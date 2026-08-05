@@ -49,6 +49,41 @@ class RoleUserSeeder extends Seeder
                     '9000000000000003',
                     $informatika,
                 ),
+                $this->buatDosen(
+                    'dosen.ti2@example.test',
+                    'Ahmad Fauzi, M.Kom.',
+                    '1000000004',
+                    '9000000000000004',
+                    $informatika,
+                ),
+                $this->buatDosen(
+                    'dosen.ti3@example.test',
+                    'Nur Aisyah, M.T.',
+                    '1000000005',
+                    '9000000000000005',
+                    $informatika,
+                ),
+                $this->buatDosen(
+                    'dosen.ti4@example.test',
+                    'Fajar Nugroho, M.Cs.',
+                    '1000000006',
+                    '9000000000000006',
+                    $informatika,
+                ),
+                $this->buatDosen(
+                    'dosen.si2@example.test',
+                    'Maya Putri, M.Kom.',
+                    '1000000007',
+                    '9000000000000007',
+                    $sistemInformasi,
+                ),
+                $this->buatDosen(
+                    'dosen.si3@example.test',
+                    'Arif Hidayat, M.S.I.',
+                    '1000000008',
+                    '9000000000000008',
+                    $sistemInformasi,
+                ),
             ];
 
             $informatika->update(['ketua_prodi_id' => $dosen[0]->nidn]);
@@ -74,6 +109,41 @@ class RoleUserSeeder extends Seeder
                 '222000000001',
                 $sistemInformasi,
                 $dosen[1],
+            );
+            $this->buatMahasiswa(
+                'mahasiswa.ti3@example.test',
+                'Nadia Permata',
+                '221000000003',
+                $informatika,
+                $dosen[3],
+            );
+            $this->buatMahasiswa(
+                'mahasiswa.ti4@example.test',
+                'Bagas Ramadhan',
+                '221000000004',
+                $informatika,
+                $dosen[4],
+            );
+            $this->buatMahasiswa(
+                'mahasiswa.ti5@example.test',
+                'Citra Anggraini',
+                '221000000005',
+                $informatika,
+                $dosen[5],
+            );
+            $this->buatMahasiswa(
+                'mahasiswa.si2@example.test',
+                'Dimas Setiawan',
+                '222000000002',
+                $sistemInformasi,
+                $dosen[6],
+            );
+            $this->buatMahasiswa(
+                'mahasiswa.si3@example.test',
+                'Farah Nabila',
+                '222000000003',
+                $sistemInformasi,
+                $dosen[7],
             );
 
             $this->buatAdminProdi(
@@ -101,7 +171,7 @@ class RoleUserSeeder extends Seeder
             }
         });
 
-        $this->command?->info('12 akun uji dibuat/diperbarui. Kata sandi seluruh akun: password');
+        $this->command?->info('22 akun uji dibuat/diperbarui. Kata sandi seluruh akun: password');
     }
 
     private function buatUser(string $email, string $nama, UserRole $role): User

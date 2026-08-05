@@ -17,11 +17,18 @@ class RoleUserSeederTest extends TestCase
     {
         $this->seed(RoleUserSeeder::class);
 
-        foreach (UserRole::cases() as $role) {
-            $this->assertGreaterThanOrEqual(
-                3,
-                User::query()->where('role', $role->value)->count(),
-                "Role {$role->value} tidak memiliki cukup akun uji.",
+        $jumlahAkun = [
+            UserRole::Mahasiswa->value => 8,
+            UserRole::Dosen->value => 8,
+            UserRole::AdminProdi->value => 3,
+            UserRole::AdminUtama->value => 3,
+        ];
+
+        foreach ($jumlahAkun as $role => $jumlah) {
+            $this->assertSame(
+                $jumlah,
+                User::query()->where('role', $role)->count(),
+                "Role {$role} tidak memiliki jumlah akun uji yang sesuai.",
             );
         }
 
@@ -33,6 +40,12 @@ class RoleUserSeederTest extends TestCase
         $this->assertTrue($kaprodi->isKetuaProdi());
         $this->assertCount(2, $adminProdi->programStudiAdministrasi);
         $this->assertTrue(Hash::check('password', $mahasiswa->password));
+        $this->assertNotNull(
+            User::query()->where('email', 'dosen.si3@example.test')->firstOrFail()->dosen,
+        );
+        $this->assertNotNull(
+            User::query()->where('email', 'mahasiswa.si3@example.test')->firstOrFail()->mahasiswa,
+        );
     }
 
     public function test_seeder_dapat_dijalankan_ulang_tanpa_menduplikasi_akun(): void
