@@ -7,7 +7,7 @@
     <h1>Dashboard Dosen</h1>
     <p class="lead">Ringkasan bimbingan dan agenda akademik yang melibatkan Anda.</p>
     <div class="stats-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-        <div class="stat-card"><div class="stat-card__label">Skripsi bimbingan</div><div class="stat-card__value">{{ $skripsiBimbingan }}</div><div class="stat-card__hint">Sebagai Pembimbing 1 atau 2</div></div>
+        <div class="stat-card"><div class="stat-card__label">Skripsi terkait</div><div class="stat-card__value">{{ $skripsiBimbingan }}</div><div class="stat-card__hint">Sebagai calon atau pembimbing final</div></div>
         <div class="stat-card"><div class="stat-card__label">Seminar terjadwal</div><div class="stat-card__value">{{ $seminarTerjadwal }}</div><div class="stat-card__hint">Sebagai pembimbing atau penguji</div></div>
         <div class="stat-card"><div class="stat-card__label">Program studi</div><div class="stat-card__value" style="font-size: 1.05rem;">{{ $dosen?->programStudi?->nama ?? '—' }}</div><div class="stat-card__hint">{{ $dosen?->nidn ?? 'Profil belum terhubung' }}</div></div>
     </div>

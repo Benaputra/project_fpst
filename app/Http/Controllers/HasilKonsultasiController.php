@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class HasilKonsultasiController extends Controller
@@ -32,7 +33,7 @@ class HasilKonsultasiController extends Controller
         return back()->with('status', 'Hasil konsultasi berhasil diunggah dan menunggu verifikasi.');
     }
 
-    public function download(Request $request, DokumenPengajuan $dokumen): StreamedResponse
+    public function download(Request $request, DokumenPengajuan $dokumen): Response|StreamedResponse
     {
         Gate::forUser($request->user())->authorize('download', $dokumen);
         abort_unless(in_array($dokumen->jenis, [
@@ -63,10 +64,20 @@ class HasilKonsultasiController extends Controller
             JenisDokumenPengajuan::BerkasSeminar => 'berkas-seminar',
             JenisDokumenPengajuan::BerkasSidang => 'berkas-sidang',
         };
+        $namaFile = sprintf('%s-%s-v%d.%s', $prefix, $nim, $dokumen->versi, $extension);
+
+        if ($dokumen->jenis === JenisDokumenPengajuan::HasilKonsultasi) {
+            return response($content, 200, [
+                'Content-Type' => $contentType,
+                'Content-Disposition' => sprintf('inline; filename="%s"', $namaFile),
+                'X-Content-Type-Options' => 'nosniff',
+                'Content-Security-Policy' => "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'",
+            ]);
+        }
 
         return Storage::disk('local')->download(
             $dokumen->file_path,
-            sprintf('%s-%s-v%d.%s', $prefix, $nim, $dokumen->versi, $extension),
+            $namaFile,
             [
                 'Content-Type' => $contentType,
                 'X-Content-Type-Options' => 'nosniff',

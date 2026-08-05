@@ -6,10 +6,12 @@ use App\Enums\JenisSurat;
 use App\Enums\PeranKesediaanBimbingan;
 use App\Enums\StatusKesediaanBimbingan;
 use App\Enums\StatusSurat;
+use App\Models\Dosen;
 use App\Models\KesediaanBimbingan;
 use App\Models\Surat;
 use App\Models\User;
 use App\Services\Pdf\SuratKesediaanPdf;
+use App\Services\Signature\TandaTanganKaprodi;
 use App\Services\Surat\ArsipPdfSurat;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Carbon;
@@ -23,6 +25,7 @@ class TerbitkanSuratKesediaan
 {
     public function __construct(
         private readonly SuratKesediaanPdf $pdf,
+        private readonly TandaTanganKaprodi $tandaTangan,
         private readonly ArsipPdfSurat $arsip
     ) {}
 
@@ -39,7 +42,7 @@ class TerbitkanSuratKesediaan
                 $kesediaanTerkunci = KesediaanBimbingan::query()
                     ->with([
                         'dosen',
-                        'skripsi.mahasiswa.programStudi',
+                        'skripsi.mahasiswa.programStudi.ketuaProdi',
                     ])
                     ->lockForUpdate()
                     ->findOrFail($kesediaan->getKey());
@@ -60,13 +63,32 @@ class TerbitkanSuratKesediaan
                     ->skripsi
                     ->mahasiswa
                     ->program_studi_id;
+                $programStudi = $kesediaanTerkunci->skripsi->mahasiswa->programStudi;
+                $penandaTangan = null;
+                $dataTandaTangan = null;
+                if ($user->isKetuaProdiUntuk($programStudiId)) {
+                    $penandaTangan = $programStudi->ketuaProdi;
+                    if (! $penandaTangan instanceof Dosen
+                        || $penandaTangan->user_id !== $user->id) {
+                        throw ValidationException::withMessages([
+                            'tanda_tangan' => 'Identitas Kaprodi aktif tidak konsisten.',
+                        ]);
+                    }
+                    $dataTandaTangan = $this->tandaTangan->dataUri($programStudi);
+                }
                 $nomorSurat = $this->nomorSurat(
                     $kesediaanTerkunci,
                     $programStudiId,
                     $versi,
                     $tanggalTerbit
                 );
-                $pdf = $this->pdf->render($kesediaanTerkunci, $nomorSurat, $tanggalTerbit);
+                $pdf = $this->pdf->render(
+                    $kesediaanTerkunci,
+                    $nomorSurat,
+                    $tanggalTerbit,
+                    $penandaTangan,
+                    $dataTandaTangan
+                );
                 $hash = hash('sha256', $pdf);
                 $pathBaru = sprintf(
                     'surat/kesediaan/%d/%d/v%d-%s.pdf',
@@ -88,8 +110,8 @@ class TerbitkanSuratKesediaan
                     'generated_at' => $tanggalTerbit,
                     'verified_by' => null,
                     'verified_at' => null,
-                    'signed_by' => null,
-                    'signed_at' => null,
+                    'signed_by' => $penandaTangan?->nidn,
+                    'signed_at' => $penandaTangan === null ? null : $tanggalTerbit,
                 ]);
 
                 $kesediaanTerkunci->forceFill([

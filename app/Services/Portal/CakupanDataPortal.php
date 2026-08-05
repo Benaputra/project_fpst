@@ -61,7 +61,9 @@ class CakupanDataPortal
         return $nidn
             ? $query->where(fn (Builder $skripsi) => $skripsi
                 ->where('pembimbing1_id', $nidn)
-                ->orWhere('pembimbing2_id', $nidn))
+                ->orWhere('pembimbing2_id', $nidn)
+                ->orWhereHas('kesediaanBimbingan', fn (Builder $kesediaan) => $kesediaan
+                    ->where('dosen_id', $nidn)))
             : $query->whereRaw('1 = 0');
     }
 

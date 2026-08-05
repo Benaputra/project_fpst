@@ -217,7 +217,7 @@ class GantiCalonPembimbingTest extends TestCase
 
         $this->assertDatabaseCount('kesediaan_bimbingan', 2);
         $this->assertDatabaseCount('surat', 0);
-        $this->assertSame([], Storage::disk('local')->allFiles());
+        $this->assertSame([], Storage::disk('local')->allFiles('surat'));
         $this->assertSame(StatusKesediaanBimbingan::Ditolak, $data['ditolak']->fresh()->status);
     }
 
@@ -226,6 +226,12 @@ class GantiCalonPembimbingTest extends TestCase
     {
         $programStudi = ProgramStudi::factory()->create(['nama' => 'Prodi Siklus']);
         $ketuaUser = $this->kaprodiUntuk($programStudi);
+        $pathTandaTangan = "tanda-tangan/kaprodi/{$programStudi->id}/ttd.png";
+        Storage::disk('local')->put(
+            $pathTandaTangan,
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+        );
+        $programStudi->update(['ttd_ketua_prodi' => $pathTandaTangan]);
         $mahasiswaUser = User::factory()->mahasiswa()->create();
         $mahasiswa = Mahasiswa::factory()->create([
             'program_studi_id' => $programStudi->id,

@@ -2,6 +2,7 @@
 
 namespace App\Services\Pdf;
 
+use App\Models\Dosen;
 use App\Models\KesediaanBimbingan;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -16,7 +17,9 @@ class SuratKesediaanPdf
     public function render(
         KesediaanBimbingan $kesediaan,
         string $nomorSurat,
-        Carbon $tanggalTerbit
+        Carbon $tanggalTerbit,
+        ?Dosen $penandaTangan = null,
+        ?string $dataTandaTangan = null
     ): string {
         $options = new Options;
         $options->set('isRemoteEnabled', false);
@@ -25,7 +28,13 @@ class SuratKesediaanPdf
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml(
-            $this->renderHtml($kesediaan, $nomorSurat, $tanggalTerbit),
+            $this->renderHtml(
+                $kesediaan,
+                $nomorSurat,
+                $tanggalTerbit,
+                $penandaTangan,
+                $dataTandaTangan
+            ),
             'UTF-8'
         );
         $dompdf->setPaper('A4', 'portrait');
@@ -42,7 +51,9 @@ class SuratKesediaanPdf
     public function renderHtml(
         KesediaanBimbingan $kesediaan,
         string $nomorSurat,
-        Carbon $tanggalTerbit
+        Carbon $tanggalTerbit,
+        ?Dosen $penandaTangan = null,
+        ?string $dataTandaTangan = null
     ): string {
         $kesediaan->loadMissing([
             'dosen',
@@ -57,6 +68,8 @@ class SuratKesediaanPdf
             'programStudi' => $kesediaan->skripsi->mahasiswa->programStudi,
             'nomorSurat' => $nomorSurat,
             'tanggalTerbit' => $tanggalTerbit,
+            'penandaTangan' => $penandaTangan,
+            'dataTandaTangan' => $dataTandaTangan,
         ])->render();
     }
 }

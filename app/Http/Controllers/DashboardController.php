@@ -10,6 +10,7 @@ use App\Models\ProgramStudi;
 use App\Models\User;
 use App\Services\Portal\CakupanDataPortal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -30,9 +31,13 @@ class DashboardController extends Controller
             $pengajuan = $cakupan->pengajuanJudul($user);
             $skripsi = $cakupan->skripsi($user);
             $seminar = $cakupan->seminar($user);
+            $programStudi = $user->dosen?->programStudiDipimpin;
 
             return view('portal.dashboard.kaprodi', [
-                'programStudi' => $user->dosen?->programStudiDipimpin,
+                'programStudi' => $programStudi,
+                'tandaTanganTersedia' => $programStudi !== null
+                    && $programStudi->ttd_ketua_prodi !== null
+                    && Storage::disk('local')->exists($programStudi->ttd_ketua_prodi),
                 'menungguJudul' => (clone $pengajuan)->where('status', StatusPengajuanJudul::Diajukan)->count(),
                 'skripsiAktif' => (clone $skripsi)->where('status', '!=', StatusSkripsi::Selesai)->count(),
                 'menungguSeminar' => (clone $seminar)->where('status', StatusSeminar::Diajukan)->count(),

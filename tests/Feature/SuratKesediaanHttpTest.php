@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Actions\Surat\TerbitkanSuratKesediaan;
+use App\Enums\PeranKesediaanBimbingan;
 use App\Models\Dosen;
 use App\Models\KesediaanBimbingan;
 use App\Models\Mahasiswa;
@@ -39,7 +40,7 @@ class SuratKesediaanHttpTest extends TestCase
         $this->assertDatabaseHas('surat', [
             'suratable_id' => $data['kesediaan']->id,
             'status' => 'diterbitkan',
-            'signed_by' => null,
+            'signed_by' => $data['ketua']->nidn,
             'verified_by' => null,
         ]);
         $this->assertDatabaseMissing('surat', ['file_path' => '../../public/palsu.pdf']);
@@ -102,7 +103,74 @@ class SuratKesediaanHttpTest extends TestCase
             ->assertForbidden();
 
         $this->assertDatabaseCount('surat', 0);
-        $this->assertSame([], Storage::disk('local')->allFiles());
+        $this->assertSame([], Storage::disk('local')->allFiles('surat'));
+    }
+
+    public function test_mahasiswa_mendapat_satu_tombol_dan_pdf_gabungan_p1_p2(): void
+    {
+        Storage::fake('local');
+        $data = $this->dataKesediaan();
+        $calon2User = User::factory()->dosen()->create();
+        $calon2 = Dosen::factory()->create([
+            'program_studi_id' => $data['programStudi']->id,
+            'user_id' => $calon2User->id,
+        ]);
+        $kesediaan2 = KesediaanBimbingan::factory()->for($data['skripsi'])->create([
+            'dosen_id' => $calon2->nidn,
+            'peran' => PeranKesediaanBimbingan::Pembimbing2,
+        ]);
+        $action = app(TerbitkanSuratKesediaan::class);
+        $surat1 = $action->execute($data['ketuaUser'], $data['kesediaan']);
+        $surat2 = $action->execute($data['ketuaUser'], $kesediaan2);
+
+        $halaman = $this->actingAs($data['mahasiswaUser'])
+            ->get(route('mahasiswa.pengajuan-judul.index'))
+            ->assertOk();
+        $this->assertSame(1, substr_count($halaman->getContent(), '>Unduh surat kesediaan</a>'));
+        $halaman->assertSee(route('skripsi.surat-kesediaan.download', $data['skripsi']));
+
+        $halamanSkripsi = $this->get(route('portal.skripsi.index'))->assertOk();
+        $this->assertSame(1, substr_count($halamanSkripsi->getContent(), '>Unduh surat kesediaan</a>'));
+        $halamanSkripsi
+            ->assertSee(route('skripsi.surat-kesediaan.download', $data['skripsi']))
+            ->assertDontSee(route('surat.download', $surat1))
+            ->assertDontSee(route('surat.download', $surat2));
+
+        $response = $this->get(route('skripsi.surat-kesediaan.download', $data['skripsi']))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+        $response->assertDownload("surat-kesediaan-pembimbing-{$data['mahasiswa']->nim}.pdf");
+        $this->assertStringStartsWith('%PDF-', $response->streamedContent());
+    }
+
+    public function test_dosen_hanya_melihat_dan_mengunduh_surat_kesediaan_miliknya(): void
+    {
+        Storage::fake('local');
+        $data = $this->dataKesediaan();
+        $calon2User = User::factory()->dosen()->create();
+        $calon2 = Dosen::factory()->create([
+            'program_studi_id' => $data['programStudi']->id,
+            'user_id' => $calon2User->id,
+        ]);
+        $kesediaan2 = KesediaanBimbingan::factory()->for($data['skripsi'])->create([
+            'dosen_id' => $calon2->nidn,
+            'peran' => PeranKesediaanBimbingan::Pembimbing2,
+        ]);
+        $action = app(TerbitkanSuratKesediaan::class);
+        $suratMiliknya = $action->execute($data['ketuaUser'], $data['kesediaan']);
+        $suratOrangLain = $action->execute($data['ketuaUser'], $kesediaan2);
+
+        $this->actingAs($data['calonUser'])
+            ->get(route('surat.download', $suratMiliknya))
+            ->assertOk();
+        $this->get(route('surat.download', $suratOrangLain))->assertForbidden();
+        $this->get(route('skripsi.surat-kesediaan.download', $data['skripsi']))->assertForbidden();
+
+        $this->get(route('portal.skripsi.index'))
+            ->assertOk()
+            ->assertSee(route('surat.download', $suratMiliknya))
+            ->assertDontSee(route('surat.download', $suratOrangLain))
+            ->assertSee('Unduh surat kesediaan saya');
     }
 
     /**
@@ -123,6 +191,12 @@ class SuratKesediaanHttpTest extends TestCase
             'user_id' => $ketuaUser->id,
         ]);
         $programStudi->update(['ketua_prodi_id' => $ketua->nidn]);
+        $pathTandaTangan = "tanda-tangan/kaprodi/{$programStudi->id}/ttd.png";
+        Storage::disk('local')->put(
+            $pathTandaTangan,
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+        );
+        $programStudi->update(['ttd_ketua_prodi' => $pathTandaTangan]);
         $mahasiswaUser = User::factory()->mahasiswa()->create();
         $mahasiswa = Mahasiswa::factory()->create([
             'program_studi_id' => $programStudi->id,
@@ -136,16 +210,24 @@ class SuratKesediaanHttpTest extends TestCase
             'nim' => $mahasiswa->nim,
             'judul' => $pengajuan->judul,
         ]);
-        $calon = Dosen::factory()->create(['program_studi_id' => $programStudi->id]);
+        $calonUser = User::factory()->dosen()->create();
+        $calon = Dosen::factory()->create([
+            'program_studi_id' => $programStudi->id,
+            'user_id' => $calonUser->id,
+        ]);
         $kesediaan = KesediaanBimbingan::factory()->for($skripsi)->create([
             'dosen_id' => $calon->nidn,
         ]);
 
         return compact(
             'ketuaUser',
+            'ketua',
             'calon',
+            'calonUser',
             'mahasiswaUser',
             'mahasiswa',
+            'programStudi',
+            'skripsi',
             'kesediaan'
         );
     }

@@ -53,7 +53,8 @@ class TerbitkanSuratKesediaanTest extends TestCase
         $this->assertStringContainsString('KSB-2026-', $surat->no_surat);
         $this->assertSame($data['calon']->nama, $surat->tujuan_surat);
         $this->assertNull($surat->verified_by);
-        $this->assertNull($surat->signed_by);
+        $this->assertSame($data['ketua']->nidn, $surat->signed_by);
+        $this->assertNotNull($surat->signed_at);
         $this->assertNotNull($surat->generated_at);
         $this->assertSame(
             StatusKesediaanBimbingan::MenungguUpload,
@@ -69,6 +70,7 @@ class TerbitkanSuratKesediaanTest extends TestCase
 
     public function test_template_mengambil_dosen_mahasiswa_peran_siklus_dan_judul_dari_relasi(): void
     {
+        Storage::fake('local');
         $data = $this->dataKesediaan(
             PeranKesediaanBimbingan::Pembimbing2,
             siklus: 3,
@@ -240,7 +242,7 @@ class TerbitkanSuratKesediaanTest extends TestCase
             StatusKesediaanBimbingan::Ditunjuk,
             $data['kesediaan']->fresh()->status
         );
-        $this->assertSame([], Storage::disk('local')->allFiles());
+        $this->assertSame([], Storage::disk('local')->allFiles('surat'));
     }
 
     /**
@@ -268,6 +270,9 @@ class TerbitkanSuratKesediaanTest extends TestCase
             'user_id' => $ketuaUser->id,
         ]);
         $programStudi->update(['ketua_prodi_id' => $ketua->nidn]);
+        $pathTandaTangan = "tanda-tangan/kaprodi/{$programStudi->id}/ttd.png";
+        Storage::disk('local')->put($pathTandaTangan, $this->pngValid());
+        $programStudi->update(['ttd_ketua_prodi' => $pathTandaTangan]);
         $mahasiswaUser = User::factory()->mahasiswa()->create();
         $mahasiswa = Mahasiswa::factory()->create([
             'nama' => $namaMahasiswa,
@@ -296,11 +301,19 @@ class TerbitkanSuratKesediaanTest extends TestCase
         return compact(
             'programStudi',
             'ketuaUser',
+            'ketua',
             'calon',
             'mahasiswaUser',
             'mahasiswa',
             'skripsi',
             'kesediaan'
+        );
+    }
+
+    private function pngValid(): string
+    {
+        return base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
         );
     }
 }

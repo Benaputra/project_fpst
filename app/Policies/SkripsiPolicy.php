@@ -7,6 +7,12 @@ use App\Models\User;
 
 class SkripsiPolicy
 {
+    public function downloadSuratKesediaanGabungan(User $user, Skripsi $skripsi): bool
+    {
+        return $user->isMahasiswa()
+            && $user->mahasiswa()->where('nim', $skripsi->nim)->exists();
+    }
+
     public function terbitkanSk(User $user, Skripsi $skripsi): bool
     {
         $programStudiId = (int) $skripsi->mahasiswa->program_studi_id;

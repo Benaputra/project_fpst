@@ -36,7 +36,8 @@ class HasilKonsultasiHttpUiTest extends TestCase
             ->assertOk()
             ->assertSee($data['calon']->nama)
             ->assertSee('Unggah hasil konsultasi')
-            ->assertSee(route('surat.download', $surat))
+            ->assertSee(route('skripsi.surat-kesediaan.download', $data['skripsi']))
+            ->assertDontSee(route('surat.download', $surat))
             ->assertSee('enctype="multipart/form-data"', false)
             ->assertSee('name="hasil_konsultasi"', false)
             ->assertSee('name="catatan_mahasiswa"', false)
@@ -115,6 +116,7 @@ class HasilKonsultasiHttpUiTest extends TestCase
             ->assertOk()
             ->assertSee('Dokumen versi 1 telah diunggah')
             ->assertSee(route('dokumen-pengajuan.download', $dokumen))
+            ->assertSee('Lihat hasil konsultasi')
             ->assertDontSee('name="hasil_konsultasi"', false)
             ->assertDontSee('Unggah perbaikan');
     }
@@ -205,7 +207,7 @@ class HasilKonsultasiHttpUiTest extends TestCase
             'status' => StatusKesediaanBimbingan::MenungguUpload,
         ]);
 
-        return compact('programStudi', 'mahasiswaUser', 'calon', 'kesediaan');
+        return compact('programStudi', 'mahasiswaUser', 'calon', 'skripsi', 'kesediaan');
     }
 
     private function pdfValid(): UploadedFile

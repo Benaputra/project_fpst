@@ -16,8 +16,10 @@
             .box { border: 1px solid #111827; display: inline-block; height: 13px; margin-right: 7px; vertical-align: -2px; width: 13px; }
             .choice { margin: 12px 0; }
             .lines { border-bottom: 1px solid #6b7280; height: 24px; }
-            .signature { margin-left: auto; margin-top: 30px; width: 48%; }
+            .signatures { display: table; margin-top: 30px; table-layout: fixed; width: 100%; }
+            .signature { display: table-cell; text-align: center; vertical-align: top; width: 50%; }
             .signature-space { height: 76px; }
+            .signature-image { height: 70px; margin: 2px auto 4px; max-width: 180px; object-fit: contain; }
             .muted { color: #4b5563; font-size: 9pt; }
         </style>
     </head>
@@ -53,11 +55,26 @@
         <div class="lines"></div>
         <div class="lines"></div>
 
-        <div class="signature">
-            <p>Tanggal: ____________________</p>
-            <div class="signature-space"></div>
-            <p><strong>{{ $dosen->nama }}</strong><br>NIDN {{ $dosen->nidn }}</p>
-            <p class="muted">Tanda tangan asli calon pembimbing</p>
+        <div class="signatures">
+            @if ($penandaTangan && $dataTandaTangan)
+                <div class="signature">
+                    <p>Mengetahui,<br>Ketua Program Studi</p>
+                    <img class="signature-image" src="{{ $dataTandaTangan }}" alt="Tanda tangan Ketua Program Studi">
+                    <p><strong>{{ $penandaTangan->nama }}</strong><br>NIDN {{ $penandaTangan->nidn }}</p>
+                </div>
+            @else
+                <div class="signature">
+                    <p>Mengetahui,<br>Ketua Program Studi</p>
+                    <div class="signature-space"></div>
+                    <p class="muted">Dokumen diterbitkan tanpa tanda tangan digital</p>
+                </div>
+            @endif
+            <div class="signature">
+                <p>Tanggal: ____________________</p>
+                <div class="signature-space"></div>
+                <p><strong>{{ $dosen->nama }}</strong><br>NIDN {{ $dosen->nidn }}</p>
+                <p class="muted">Tanda tangan asli calon pembimbing</p>
+            </div>
         </div>
     </body>
 </html>

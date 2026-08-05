@@ -103,13 +103,28 @@
             @endif
 
             @if ($pengajuan?->skripsi)
+                @php
+                    $kesediaanAktif = $pengajuan->skripsi->kesediaanBimbingan
+                        ->groupBy(fn ($item) => $item->peran->value)
+                        ->map(fn ($riwayat) => $riwayat->sortByDesc('siklus')->first());
+                    $suratKesediaanLengkap = $kesediaanAktif->isNotEmpty()
+                        && $kesediaanAktif->every(fn ($item) => $item->surat
+                            ->where('jenis_surat', \App\Enums\JenisSurat::KesediaanPembimbing)
+                            ->whereIn('status', [\App\Enums\StatusSurat::Diterbitkan, \App\Enums\StatusSurat::Terverifikasi])
+                            ->isNotEmpty());
+                @endphp
+                @if ($suratKesediaanLengkap)
+                    <section class="card" aria-labelledby="surat-kesediaan-heading">
+                        <div class="card__header">
+                            <div><h2 id="surat-kesediaan-heading">Surat kesediaan pembimbing</h2><p class="field-help">Satu PDF berisi seluruh surat calon pembimbing aktif, termasuk P1 dan P2 jika keduanya ditetapkan.</p></div>
+                        </div>
+                        <a class="button button--secondary" href="{{ route('skripsi.surat-kesediaan.download', $pengajuan->skripsi) }}">Unduh surat kesediaan</a>
+                    </section>
+                @elseif ($kesediaanAktif->isNotEmpty())
+                    <div class="notice notice--warning">Surat kesediaan sedang disiapkan. Tombol unduh akan tersedia setelah seluruh surat calon pembimbing aktif diterbitkan.</div>
+                @endif
                 @foreach ($pengajuan->skripsi->kesediaanBimbingan as $kesediaan)
                     @php
-                        $suratAktif = $kesediaan->surat
-                            ->where('jenis_surat', \App\Enums\JenisSurat::KesediaanPembimbing)
-                            ->where('status', \App\Enums\StatusSurat::Diterbitkan)
-                            ->sortByDesc('versi')
-                            ->first();
                         $dokumenTerakhir = $kesediaan->dokumenPengajuan
                             ->where('jenis', \App\Enums\JenisDokumenPengajuan::HasilKonsultasi)
                             ->sortByDesc('versi')
@@ -131,12 +146,6 @@
                                 {{ str_replace('_', ' ', $kesediaan->status->value) }}
                             </span>
                         </div>
-
-                        @if ($suratAktif)
-                            <a class="button button--secondary" href="{{ route('surat.download', $suratAktif) }}">
-                                Unduh surat kesediaan
-                            </a>
-                        @endif
 
                         @if ($kesediaan->status === \App\Enums\StatusKesediaanBimbingan::UploadTidakValid)
                             <div class="notice notice--danger" role="alert" style="margin-top: 1rem;">
@@ -173,7 +182,7 @@
                         @elseif ($dokumenTerakhir)
                             <div class="notice notice--warning" style="margin-top: 1rem; margin-bottom: 0;">
                                 Dokumen versi {{ $dokumenTerakhir->versi }} telah diunggah dan tidak dapat diganti pada status ini.
-                                <a class="table-link" href="{{ route('dokumen-pengajuan.download', $dokumenTerakhir) }}">Unduh dokumen</a>
+                                <a class="table-link" target="_blank" rel="noopener" href="{{ route('dokumen-pengajuan.download', $dokumenTerakhir) }}">Lihat hasil konsultasi</a>
                             </div>
                         @endif
                     </section>

@@ -6,7 +6,10 @@
     @php
         $user = auth()->user();
         $kaprodi = $user->isKetuaProdi();
+        $mahasiswa = $user->isMahasiswa();
         $bolehAdministrasi = $kaprodi || $user->isAdminProdi() || $user->isAdminUtama();
+        $dosenBiasa = $user->isDosen() && ! $bolehAdministrasi;
+        $nidnDosen = $dosenBiasa ? $user->dosen?->nidn : null;
     @endphp
     <div class="eyebrow">Proses akademik</div>
     <h1>Skripsi</h1>
@@ -22,22 +25,34 @@
                 @foreach ($skripsi as $item)
                     @php
                         $dosen = $dosenPerProdi->get($item->mahasiswa->program_studi_id, collect());
-                        $terakhirPerPeran = $item->kesediaanBimbingan
+                        $kesediaanDitampilkan = $dosenBiasa
+                            ? $item->kesediaanBimbingan->where('dosen_id', $nidnDosen)
+                            : $item->kesediaanBimbingan;
+                        $terakhirPerPeran = $kesediaanDitampilkan
                             ->groupBy(fn ($kesediaan) => $kesediaan->peran->value)
                             ->map(fn ($riwayat) => $riwayat->sortByDesc('siklus')->first());
                         $siapFinalisasi = $terakhirPerPeran->isNotEmpty()
                             && $terakhirPerPeran->contains(fn ($k) => $k->peran === \App\Enums\PeranKesediaanBimbingan::Pembimbing1)
                             && $terakhirPerPeran->every(fn ($k) => $k->status === \App\Enums\StatusKesediaanBimbingan::Diterima);
+                        $suratKesediaanLengkap = $terakhirPerPeran->isNotEmpty()
+                            && $terakhirPerPeran->every(fn ($k) => $k->surat
+                                ->where('jenis_surat', \App\Enums\JenisSurat::KesediaanPembimbing)
+                                ->whereIn('status', [\App\Enums\StatusSurat::Diterbitkan, \App\Enums\StatusSurat::Terverifikasi])
+                                ->isNotEmpty());
                     @endphp
                     <article class="workflow-card">
                         <div class="workflow-card__header"><div><h3>{{ $item->mahasiswa->nama }}</h3><p class="field-help">{{ $item->nim }} · {{ $item->mahasiswa->programStudi->nama }}</p></div><span class="badge badge--waiting status-text">{{ str_replace('_', ' ', $item->status->value) }}</span></div>
                         <p class="title-value" style="font-size: .95rem; margin-top: 1rem;">{{ $item->judul }}</p>
                         <dl class="meta" style="margin-top: 1rem;"><div><dt>Pembimbing 1</dt><dd>{{ $item->pembimbing1?->nama ?? 'Belum final' }}</dd></div><div><dt>Pembimbing 2</dt><dd>{{ $item->pembimbing2?->nama ?? '—' }}</dd></div><div><dt>Progres</dt><dd>Seminar: {{ str_replace('_', ' ', $item->seminar?->status->value ?? 'belum diajukan') }}<br>Sidang: {{ str_replace('_', ' ', $item->sidangSkripsi?->status->value ?? 'belum diajukan') }}</dd></div></dl>
 
-                        @if ($item->kesediaanBimbingan->isNotEmpty())
+                        @if ($mahasiswa && $suratKesediaanLengkap)
+                            <div class="compact-actions"><a class="button button--secondary button--compact" href="{{ route('skripsi.surat-kesediaan.download', $item) }}">Unduh surat kesediaan</a></div>
+                        @endif
+
+                        @if ($kesediaanDitampilkan->isNotEmpty())
                             <details open><summary>Proses kesediaan pembimbing</summary>
                                 <div class="workflow-list" style="margin-top: .8rem;">
-                                    @foreach ($item->kesediaanBimbingan->sortBy([['peran.value', 'asc'], ['siklus', 'asc']]) as $kesediaan)
+                                    @foreach ($kesediaanDitampilkan->sortBy([['peran.value', 'asc'], ['siklus', 'asc']]) as $kesediaan)
                                         @php
                                             $dokumen = $kesediaan->dokumenPengajuan->sortByDesc('versi')->first();
                                             $suratAktif = $kesediaan->surat->whereIn('status', [\App\Enums\StatusSurat::Diterbitkan, \App\Enums\StatusSurat::Terverifikasi])->sortByDesc('versi')->first();
@@ -46,8 +61,8 @@
                                         <div class="workflow-card" style="background: #f8fafc;">
                                             <div class="workflow-card__header"><div><strong>{{ $kesediaan->peran === \App\Enums\PeranKesediaanBimbingan::Pembimbing1 ? 'Pembimbing 1' : 'Pembimbing 2' }} · Siklus {{ $kesediaan->siklus }}</strong><p class="field-help">{{ $kesediaan->dosen->nama }} · {{ $kesediaan->dosen_id }}</p></div><span class="badge badge--waiting status-text">{{ str_replace('_', ' ', $kesediaan->status->value) }}</span></div>
                                             <div class="compact-actions">
-                                                @if ($suratAktif)<a class="table-link" href="{{ route('surat.download', $suratAktif) }}">Unduh surat kesediaan</a>@endif
-                                                @if ($dokumen)<a class="table-link" href="{{ route('dokumen-pengajuan.download', $dokumen) }}">Unduh hasil konsultasi v{{ $dokumen->versi }}</a>@endif
+                                                @if ($suratAktif && ! $mahasiswa)<a class="table-link" href="{{ route('surat.download', $suratAktif) }}">{{ $dosenBiasa ? 'Unduh surat kesediaan saya' : 'Unduh surat kesediaan' }}</a>@endif
+                                                @if ($dokumen && ! $dosenBiasa)<a class="table-link" target="_blank" rel="noopener" href="{{ route('dokumen-pengajuan.download', $dokumen) }}">Lihat hasil konsultasi v{{ $dokumen->versi }}</a>@endif
                                             </div>
 
                                             @if ($bolehAdministrasi && $kesediaan->status === \App\Enums\StatusKesediaanBimbingan::Ditunjuk)

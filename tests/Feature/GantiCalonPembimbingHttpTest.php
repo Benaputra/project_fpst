@@ -67,6 +67,12 @@ class GantiCalonPembimbingHttpTest extends TestCase
             'user_id' => $ketuaUser->id,
         ]);
         $programStudi->update(['ketua_prodi_id' => $ketua->nidn]);
+        $pathTandaTangan = "tanda-tangan/kaprodi/{$programStudi->id}/ttd.png";
+        Storage::disk('local')->put(
+            $pathTandaTangan,
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+        );
+        $programStudi->update(['ttd_ketua_prodi' => $pathTandaTangan]);
         $mahasiswaUser = User::factory()->mahasiswa()->create();
         $mahasiswa = Mahasiswa::factory()->create([
             'program_studi_id' => $programStudi->id,

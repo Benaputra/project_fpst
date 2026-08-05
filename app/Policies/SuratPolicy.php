@@ -47,6 +47,12 @@ class SuratPolicy
             return $user->memilikiAksesAdministratifKeProgramStudi($programStudiId);
         }
 
+        if ($user->isDosen()
+            && $surat->suratable instanceof KesediaanBimbingan
+            && $user->dosen?->nidn === $surat->suratable->dosen_id) {
+            return true;
+        }
+
         return $user->isKetuaProdiUntuk($programStudiId);
     }
 

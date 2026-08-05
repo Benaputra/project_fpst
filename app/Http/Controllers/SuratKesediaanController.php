@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Surat\TerbitkanSuratKesediaan;
+use App\Enums\JenisSurat;
+use App\Enums\StatusSurat;
 use App\Http\Requests\Surat\TerbitkanSuratKesediaanRequest;
 use App\Models\KesediaanBimbingan;
 use App\Models\Seminar;
 use App\Models\SidangSkripsi;
 use App\Models\Skripsi;
 use App\Models\Surat;
+use App\Services\Pdf\SuratKesediaanGabunganPdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -58,6 +61,52 @@ class SuratKesediaanController extends Controller
             $surat->file_path,
             $namaFile,
             ['Content-Type' => 'application/pdf']
+        );
+    }
+
+    public function downloadGabungan(
+        Request $request,
+        Skripsi $skripsi,
+        SuratKesediaanGabunganPdf $pdf
+    ): StreamedResponse {
+        Gate::forUser($request->user())->authorize('downloadSuratKesediaanGabungan', $skripsi);
+        $skripsi->load([
+            'mahasiswa.programStudi.ketuaProdi',
+            'kesediaanBimbingan.dosen',
+            'kesediaanBimbingan.surat.penandaTangan',
+        ]);
+
+        $kesediaanAktif = $skripsi->kesediaanBimbingan
+            ->groupBy(fn (KesediaanBimbingan $item) => $item->peran->value)
+            ->map(fn ($riwayat) => $riwayat->sortByDesc('siklus')->first())
+            ->sortBy(fn (KesediaanBimbingan $item) => $item->peran->value)
+            ->values();
+        abort_if($kesediaanAktif->isEmpty(), 404);
+
+        $surat = $kesediaanAktif->map(function (KesediaanBimbingan $item): Surat {
+            $suratAktif = $item->surat
+                ->where('jenis_surat', JenisSurat::KesediaanPembimbing)
+                ->whereIn('status', [StatusSurat::Diterbitkan, StatusSurat::Terverifikasi])
+                ->sortByDesc('versi')
+                ->first();
+            abort_unless($suratAktif instanceof Surat, 409, 'Surat kesediaan P1/P2 belum lengkap.');
+            abort_unless(Storage::disk('local')->exists($suratAktif->file_path), 404);
+            $content = Storage::disk('local')->get($suratAktif->file_path);
+            abort_if(! hash_equals($suratAktif->file_hash, hash('sha256', $content)), 409);
+
+            return $suratAktif;
+        });
+        $content = $pdf->render($surat);
+
+        return response()->streamDownload(
+            static function () use ($content): void {
+                echo $content;
+            },
+            sprintf('surat-kesediaan-pembimbing-%s.pdf', $skripsi->nim),
+            [
+                'Content-Type' => 'application/pdf',
+                'X-Content-Type-Options' => 'nosniff',
+            ]
         );
     }
 }

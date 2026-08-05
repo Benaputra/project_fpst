@@ -6,6 +6,7 @@ use App\Http\Controllers\HasilKonsultasiController;
 use App\Http\Controllers\Kaprodi\CalonPembimbingController;
 use App\Http\Controllers\Kaprodi\FinalisasiPembimbingController;
 use App\Http\Controllers\Kaprodi\PengajuanJudulController as PengajuanJudulKaprodiController;
+use App\Http\Controllers\Kaprodi\TandaTanganKaprodiController;
 use App\Http\Controllers\Kaprodi\VerifikasiPengajuanJudulController;
 use App\Http\Controllers\Mahasiswa\PengajuanJudulController;
 use App\Http\Controllers\Portal\AktivitasLogController;
@@ -36,6 +37,8 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::post('/kaprodi/tanda-tangan', [TandaTanganKaprodiController::class, 'store'])
+        ->name('kaprodi.tanda-tangan.store');
     Route::get('/portal/pengajuan-judul', PengajuanJudulPortalController::class)
         ->name('portal.pengajuan-judul.index');
     Route::get('/portal/skripsi', SkripsiPortalController::class)->name('portal.skripsi.index');
@@ -104,6 +107,10 @@ Route::middleware('auth')->group(function () {
     )->name('kesediaan-bimbingan.surat.store');
     Route::get('/surat/{surat}/download', [SuratKesediaanController::class, 'download'])
         ->name('surat.download');
+    Route::get(
+        '/skripsi/{skripsi}/surat-kesediaan/download',
+        [SuratKesediaanController::class, 'downloadGabungan']
+    )->name('skripsi.surat-kesediaan.download');
     Route::post(
         '/kesediaan-bimbingan/{kesediaanBimbingan}/hasil-konsultasi',
         [HasilKonsultasiController::class, 'store']
