@@ -8,6 +8,13 @@ use App\Http\Controllers\Kaprodi\FinalisasiPembimbingController;
 use App\Http\Controllers\Kaprodi\PengajuanJudulController as PengajuanJudulKaprodiController;
 use App\Http\Controllers\Kaprodi\VerifikasiPengajuanJudulController;
 use App\Http\Controllers\Mahasiswa\PengajuanJudulController;
+use App\Http\Controllers\Portal\AktivitasLogController;
+use App\Http\Controllers\Portal\PengajuanJudulController as PengajuanJudulPortalController;
+use App\Http\Controllers\Portal\ProfileController;
+use App\Http\Controllers\Portal\SeminarController as SeminarPortalController;
+use App\Http\Controllers\Portal\SidangController as SidangPortalController;
+use App\Http\Controllers\Portal\SkripsiController as SkripsiPortalController;
+use App\Http\Controllers\Portal\SuratController as SuratPortalController;
 use App\Http\Controllers\SeminarController;
 use App\Http\Controllers\SidangSkripsiController;
 use App\Http\Controllers\SkBimbinganController;
@@ -29,6 +36,14 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::get('/portal/pengajuan-judul', PengajuanJudulPortalController::class)
+        ->name('portal.pengajuan-judul.index');
+    Route::get('/portal/skripsi', SkripsiPortalController::class)->name('portal.skripsi.index');
+    Route::get('/portal/seminar', SeminarPortalController::class)->name('portal.seminar.index');
+    Route::get('/portal/sidang', SidangPortalController::class)->name('portal.sidang.index');
+    Route::get('/portal/surat', SuratPortalController::class)->name('portal.surat.index');
+    Route::get('/portal/log-aktivitas', AktivitasLogController::class)->name('portal.aktivitas-log.index');
+    Route::get('/profil', ProfileController::class)->name('portal.profile.show');
     Route::get('/kaprodi/pengajuan-judul', [PengajuanJudulKaprodiController::class, 'index'])
         ->name('kaprodi.pengajuan-judul.index');
     Route::get('/kaprodi/pengajuan-judul/{pengajuanJudul}', [PengajuanJudulKaprodiController::class, 'show'])

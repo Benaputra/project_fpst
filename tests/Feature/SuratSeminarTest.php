@@ -68,7 +68,7 @@ class SuratSeminarTest extends TestCase
             $data['seminar'], JenisSurat::SuratTugasSeminar, 'TSM-TEST', now(), null, null
         );
         foreach ([$data['seminar']->tempat, $data['penguji1']->nama, $data['penguji2']->nama, $data['skripsi']->judul, 'TERVERIFIKASI TANPA TANDA TANGAN KAPRODI'] as $teks) {
-            $this->assertStringContainsString($teks, $html);
+            $this->assertStringContainsString(e($teks), $html);
         }
 
         $admin = User::factory()->adminUtama()->create();

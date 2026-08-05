@@ -30,7 +30,7 @@ class AuthenticationTest extends TestCase
             ->assertSee('name="password"', false);
     }
 
-    public function test_mahasiswa_dapat_login_dan_diarahkan_ke_halaman_pengajuan(): void
+    public function test_mahasiswa_dapat_login_dan_melihat_dashboard_pribadi(): void
     {
         $user = $this->buatMahasiswa();
 
@@ -41,10 +41,13 @@ class AuthenticationTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $this->get(route('dashboard'))
-            ->assertRedirect(route('mahasiswa.pengajuan-judul.index'));
+            ->assertOk()
+            ->assertSee('Mahasiswa')
+            ->assertSee('Pengajuan Judul')
+            ->assertSee('Profil');
     }
 
-    public function test_kaprodi_dapat_login_dan_diarahkan_ke_daftar_verifikasi(): void
+    public function test_kaprodi_dapat_login_dan_melihat_dashboard_prodi(): void
     {
         $user = $this->buatKaprodi();
 
@@ -55,7 +58,10 @@ class AuthenticationTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $this->get(route('dashboard'))
-            ->assertRedirect(route('kaprodi.pengajuan-judul.index'));
+            ->assertOk()
+            ->assertSee('Ketua Program Studi')
+            ->assertSee('Pengajuan Judul')
+            ->assertSee('Surat');
     }
 
     public function test_kredensial_salah_ditolak_dengan_pesan_generik(): void
