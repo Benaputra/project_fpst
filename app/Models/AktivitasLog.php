@@ -2,34 +2,35 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class AktivitasLog extends Model
 {
+    use HasFactory;
+
     protected $table = 'aktivitas_log';
 
-    public $timestamps = false;
-
-    protected $fillable = [];
-
-    protected function casts(): array
-    {
-        return [
-            'before_data' => 'array',
-            'after_data' => 'array',
-            'created_at' => 'datetime',
-        ];
-    }
+    protected $fillable = [
+        'user_id',
+        'aksi',
+        'deskripsi',
+        'ip_address',
+    ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function subject(): MorphTo
+    public static function catat(?User $user, string $aksi, string $deskripsi): self
     {
-        return $this->morphTo();
+        return self::create([
+            'user_id' => $user?->id ?? auth()->id(),
+            'aksi' => $aksi,
+            'deskripsi' => $deskripsi,
+            'ip_address' => request()->ip(),
+        ]);
     }
 }

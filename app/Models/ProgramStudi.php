@@ -2,49 +2,28 @@
 
 namespace App\Models;
 
-use Database\Factories\ProgramStudiFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProgramStudi extends Model
 {
-    /** @use HasFactory<ProgramStudiFactory> */
     use HasFactory;
 
     protected $table = 'program_studi';
 
     protected $fillable = [
         'nama',
-        'ketua_prodi_id',
-        'ttd_ketua_prodi',
+        'kode',
     ];
 
-    public function ketuaProdi(): BelongsTo
+    public function users(): HasMany
     {
-        return $this->belongsTo(Dosen::class, 'ketua_prodi_id', 'nidn');
+        return $this->hasMany(User::class);
     }
 
-    public function dosen(): HasMany
+    public function pengajuanSkripsi(): HasMany
     {
-        return $this->hasMany(Dosen::class, 'program_studi_id');
-    }
-
-    public function mahasiswa(): HasMany
-    {
-        return $this->hasMany(Mahasiswa::class, 'program_studi_id');
-    }
-
-    public function surat(): HasMany
-    {
-        return $this->hasMany(Surat::class);
-    }
-
-    public function adminProdi(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'user_program_studi')
-            ->withTimestamps();
+        return $this->hasMany(PengajuanSkripsi::class);
     }
 }

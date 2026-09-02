@@ -7,28 +7,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SidangSkripsi extends Model
+class SeminarSkripsi extends Model
 {
     use HasFactory;
 
-    protected $table = 'sidang_skripsi';
+    protected $table = 'seminar_skripsi';
 
     protected $fillable = [
         'pengajuan_skripsi_id',
-        'file_naskah_sidang',
-        'file_acc_sidang',
-        'file_bebas_revisi_seminar',
-        'file_bukti_bayar_sidang',
-        'penguji_1_id',
-        'penguji_2_id',
-        'tgl_sidang',
-        'jam_sidang',
+        'file_naskah_seminar',
+        'file_acc_pembimbing',
+        'file_bukti_bayar_seminar',
+        'file_toefl',
+        'penguji_seminar_id',
+        'tgl_seminar',
+        'jam_seminar',
         'ruangan',
-        'nomor_undangan_sidang',
-        'file_undangan_sidang',
-        'nomor_sk_sidang',
-        'file_sk_sidang',
-        'nilai_sidang',
+        'nomor_undangan_seminar',
+        'file_undangan_seminar',
+        'nomor_sk_seminar',
+        'file_sk_seminar',
+        'nilai_seminar',
         'status',
         'catatan',
     ];
@@ -37,8 +36,8 @@ class SidangSkripsi extends Model
     {
         return [
             'status' => StatusPengajuan::class,
-            'tgl_sidang' => 'date',
-            'nilai_sidang' => 'decimal:2',
+            'tgl_seminar' => 'date',
+            'nilai_seminar' => 'decimal:2',
         ];
     }
 
@@ -47,14 +46,9 @@ class SidangSkripsi extends Model
         return $this->belongsTo(PengajuanSkripsi::class, 'pengajuan_skripsi_id');
     }
 
-    public function penguji1(): BelongsTo
+    public function penguji(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'penguji_1_id');
-    }
-
-    public function penguji2(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'penguji_2_id');
+        return $this->belongsTo(User::class, 'penguji_seminar_id');
     }
 
     public function isSelesai(): bool

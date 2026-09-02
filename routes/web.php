@@ -1,126 +1,83 @@
 <?php
 
+use App\Http\Controllers\Admin\AdministrasiSkripsiController;
+use App\Http\Controllers\Admin\LogAktivitasController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\HasilKonsultasiController;
-use App\Http\Controllers\Kaprodi\CalonPembimbingController;
-use App\Http\Controllers\Kaprodi\FinalisasiPembimbingController;
-use App\Http\Controllers\Kaprodi\PengajuanJudulController as PengajuanJudulKaprodiController;
-use App\Http\Controllers\Kaprodi\TandaTanganKaprodiController;
-use App\Http\Controllers\Kaprodi\VerifikasiPengajuanJudulController;
-use App\Http\Controllers\Mahasiswa\PengajuanJudulController;
-use App\Http\Controllers\Portal\AktivitasLogController;
-use App\Http\Controllers\Portal\PengajuanJudulController as PengajuanJudulPortalController;
-use App\Http\Controllers\Portal\ProfileController;
-use App\Http\Controllers\Portal\SeminarController as SeminarPortalController;
-use App\Http\Controllers\Portal\SidangController as SidangPortalController;
-use App\Http\Controllers\Portal\SkripsiController as SkripsiPortalController;
-use App\Http\Controllers\Portal\SuratController as SuratPortalController;
-use App\Http\Controllers\SeminarController;
-use App\Http\Controllers\SidangSkripsiController;
-use App\Http\Controllers\SkBimbinganController;
-use App\Http\Controllers\SuratKesediaanController;
-use App\Http\Controllers\SuratSeminarController;
-use App\Http\Controllers\SuratSidangController;
-use App\Http\Controllers\VerifikasiHasilKonsultasiController;
+use App\Http\Controllers\DokumenController;
+use App\Http\Controllers\Dosen\DaftarBimbinganController;
+use App\Http\Controllers\Kaprodi\PenetapanController;
+use App\Http\Controllers\Mahasiswa\PengajuanSkripsiController;
+use App\Http\Controllers\Mahasiswa\SeminarSkripsiController;
+use App\Http\Controllers\Mahasiswa\SidangSkripsiController;
+use App\Http\Controllers\NotifikasiController;
 use Illuminate\Support\Facades\Route;
 
+// Redirect Home
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 })->name('home');
 
+// Autentikasi
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
 });
 
+// Area Terotentikasi
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-    Route::post('/kaprodi/tanda-tangan', [TandaTanganKaprodiController::class, 'store'])
-        ->name('kaprodi.tanda-tangan.store');
-    Route::get('/portal/pengajuan-judul', PengajuanJudulPortalController::class)
-        ->name('portal.pengajuan-judul.index');
-    Route::get('/portal/skripsi', SkripsiPortalController::class)->name('portal.skripsi.index');
-    Route::get('/portal/seminar', SeminarPortalController::class)->name('portal.seminar.index');
-    Route::get('/portal/sidang', SidangPortalController::class)->name('portal.sidang.index');
-    Route::get('/portal/surat', SuratPortalController::class)->name('portal.surat.index');
-    Route::get('/portal/log-aktivitas', AktivitasLogController::class)->name('portal.aktivitas-log.index');
-    Route::get('/profil', ProfileController::class)->name('portal.profile.show');
-    Route::get('/kaprodi/pengajuan-judul', [PengajuanJudulKaprodiController::class, 'index'])
-        ->name('kaprodi.pengajuan-judul.index');
-    Route::get('/kaprodi/pengajuan-judul/{pengajuanJudul}', [PengajuanJudulKaprodiController::class, 'show'])
-        ->name('kaprodi.pengajuan-judul.show');
-    Route::get('/mahasiswa/pengajuan-judul', [PengajuanJudulController::class, 'index'])
-        ->name('mahasiswa.pengajuan-judul.index');
-    Route::put('/mahasiswa/pengajuan-judul', [PengajuanJudulController::class, 'updateMilikSaya'])
-        ->name('mahasiswa.pengajuan-judul.update');
-    Route::post('/pengajuan-judul', [PengajuanJudulController::class, 'store'])
-        ->name('pengajuan-judul.store');
-    Route::put('/pengajuan-judul/{pengajuanJudul}', [PengajuanJudulController::class, 'update'])
-        ->name('pengajuan-judul.update');
-    Route::post(
-        '/pengajuan-judul/{pengajuanJudul}/terima',
-        [VerifikasiPengajuanJudulController::class, 'terima']
-    )->name('pengajuan-judul.terima');
-    Route::post(
-        '/pengajuan-judul/{pengajuanJudul}/tolak',
-        [VerifikasiPengajuanJudulController::class, 'tolak']
-    )->name('pengajuan-judul.tolak');
-    Route::post(
-        '/pengajuan-judul/{pengajuanJudul}/calon-pembimbing',
-        [CalonPembimbingController::class, 'store']
-    )->name('pengajuan-judul.calon-pembimbing.store');
-    Route::post(
-        '/kesediaan-bimbingan/{kesediaanBimbingan}/calon-pengganti',
-        [CalonPembimbingController::class, 'replace']
-    )->name('kesediaan-bimbingan.calon-pengganti.store');
-    Route::post(
-        '/skripsi/{skripsi}/finalisasi-pembimbing',
-        [FinalisasiPembimbingController::class, 'store']
-    )->name('skripsi.finalisasi-pembimbing.store');
-    Route::post('/skripsi/{skripsi}/sk-bimbingan', [SkBimbinganController::class, 'store'])
-        ->name('skripsi.sk-bimbingan.store');
-    Route::post('/skripsi/{skripsi}/seminar', [SeminarController::class, 'store'])
-        ->name('skripsi.seminar.store');
-    Route::post('/seminar/{seminar}/verifikasi', [SeminarController::class, 'verify'])
-        ->name('seminar.verifikasi.store');
-    Route::post('/seminar/{seminar}/jadwal', [SeminarController::class, 'schedule'])
-        ->name('seminar.jadwal.store');
-    Route::post('/seminar/{seminar}/surat', [SuratSeminarController::class, 'store'])
-        ->name('seminar.surat.store');
-    Route::post('/skripsi/{skripsi}/sidang', [SidangSkripsiController::class, 'store'])
-        ->name('skripsi.sidang.store');
-    Route::post('/sidang/{sidang}/verifikasi', [SidangSkripsiController::class, 'verify'])
-        ->name('sidang.verifikasi.store');
-    Route::post('/sidang/{sidang}/jadwal', [SidangSkripsiController::class, 'schedule'])
-        ->name('sidang.jadwal.store');
-    Route::post('/sidang/{sidang}/surat', [SuratSidangController::class, 'store'])
-        ->name('sidang.surat.store');
-    Route::get(
-        '/pengajuan-judul/{pengajuanJudul}/calon-pembimbing/cari',
-        [CalonPembimbingController::class, 'search']
-    )->name('pengajuan-judul.calon-pembimbing.search');
-    Route::post(
-        '/kesediaan-bimbingan/{kesediaanBimbingan}/surat',
-        [SuratKesediaanController::class, 'store']
-    )->name('kesediaan-bimbingan.surat.store');
-    Route::get('/surat/{surat}/download', [SuratKesediaanController::class, 'download'])
-        ->name('surat.download');
-    Route::get(
-        '/skripsi/{skripsi}/surat-kesediaan/download',
-        [SuratKesediaanController::class, 'downloadGabungan']
-    )->name('skripsi.surat-kesediaan.download');
-    Route::post(
-        '/kesediaan-bimbingan/{kesediaanBimbingan}/hasil-konsultasi',
-        [HasilKonsultasiController::class, 'store']
-    )->name('kesediaan-bimbingan.hasil-konsultasi.store');
-    Route::get(
-        '/dokumen-pengajuan/{dokumen}/download',
-        [HasilKonsultasiController::class, 'download']
-    )->name('dokumen-pengajuan.download');
-    Route::post(
-        '/dokumen-pengajuan/{dokumen}/verifikasi-hasil-konsultasi',
-        [VerifikasiHasilKonsultasiController::class, 'store']
-    )->name('dokumen-pengajuan.verifikasi-hasil-konsultasi.store');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    // Download File & SK
+    Route::get('/dokumen/download/{path}', [DokumenController::class, 'download'])->name('dokumen.download');
+
+    // Notifikasi
+    Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
+    Route::post('/notifikasi/{notifikasi}/baca', [NotifikasiController::class, 'markAsRead'])->name('notifikasi.baca');
+    Route::post('/notifikasi/baca-semua', [NotifikasiController::class, 'markAllAsRead'])->name('notifikasi.baca-semua');
+
+    // Route Mahasiswa
+    Route::prefix('mahasiswa')->name('mahasiswa.')->group(function () {
+        // Fase 1: Judul & SK Bimbingan
+        Route::get('/skripsi', [PengajuanSkripsiController::class, 'index'])->name('skripsi.index');
+        Route::get('/skripsi/create', [PengajuanSkripsiController::class, 'create'])->name('skripsi.create');
+        Route::post('/skripsi', [PengajuanSkripsiController::class, 'store'])->name('skripsi.store');
+
+        // Fase 2: Seminar Proposal / Hasil
+        Route::get('/seminar', [SeminarSkripsiController::class, 'index'])->name('seminar.index');
+        Route::get('/seminar/create', [SeminarSkripsiController::class, 'create'])->name('seminar.create');
+        Route::post('/seminar', [SeminarSkripsiController::class, 'store'])->name('seminar.store');
+
+        // Fase 3: Sidang Skripsi
+        Route::get('/sidang', [SidangSkripsiController::class, 'index'])->name('sidang.index');
+        Route::get('/sidang/create', [SidangSkripsiController::class, 'create'])->name('sidang.create');
+        Route::post('/sidang', [SidangSkripsiController::class, 'store'])->name('sidang.store');
+    });
+
+    // Route Kaprodi
+    Route::prefix('kaprodi')->name('kaprodi.')->group(function () {
+        Route::get('/penetapan', [PenetapanController::class, 'index'])->name('penetapan.index');
+        Route::post('/skripsi/{skripsi}/review', [PenetapanController::class, 'updateJudul'])->name('skripsi.review');
+        Route::post('/seminar/{seminar}/penguji', [PenetapanController::class, 'assignPengujiSeminar'])->name('seminar.penguji');
+        Route::post('/sidang/{sidang}/penguji', [PenetapanController::class, 'assignPengujiSidang'])->name('sidang.penguji');
+    });
+
+    // Route Admin (Prodi & Utama)
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/administrasi', [AdministrasiSkripsiController::class, 'index'])->name('administrasi.index');
+        Route::post('/skripsi/{skripsi}/sk-bimbingan', [AdministrasiSkripsiController::class, 'updateSkBimbingan'])->name('skripsi.sk-bimbingan');
+        Route::post('/seminar/{seminar}/jadwal-sk', [AdministrasiSkripsiController::class, 'updateJadwalDanSkSeminar'])->name('seminar.jadwal-sk');
+        Route::post('/seminar/{seminar}/selesai', [AdministrasiSkripsiController::class, 'selesaikanSeminar'])->name('seminar.selesai');
+        Route::post('/sidang/{sidang}/jadwal-sk', [AdministrasiSkripsiController::class, 'updateJadwalDanSkSidang'])->name('sidang.jadwal-sk');
+        Route::post('/sidang/{sidang}/selesai', [AdministrasiSkripsiController::class, 'selesaikanSidang'])->name('sidang.selesai');
+
+        // Log Aktivitas Audit Trail (Khusus Admin Utama)
+        Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])->name('log-aktivitas.index');
+    });
+
+    // Route Dosen
+    Route::prefix('dosen')->name('dosen.')->group(function () {
+        Route::get('/bimbingan', [DaftarBimbinganController::class, 'index'])->name('bimbingan.index');
+    });
 });

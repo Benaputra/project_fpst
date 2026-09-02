@@ -3,10 +3,8 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -14,35 +12,23 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
+        'nomor_induk',
         'password',
+        'role',
+        'program_studi_id',
+        'no_hp',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -52,42 +38,12 @@ class User extends Authenticatable
         ];
     }
 
-    public function mahasiswa(): HasOne
+    public function programStudi(): BelongsTo
     {
-        return $this->hasOne(Mahasiswa::class);
+        return $this->belongsTo(ProgramStudi::class);
     }
 
-    public function dosen(): HasOne
-    {
-        return $this->hasOne(Dosen::class);
-    }
-
-    public function programStudiAdministrasi(): BelongsToMany
-    {
-        return $this->belongsToMany(ProgramStudi::class, 'user_program_studi')
-            ->withTimestamps();
-    }
-
-    public function kesediaanBimbinganDiverifikasi(): HasMany
-    {
-        return $this->hasMany(KesediaanBimbingan::class, 'diverifikasi_oleh');
-    }
-
-    public function suratDiverifikasi(): HasMany
-    {
-        return $this->hasMany(Surat::class, 'verified_by');
-    }
-
-    public function dokumenPengajuanDiunggah(): HasMany
-    {
-        return $this->hasMany(DokumenPengajuan::class, 'uploaded_by');
-    }
-
-    public function dokumenPengajuanDiverifikasi(): HasMany
-    {
-        return $this->hasMany(DokumenPengajuan::class, 'verified_by');
-    }
-
+    // Role helpers
     public function isMahasiswa(): bool
     {
         return $this->role === UserRole::Mahasiswa;
@@ -95,7 +51,12 @@ class User extends Authenticatable
 
     public function isDosen(): bool
     {
-        return $this->role === UserRole::Dosen;
+        return $this->role === UserRole::Dosen || $this->role === UserRole::Kaprodi;
+    }
+
+    public function isKaprodi(): bool
+    {
+        return $this->role === UserRole::Kaprodi;
     }
 
     public function isAdminProdi(): bool
@@ -108,51 +69,56 @@ class User extends Authenticatable
         return $this->role === UserRole::AdminUtama;
     }
 
-    public function isKetuaProdiUntuk(ProgramStudi|int $programStudi): bool
+    public function isAdmin(): bool
     {
-        if (! $this->isDosen()) {
-            return false;
-        }
-
-        $programStudiId = $programStudi instanceof ProgramStudi
-            ? $programStudi->getKey()
-            : $programStudi;
-
-        return $this->dosen()
-            ->whereHas(
-                'programStudiDipimpin',
-                fn ($query) => $query->whereKey($programStudiId)
-            )
-            ->exists();
+        return $this->isAdminProdi() || $this->isAdminUtama();
     }
 
-    public function isKetuaProdi(): bool
+    // Relasi Mahasiswa ke Pengajuan Skripsi
+    public function pengajuanSkripsi(): HasOne
     {
-        if (! $this->isDosen()) {
-            return false;
-        }
-
-        return $this->dosen()
-            ->whereHas('programStudiDipimpin')
-            ->exists();
+        return $this->hasOne(PengajuanSkripsi::class, 'mahasiswa_id')->latestOfMany();
     }
 
-    public function memilikiAksesAdministratifKeProgramStudi(ProgramStudi|int $programStudi): bool
+    // Relasi Dosen
+    public function bimbinganPertama(): HasMany
     {
-        if ($this->isAdminUtama()) {
-            return true;
-        }
+        return $this->hasMany(PengajuanSkripsi::class, 'pembimbing_1_id');
+    }
 
-        if (! $this->isAdminProdi()) {
-            return false;
-        }
+    public function bimbinganKedua(): HasMany
+    {
+        return $this->hasMany(PengajuanSkripsi::class, 'pembimbing_2_id');
+    }
 
-        $programStudiId = $programStudi instanceof ProgramStudi
-            ? $programStudi->getKey()
-            : $programStudi;
+    public function mengujiSeminar(): HasMany
+    {
+        return $this->hasMany(SeminarSkripsi::class, 'penguji_seminar_id');
+    }
 
-        return $this->programStudiAdministrasi()
-            ->whereKey($programStudiId)
-            ->exists();
+    public function mengujiSidangPertama(): HasMany
+    {
+        return $this->hasMany(SidangSkripsi::class, 'penguji_1_id');
+    }
+
+    public function mengujiSidangKedua(): HasMany
+    {
+        return $this->hasMany(SidangSkripsi::class, 'penguji_2_id');
+    }
+
+    // Relasi Notifikasi & Log Aktivitas
+    public function notifikasi(): HasMany
+    {
+        return $this->hasMany(Notifikasi::class)->latest();
+    }
+
+    public function unreadNotifikasiCount(): int
+    {
+        return $this->hasMany(Notifikasi::class)->where('dibaca', false)->count();
+    }
+
+    public function aktivitasLog(): HasMany
+    {
+        return $this->hasMany(AktivitasLog::class)->latest();
     }
 }

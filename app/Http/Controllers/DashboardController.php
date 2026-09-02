@@ -2,87 +2,76 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\StatusPengajuanJudul;
-use App\Enums\StatusSeminar;
-use App\Enums\StatusSkripsi;
-use App\Models\AktivitasLog;
-use App\Models\ProgramStudi;
-use App\Models\User;
-use App\Services\Portal\CakupanDataPortal;
+use App\Enums\StatusPengajuan;
+use App\Models\PengajuanSkripsi;
+use App\Models\SeminarSkripsi;
+use App\Models\SidangSkripsi;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, CakupanDataPortal $cakupan): View
+    public function __invoke(Request $request): View
     {
         $user = $request->user();
 
+        $data = [
+            'user' => $user,
+        ];
+
         if ($user->isMahasiswa()) {
-            $mahasiswa = $user->mahasiswa()
-                ->with(['programStudi', 'pembimbingAkademik', 'pengajuanJudul.skripsi.seminar', 'pengajuanJudul.skripsi.sidangSkripsi'])
+            $skripsi = $user->pengajuanSkripsi()
+                ->with(['programStudi', 'pembimbing1', 'pembimbing2', 'seminar.penguji', 'sidang.penguji1', 'sidang.penguji2'])
                 ->first();
+            $data['skripsi'] = $skripsi;
+        } elseif ($user->isKaprodi()) {
+            $prodiId = $user->program_studi_id;
+            $data['pendingJudulCount'] = PengajuanSkripsi::where('program_studi_id', $prodiId)
+                ->where('status', StatusPengajuan::Diajukan)
+                ->count();
+            $data['pendingSeminarPengujiCount'] = SeminarSkripsi::whereHas('pengajuanSkripsi', function ($q) use ($prodiId) {
+                $q->where('program_studi_id', $prodiId);
+            })->whereNull('penguji_seminar_id')->where('status', '!=', StatusPengajuan::Ditolak)->count();
+            $data['pendingSidangPengujiCount'] = SidangSkripsi::whereHas('pengajuanSkripsi', function ($q) use ($prodiId) {
+                $q->where('program_studi_id', $prodiId);
+            })->where(function ($q) {
+                $q->whereNull('penguji_1_id')->orWhereNull('penguji_2_id');
+            })->where('status', '!=', StatusPengajuan::Ditolak)->count();
 
-            return view('portal.dashboard.mahasiswa', compact('mahasiswa'));
+            $data['recentJudul'] = PengajuanSkripsi::where('program_studi_id', $prodiId)
+                ->with('mahasiswa')
+                ->latest()
+                ->take(5)
+                ->get();
+        } elseif ($user->isAdmin()) {
+            $prodiId = $user->program_studi_id;
+            $querySkripsi = PengajuanSkripsi::query();
+            $querySeminar = SeminarSkripsi::query();
+            $querySidang = SidangSkripsi::query();
+
+            if ($user->isAdminProdi() && $prodiId) {
+                $querySkripsi->where('program_studi_id', $prodiId);
+                $querySeminar->whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiId));
+                $querySidang->whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiId));
+            }
+
+            $data['skripsiCount'] = (clone $querySkripsi)->count();
+            $data['pendingSkBimbinganCount'] = (clone $querySkripsi)->whereNotNull('pembimbing_1_id')->whereNull('nomor_sk_bimbingan')->count();
+            $data['pendingJadwalSeminarCount'] = (clone $querySeminar)->whereNull('tgl_seminar')->count();
+            $data['pendingJadwalSidangCount'] = (clone $querySidang)->whereNull('tgl_sidang')->count();
+
+            $data['recentSkripsi'] = (clone $querySkripsi)->with(['mahasiswa', 'pembimbing1', 'pembimbing2'])->latest()->take(5)->get();
+        } elseif ($user->isDosen()) {
+            $data['bimbingan1Count'] = PengajuanSkripsi::where('pembimbing_1_id', $user->id)->count();
+            $data['bimbingan2Count'] = PengajuanSkripsi::where('pembimbing_2_id', $user->id)->count();
+            $data['ujiSeminarCount'] = SeminarSkripsi::where('penguji_seminar_id', $user->id)->count();
+            $data['ujiSidangCount'] = SidangSkripsi::where('penguji_1_id', $user->id)->orWhere('penguji_2_id', $user->id)->count();
+            
+            $data['bimbinganAktif'] = PengajuanSkripsi::where(function ($q) use ($user) {
+                $q->where('pembimbing_1_id', $user->id)->orWhere('pembimbing_2_id', $user->id);
+            })->with('mahasiswa')->latest()->take(5)->get();
         }
 
-        if ($user->isKetuaProdi()) {
-            $pengajuan = $cakupan->pengajuanJudul($user);
-            $skripsi = $cakupan->skripsi($user);
-            $seminar = $cakupan->seminar($user);
-            $programStudi = $user->dosen?->programStudiDipimpin;
-
-            return view('portal.dashboard.kaprodi', [
-                'programStudi' => $programStudi,
-                'tandaTanganTersedia' => $programStudi !== null
-                    && $programStudi->ttd_ketua_prodi !== null
-                    && Storage::disk('local')->exists($programStudi->ttd_ketua_prodi),
-                'menungguJudul' => (clone $pengajuan)->where('status', StatusPengajuanJudul::Diajukan)->count(),
-                'skripsiAktif' => (clone $skripsi)->where('status', '!=', StatusSkripsi::Selesai)->count(),
-                'menungguSeminar' => (clone $seminar)->where('status', StatusSeminar::Diajukan)->count(),
-                'suratTerbit' => $cakupan->surat($user)->count(),
-                'pengajuanTerbaru' => $pengajuan->with('mahasiswa')->latest()->limit(5)->get(),
-            ]);
-        }
-
-        if ($user->isAdminProdi()) {
-            $pengajuan = $cakupan->pengajuanJudul($user);
-            $skripsi = $cakupan->skripsi($user);
-            $seminar = $cakupan->seminar($user);
-
-            return view('portal.dashboard.admin-prodi', [
-                'programStudi' => $user->programStudiAdministrasi()->orderBy('nama')->get(),
-                'totalPengajuan' => $pengajuan->count(),
-                'skripsiAktif' => (clone $skripsi)->where('status', '!=', StatusSkripsi::Selesai)->count(),
-                'menungguSeminar' => (clone $seminar)->where('status', StatusSeminar::Diajukan)->count(),
-                'suratTerbit' => $cakupan->surat($user)->count(),
-            ]);
-        }
-
-        if ($user->isAdminUtama()) {
-            return view('portal.dashboard.admin-utama', [
-                'totalPengguna' => User::query()->count(),
-                'totalProgramStudi' => ProgramStudi::query()->count(),
-                'totalSkripsi' => $cakupan->skripsi($user)->count(),
-                'totalSurat' => $cakupan->surat($user)->count(),
-                'aktivitasTerbaru' => AktivitasLog::query()->with('user')->latest()->limit(6)->get(),
-            ]);
-        }
-
-        $dosen = $user->dosen()->with('programStudi')->first();
-
-        return view('portal.dashboard.dosen', [
-            'dosen' => $dosen,
-            'skripsiBimbingan' => $cakupan->skripsi($user)->count(),
-            'seminarTerjadwal' => $cakupan->seminar($user)
-                ->where('status', StatusSeminar::Dijadwalkan)
-                ->count(),
-            'seminarTerbaru' => $cakupan->seminar($user)
-                ->with('skripsi.mahasiswa')
-                ->latest('tanggal')
-                ->limit(5)
-                ->get(),
-        ]);
+        return view('dashboard', $data);
     }
 }

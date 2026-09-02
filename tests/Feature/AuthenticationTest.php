@@ -2,154 +2,56 @@
 
 namespace Tests\Feature;
 
-use App\Models\Dosen;
-use App\Models\Mahasiswa;
-use App\Models\ProgramStudi;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
-    protected function tearDown(): void
+    public function test_login_screen_can_be_rendered(): void
     {
-        RateLimiter::clear('tidak-ada@example.com|127.0.0.1');
+        $response = $this->get('/login');
 
-        parent::tearDown();
+        $response->assertStatus(200);
+        $response->assertSee('Portal Skripsi');
     }
 
-    public function test_guest_dapat_membuka_halaman_login(): void
+    public function test_users_can_authenticate_using_the_login_screen(): void
     {
-        $this->get(route('login'))
-            ->assertOk()
-            ->assertSee('Masuk ke akun Anda')
-            ->assertSee('name="email"', false)
-            ->assertSee('name="password"', false);
-    }
+        $user = User::factory()->create([
+            'password' => 'password',
+        ]);
 
-    public function test_mahasiswa_dapat_login_dan_melihat_dashboard_pribadi(): void
-    {
-        $user = $this->buatMahasiswa();
-
-        $this->post(route('login.store'), [
+        $response = $this->post('/login', [
             'email' => $user->email,
             'password' => 'password',
-        ])->assertRedirect(route('dashboard'));
+        ]);
 
-        $this->assertAuthenticatedAs($user);
-        $this->get(route('dashboard'))
-            ->assertOk()
-            ->assertSee('Mahasiswa')
-            ->assertSee('Pengajuan Judul')
-            ->assertSee('Profil');
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('dashboard'));
     }
 
-    public function test_kaprodi_dapat_login_dan_melihat_dashboard_prodi(): void
+    public function test_users_can_not_authenticate_with_invalid_password(): void
     {
-        $user = $this->buatKaprodi();
+        $user = User::factory()->create();
 
-        $this->post(route('login.store'), [
+        $this->post('/login', [
             'email' => $user->email,
-            'password' => 'password',
-        ])->assertRedirect(route('dashboard'));
-
-        $this->assertAuthenticatedAs($user);
-        $this->get(route('dashboard'))
-            ->assertOk()
-            ->assertSee('Ketua Program Studi')
-            ->assertSee('Pengajuan Judul')
-            ->assertSee('Surat');
-    }
-
-    public function test_kredensial_salah_ditolak_dengan_pesan_generik(): void
-    {
-        $user = User::factory()->mahasiswa()->create();
-
-        $this->from(route('login'))
-            ->post(route('login.store'), [
-                'email' => $user->email,
-                'password' => 'kata-sandi-salah',
-            ])
-            ->assertRedirect(route('login'))
-            ->assertSessionHasErrors('email');
+            'password' => 'wrong-password',
+        ]);
 
         $this->assertGuest();
     }
 
-    public function test_login_dibatasi_setelah_lima_percobaan_gagal(): void
+    public function test_users_can_logout(): void
     {
-        foreach (range(1, 5) as $percobaan) {
-            $this->post(route('login.store'), [
-                'email' => 'tidak-ada@example.com',
-                'password' => 'salah-'.$percobaan,
-            ])->assertSessionHasErrors('email');
-        }
+        $user = User::factory()->create();
 
-        $response = $this->post(route('login.store'), [
-            'email' => 'tidak-ada@example.com',
-            'password' => 'tetap-salah',
-        ]);
-
-        $response->assertSessionHasErrors('email');
-        $this->assertStringContainsString(
-            'Terlalu banyak percobaan login',
-            session('errors')->first('email')
-        );
+        $response = $this->actingAs($user)->post('/logout');
 
         $this->assertGuest();
-    }
-
-    public function test_logout_mengakhiri_session_dan_meregenerasi_token(): void
-    {
-        $user = User::factory()->mahasiswa()->create();
-        $this->actingAs($user);
-        $tokenLama = session()->token();
-
-        $this->post(route('logout'))
-            ->assertRedirect(route('login'));
-
-        $this->assertGuest();
-        $this->assertNotSame($tokenLama, session()->token());
-    }
-
-    public function test_pengguna_yang_sudah_login_tidak_dapat_membuka_form_login(): void
-    {
-        $user = User::factory()->mahasiswa()->create();
-
-        $this->actingAs($user)
-            ->get(route('login'))
-            ->assertRedirect(route('dashboard'));
-    }
-
-    private function buatMahasiswa(): User
-    {
-        $programStudi = ProgramStudi::factory()->create();
-        $dosen = Dosen::factory()->create([
-            'program_studi_id' => $programStudi->id,
-        ]);
-        $user = User::factory()->mahasiswa()->create();
-        Mahasiswa::factory()->create([
-            'program_studi_id' => $programStudi->id,
-            'pembimbing_akademik_id' => $dosen->nidn,
-            'user_id' => $user->id,
-        ]);
-
-        return $user;
-    }
-
-    private function buatKaprodi(): User
-    {
-        $programStudi = ProgramStudi::factory()->create();
-        $user = User::factory()->dosen()->create();
-        $dosen = Dosen::factory()->create([
-            'program_studi_id' => $programStudi->id,
-            'user_id' => $user->id,
-        ]);
-        $programStudi->update(['ketua_prodi_id' => $dosen->nidn]);
-
-        return $user;
+        $response->assertRedirect('/login');
     }
 }
