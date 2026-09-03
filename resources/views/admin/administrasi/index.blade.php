@@ -209,7 +209,7 @@
         </div>
 
         <div style="margin-top: 1rem;">
-            {{ $daftarSkripsi->links() }}
+            {{ $daftarSkripsi->appends(['tab' => 'sk-bimbingan'])->links() }}
         </div>
     </div>
 
@@ -384,7 +384,7 @@
         </div>
 
         <div style="margin-top: 1rem;">
-            {{ $daftarSeminar->links() }}
+            {{ $daftarSeminar->appends(['tab' => 'seminar'])->links() }}
         </div>
     </div>
 
@@ -393,7 +393,7 @@
     <!-- ========================================== -->
     <div id="tab-admin-sidang" class="tab-content {{ $activeTab === 'sidang' ? 'active' : '' }}">
         <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-            Atur jadwal tanggal/jam/ruang sidang meja hijau, nomor surat undangan ke semua pihak, nomor SK dewan penguji, dan input nilai kelulusan meja hijau.
+            Atur jadwal tanggal/jam/ruang sidang skripsi, nomor surat undangan ke semua pihak, nomor SK dewan penguji, dan input nilai kelulusan sidang skripsi.
         </div>
 
         <!-- Filter Toolbar Tab 3 -->
@@ -559,7 +559,7 @@
         </div>
 
         <div style="margin-top: 1rem;">
-            {{ $daftarSidang->links() }}
+            {{ $daftarSidang->appends(['tab' => 'sidang'])->links() }}
         </div>
     </div>
 
@@ -666,7 +666,7 @@
         </div>
 
         <div style="margin-top: 1rem;">
-            {{ $daftarSurat->links() }}
+            {{ $daftarSurat->appends(['tab' => 'surat'])->links() }}
         </div>
     </div>
 </div>
@@ -852,7 +852,7 @@
     }
 
     function openDrawerAdminSidang(data) {
-        document.getElementById('drawer-admin-title').innerText = 'Jadwal & Dokumen Sidang Skripsi (Meja Hijau)';
+        document.getElementById('drawer-admin-title').innerText = 'Jadwal & Dokumen Sidang Skripsi';
         document.getElementById('drawer-admin-subtitle').innerText = `${data.mhs_nim} • ${data.mhs_name}`;
 
         const body = document.getElementById('drawer-admin-body');
@@ -943,7 +943,7 @@
                         </div>
                         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
                             <button type="submit" class="btn btn-success btn-sm">
-                                ✓ ${data.nilai_sidang !== null ? 'Perbarui Nilai Sidang' : 'Finalisasi Kelulusan Meja Hijau'}
+                                ✓ ${data.nilai_sidang !== null ? 'Perbarui Nilai Sidang' : 'Finalisasi Kelulusan Sidang Skripsi'}
                             </button>
                         </div>
                     </form>

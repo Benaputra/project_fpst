@@ -29,14 +29,16 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
     private User $dosen1;
     private User $dosen2;
     private User $dosen3;
+    private User $dosen4;
+    private User $dosen5;
 
     protected function setUp(): void
     {
         parent::setUp();
         Storage::fake('local');
 
-        $this->prodiTI = ProgramStudi::create(['nama' => 'Teknik Informatika', 'kode' => 'TI']);
-        $this->prodiSI = ProgramStudi::create(['nama' => 'Sistem Informasi', 'kode' => 'SI']);
+        $this->prodiTI = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
+        $this->prodiSI = ProgramStudi::create(['nama' => 'Agribisnis', 'kode' => 'AGB']);
 
         $this->adminUtama = User::create([
             'name' => 'Admin Utama FPST',
@@ -86,6 +88,24 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
             'name' => 'Fajar Nugroho, M.Cs.',
             'email' => 'fajar@example.test',
             'nomor_induk' => '1000000006',
+            'password' => 'password',
+            'role' => UserRole::Dosen,
+            'program_studi_id' => $this->prodiTI->id,
+        ]);
+
+        $this->dosen4 = User::create([
+            'name' => 'Siti Aminah, M.Kom.',
+            'email' => 'siti@example.test',
+            'nomor_induk' => '1000000007',
+            'password' => 'password',
+            'role' => UserRole::Dosen,
+            'program_studi_id' => $this->prodiTI->id,
+        ]);
+
+        $this->dosen5 = User::create([
+            'name' => 'Hendra Setiawan, M.T.',
+            'email' => 'hendra@example.test',
+            'nomor_induk' => '1000000008',
             'password' => 'password',
             'role' => UserRole::Dosen,
             'program_studi_id' => $this->prodiTI->id,
@@ -302,7 +322,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         $response = $this->actingAs($this->adminTI)->post(route('admin.sidang.jadwal-sk', $sidang->id), [
             'tgl_sidang' => '2026-09-20',
             'jam_sidang' => '10:00 - 12:00',
-            'ruangan' => 'Ruang Sidang Meja Hijau',
+            'ruangan' => 'Ruang Sidang Skripsi',
             'nomor_undangan_sidang' => 'UND-SDG/099/2026',
             'file_undangan_sidang' => UploadedFile::fake()->create('undangan_sidang.pdf', 300, 'application/pdf'),
         ]);
@@ -323,7 +343,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         // Verifikasi Pembimbing 1 dapat melihat undangan sidang di halaman bimbingan
         $response = $this->actingAs($this->dosen1)->get(route('dosen.bimbingan.index'));
         $response->assertStatus(200);
-        $response->assertSee('Undangan Sidang Meja Hijau Mahasiswa Bimbingan');
+        $response->assertSee('Undangan Sidang Skripsi Mahasiswa Bimbingan');
         $response->assertSee('UND-SDG/099/2026');
         $response->assertSee('Unduh Berkas Undangan (PDF)');
 
@@ -388,26 +408,26 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
 
         // Kaprodi menetapkan penguji seminar pertama kali -> Berhasil
         $this->actingAs($this->kaprodiTI)->post(route('kaprodi.seminar.penguji', $seminar->id), [
-            'penguji_seminar_id' => $this->dosen1->id,
+            'penguji_seminar_id' => $this->dosen4->id,
         ]);
         $seminar->refresh();
-        $this->assertEquals($this->dosen1->id, $seminar->penguji_seminar_id);
+        $this->assertEquals($this->dosen4->id, $seminar->penguji_seminar_id);
 
         // Kaprodi mencoba mengubah penguji seminar -> Ditolak!
         $response = $this->actingAs($this->kaprodiTI)->post(route('kaprodi.seminar.penguji', $seminar->id), [
-            'penguji_seminar_id' => $this->dosen2->id,
+            'penguji_seminar_id' => $this->dosen5->id,
         ]);
         $response->assertSessionHas('error');
         $seminar->refresh();
-        $this->assertEquals($this->dosen1->id, $seminar->penguji_seminar_id);
+        $this->assertEquals($this->dosen4->id, $seminar->penguji_seminar_id);
 
         // Admin Utama mengubah penguji seminar -> Berhasil!
         $response = $this->actingAs($this->adminUtama)->post(route('kaprodi.seminar.penguji', $seminar->id), [
-            'penguji_seminar_id' => $this->dosen2->id,
+            'penguji_seminar_id' => $this->dosen5->id,
         ]);
         $response->assertSessionHas('success');
         $seminar->refresh();
-        $this->assertEquals($this->dosen2->id, $seminar->penguji_seminar_id);
+        $this->assertEquals($this->dosen5->id, $seminar->penguji_seminar_id);
 
         // -------------------------------------------------------------
         // C. Penguncian Dosen Penguji Sidang
@@ -420,15 +440,15 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         // Kaprodi menetapkan 2 penguji sidang pertama kali -> Berhasil
         $this->actingAs($this->kaprodiTI)->post(route('kaprodi.sidang.penguji', $sidang->id), [
             'penguji_1_id' => $this->dosen1->id,
-            'penguji_2_id' => $this->dosen2->id,
+            'penguji_2_id' => $this->dosen4->id,
         ]);
         $sidang->refresh();
         $this->assertEquals($this->dosen1->id, $sidang->penguji_1_id);
 
         // Kaprodi mencoba mengubah penguji sidang -> Ditolak!
         $response = $this->actingAs($this->kaprodiTI)->post(route('kaprodi.sidang.penguji', $sidang->id), [
-            'penguji_1_id' => $this->dosen2->id,
-            'penguji_2_id' => $this->dosen3->id,
+            'penguji_1_id' => $this->dosen4->id,
+            'penguji_2_id' => $this->dosen5->id,
         ]);
         $response->assertSessionHas('error');
         $sidang->refresh();
@@ -436,13 +456,13 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
 
         // Admin Utama mengubah penguji sidang -> Berhasil!
         $response = $this->actingAs($this->adminUtama)->post(route('kaprodi.sidang.penguji', $sidang->id), [
-            'penguji_1_id' => $this->dosen2->id,
-            'penguji_2_id' => $this->dosen3->id,
+            'penguji_1_id' => $this->dosen4->id,
+            'penguji_2_id' => $this->dosen5->id,
         ]);
         $response->assertSessionHas('success');
         $sidang->refresh();
-        $this->assertEquals($this->dosen2->id, $sidang->penguji_1_id);
-        $this->assertEquals($this->dosen3->id, $sidang->penguji_2_id);
+        $this->assertEquals($this->dosen4->id, $sidang->penguji_1_id);
+        $this->assertEquals($this->dosen5->id, $sidang->penguji_2_id);
 
         // -------------------------------------------------------------
         // D. Penguncian Nilai Seminar

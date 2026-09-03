@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DokumenController;
 use App\Http\Controllers\Dosen\DaftarBimbinganController;
+use App\Http\Controllers\Dosen\PenugasanDosenController;
 use App\Http\Controllers\Kaprodi\PenetapanController;
 use App\Http\Controllers\Mahasiswa\PengajuanSkripsiController;
 use App\Http\Controllers\Mahasiswa\SeminarSkripsiController;
@@ -104,5 +105,6 @@ Route::middleware('auth')->group(function () {
     // Route Dosen
     Route::prefix('dosen')->name('dosen.')->group(function () {
         Route::get('/bimbingan', [DaftarBimbinganController::class, 'index'])->name('bimbingan.index');
+        Route::post('/penugasan/{penugasan}/respon', [PenugasanDosenController::class, 'respon'])->name('penugasan.respon');
     });
 });

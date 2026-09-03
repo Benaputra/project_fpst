@@ -22,14 +22,14 @@ class DatabaseSeeder extends Seeder
     {
         DB::transaction(function () {
             // 1. Program Studi
-            $ti = ProgramStudi::create([
-                'nama' => 'Teknik Informatika',
-                'kode' => 'TI',
+            $agt = ProgramStudi::create([
+                'nama' => 'Agroteknologi',
+                'kode' => 'AGT',
             ]);
 
-            $si = ProgramStudi::create([
-                'nama' => 'Sistem Informasi',
-                'kode' => 'SI',
+            $agb = ProgramStudi::create([
+                'nama' => 'Agribisnis',
+                'kode' => 'AGB',
             ]);
 
             // 2. Admin Utama
@@ -43,95 +43,95 @@ class DatabaseSeeder extends Seeder
             ]);
 
             // 3. Admin Prodi
-            $adminTi = User::create([
-                'name' => 'Admin Prodi TI',
-                'email' => 'admin.ti@example.test',
-                'nomor_induk' => 'ADM-TI-01',
+            $adminAgt = User::create([
+                'name' => 'Admin Prodi Agroteknologi',
+                'email' => 'admin.agt@example.test',
+                'nomor_induk' => 'ADM-AGT-01',
                 'password' => Hash::make('password'),
                 'role' => UserRole::AdminProdi,
-                'program_studi_id' => $ti->id,
+                'program_studi_id' => $agt->id,
                 'no_hp' => '081299990002',
             ]);
 
-            $adminSi = User::create([
-                'name' => 'Admin Prodi SI',
-                'email' => 'admin.si@example.test',
-                'nomor_induk' => 'ADM-SI-01',
+            $adminAgb = User::create([
+                'name' => 'Admin Prodi Agribisnis',
+                'email' => 'admin.agb@example.test',
+                'nomor_induk' => 'ADM-AGB-01',
                 'password' => Hash::make('password'),
                 'role' => UserRole::AdminProdi,
-                'program_studi_id' => $si->id,
+                'program_studi_id' => $agb->id,
                 'no_hp' => '081299990003',
             ]);
 
             // 4. Kaprodi
-            $kaprodiTi = User::create([
-                'name' => 'Dr. Ratna Wijaya, M.Kom.',
-                'email' => 'kaprodi.ti@example.test',
+            $kaprodiAgt = User::create([
+                'name' => 'Dr. Ir. Ratna Wijaya, M.P.',
+                'email' => 'kaprodi.agt@example.test',
                 'nomor_induk' => '1000000001',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Kaprodi,
-                'program_studi_id' => $ti->id,
+                'program_studi_id' => $agt->id,
                 'no_hp' => '081200000001',
             ]);
 
-            $kaprodiSi = User::create([
-                'name' => 'Dr. Bima Pratama, M.Kom.',
-                'email' => 'kaprodi.si@example.test',
+            $kaprodiAgb = User::create([
+                'name' => 'Dr. Bima Pratama, S.P., M.Si.',
+                'email' => 'kaprodi.agb@example.test',
                 'nomor_induk' => '1000000002',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Kaprodi,
-                'program_studi_id' => $si->id,
+                'program_studi_id' => $agb->id,
                 'no_hp' => '081200000002',
             ]);
 
             // 5. Dosen
             $dosen1 = User::create([
-                'name' => 'Dewi Lestari, M.Kom.',
+                'name' => 'Dr. Dewi Lestari, S.P., M.P.',
                 'email' => 'dosen1@example.test',
                 'nomor_induk' => '1000000003',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Dosen,
-                'program_studi_id' => $ti->id,
+                'program_studi_id' => $agt->id,
                 'no_hp' => '081200000003',
             ]);
 
             $dosen2 = User::create([
-                'name' => 'Ahmad Fauzi, M.Kom.',
+                'name' => 'Ahmad Fauzi, S.P., M.Sc.',
                 'email' => 'dosen2@example.test',
                 'nomor_induk' => '1000000004',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Dosen,
-                'program_studi_id' => $ti->id,
+                'program_studi_id' => $agt->id,
                 'no_hp' => '081200000004',
             ]);
 
             $dosen3 = User::create([
-                'name' => 'Nur Aisyah, M.T.',
+                'name' => 'Nur Aisyah, S.P., M.Si.',
                 'email' => 'dosen3@example.test',
                 'nomor_induk' => '1000000005',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Dosen,
-                'program_studi_id' => $ti->id,
+                'program_studi_id' => $agt->id,
                 'no_hp' => '081200000005',
             ]);
 
             $dosen4 = User::create([
-                'name' => 'Fajar Nugroho, M.Cs.',
+                'name' => 'Fajar Nugroho, S.P., M.P.',
                 'email' => 'dosen4@example.test',
                 'nomor_induk' => '1000000006',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Dosen,
-                'program_studi_id' => $ti->id,
+                'program_studi_id' => $agt->id,
                 'no_hp' => '081200000006',
             ]);
 
             $dosen5 = User::create([
-                'name' => 'Maya Putri, M.Kom.',
+                'name' => 'Maya Putri, S.P., M.Si.',
                 'email' => 'dosen5@example.test',
                 'nomor_induk' => '1000000007',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Dosen,
-                'program_studi_id' => $si->id,
+                'program_studi_id' => $agb->id,
                 'no_hp' => '081200000007',
             ]);
 
@@ -144,14 +144,14 @@ class DatabaseSeeder extends Seeder
                 'nomor_induk' => '221000000001',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Mahasiswa,
-                'program_studi_id' => $ti->id,
+                'program_studi_id' => $agt->id,
                 'no_hp' => '081300000001',
             ]);
             PengajuanSkripsi::create([
                 'mahasiswa_id' => $mhs1->id,
-                'program_studi_id' => $ti->id,
-                'judul' => 'Rancang Bangun Sistem Klasifikasi Citra Medis Menggunakan Convolutional Neural Network',
-                'abstrak' => 'Penelitian ini bertujuan mengimplementasikan arsitektur CNN untuk mendeteksi anomali pada citra rontgen secara otomatis.',
+                'program_studi_id' => $agt->id,
+                'judul' => 'Pengaruh Konsentrasi Pupuk Organik Cair Limbah Kulit Pisang terhadap Pertumbuhan Bibit Kelapa Sawit',
+                'abstrak' => 'Penelitian ini bertujuan menganalisis efektivitas pemberian pupuk organik cair berbahan dasar kulit pisang terhadap parameter vegetatif bibit kelapa sawit pada fase pre-nursery.',
                 'status' => StatusPengajuan::Diajukan,
             ]);
 
@@ -162,30 +162,30 @@ class DatabaseSeeder extends Seeder
                 'nomor_induk' => '221000000002',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Mahasiswa,
-                'program_studi_id' => $ti->id,
+                'program_studi_id' => $agt->id,
                 'no_hp' => '081300000002',
             ]);
             $skripsi2 = PengajuanSkripsi::create([
                 'mahasiswa_id' => $mhs2->id,
-                'program_studi_id' => $ti->id,
-                'judul' => 'Pengembangan Aplikasi Pemantauan Emisi Karbon Berbasis Internet of Things',
-                'abstrak' => 'Sistem IoT real-time untuk memantau jejak karbon pabrik dengan visualisasi dashboard berbasis web.',
+                'program_studi_id' => $agt->id,
+                'judul' => 'Efektivitas Sistem Irigasi Tetes Berbasis Sensor Kelembaban Tanah pada Budidaya Tanaman Tomat',
+                'abstrak' => 'Penerapan teknologi presisi smart irrigation untuk efisiensi penggunaan air dan peningkatan produktivitas tanaman tomat di lahan kering.',
                 'pembimbing_1_id' => $dosen1->id,
                 'pembimbing_2_id' => $dosen2->id,
-                'nomor_sk_bimbingan' => 'SK/001/FPST/TI/2026',
+                'nomor_sk_bimbingan' => 'SK/001/FPST/AGT/2026',
                 'tgl_sk_bimbingan' => now()->subMonths(2),
                 'status' => StatusPengajuan::Selesai,
             ]);
             Surat::create([
-                'nomor_surat' => 'SK/001/FPST/TI/2026',
+                'nomor_surat' => 'SK/001/FPST/AGT/2026',
                 'jenis_surat' => 'sk_bimbingan',
                 'nama_surat' => 'SK Pembimbing Skripsi - Siti Rahma',
                 'pengajuan_skripsi_id' => $skripsi2->id,
-                'program_studi_id' => $ti->id,
+                'program_studi_id' => $agt->id,
                 'tgl_surat' => now()->subMonths(2),
                 'versi' => 1,
                 'status' => 'aktif',
-                'diterbitkan_oleh' => $adminTi->id,
+                'diterbitkan_oleh' => $adminAgt->id,
                 'keterangan' => 'Penerbitan awal SK Pembimbing Skripsi',
             ]);
 
@@ -196,30 +196,30 @@ class DatabaseSeeder extends Seeder
                 'nomor_induk' => '222000000001',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Mahasiswa,
-                'program_studi_id' => $si->id,
+                'program_studi_id' => $agb->id,
                 'no_hp' => '081300000003',
             ]);
             $skripsi3 = PengajuanSkripsi::create([
                 'mahasiswa_id' => $mhs3->id,
-                'program_studi_id' => $si->id,
-                'judul' => 'Audit Tata Kelola Teknologi Informasi Menggunakan Framework COBIT 2019 pada Diskominfo',
-                'abstrak' => 'Analisis kapabilitas tata kelola sistem informasi pemerintahan daerah untuk menghasilkan rekomendasi perbaikan proses bisnis.',
-                'pembimbing_1_id' => $kaprodiSi->id,
+                'program_studi_id' => $agb->id,
+                'judul' => 'Analisis Rantai Pasok dan Efisiensi Pemasaran Komoditas Padi Organik di Wilayah Pontianak',
+                'abstrak' => 'Analisis marjin pemasaran, farmer share, serta efisiensi transmisi harga komoditas padi organik dari tingkat produsen hingga konsumen akhir.',
+                'pembimbing_1_id' => $kaprodiAgb->id,
                 'pembimbing_2_id' => $dosen5->id,
-                'nomor_sk_bimbingan' => 'SK/002/FPST/SI/2026',
+                'nomor_sk_bimbingan' => 'SK/002/FPST/AGB/2026',
                 'tgl_sk_bimbingan' => now()->subMonths(4),
                 'status' => StatusPengajuan::Selesai,
             ]);
             Surat::create([
-                'nomor_surat' => 'SK/002/FPST/SI/2026',
+                'nomor_surat' => 'SK/002/FPST/AGB/2026',
                 'jenis_surat' => 'sk_bimbingan',
                 'nama_surat' => 'SK Pembimbing Skripsi - Rizky Maulana',
                 'pengajuan_skripsi_id' => $skripsi3->id,
-                'program_studi_id' => $si->id,
+                'program_studi_id' => $agb->id,
                 'tgl_surat' => now()->subMonths(4),
                 'versi' => 1,
                 'status' => 'aktif',
-                'diterbitkan_oleh' => $adminSi->id,
+                'diterbitkan_oleh' => $adminAgb->id,
                 'keterangan' => 'Penerbitan awal SK Pembimbing Skripsi',
             ]);
 
@@ -229,23 +229,23 @@ class DatabaseSeeder extends Seeder
                 'tgl_seminar' => now()->subMonth(),
                 'jam_seminar' => '09:00',
                 'ruangan' => 'Ruang Seminar 201',
-                'nomor_undangan_seminar' => 'UND/012/FPST/SI/2026',
+                'nomor_undangan_seminar' => 'UND/012/FPST/AGB/2026',
                 'nomor_sk_seminar' => 'SK-SEM/005/FPST/2026',
                 'nilai_seminar' => 86.50,
                 'status' => StatusPengajuan::Selesai,
                 'catatan' => 'Lanjut ke tahap penelitian lapangan dan perbaikan instrumen kuesioner.',
             ]);
             Surat::create([
-                'nomor_surat' => 'UND/012/FPST/SI/2026',
+                'nomor_surat' => 'UND/012/FPST/AGB/2026',
                 'jenis_surat' => 'undangan_seminar',
                 'nama_surat' => 'Surat Undangan Seminar - Rizky Maulana',
                 'pengajuan_skripsi_id' => $skripsi3->id,
                 'seminar_skripsi_id' => $seminar3->id,
-                'program_studi_id' => $si->id,
+                'program_studi_id' => $agb->id,
                 'tgl_surat' => now()->subMonth(),
                 'versi' => 1,
                 'status' => 'aktif',
-                'diterbitkan_oleh' => $adminSi->id,
+                'diterbitkan_oleh' => $adminAgb->id,
                 'keterangan' => 'Surat Undangan Seminar Skripsi',
             ]);
             Surat::create([
@@ -254,11 +254,11 @@ class DatabaseSeeder extends Seeder
                 'nama_surat' => 'SK Penguji Seminar - Rizky Maulana',
                 'pengajuan_skripsi_id' => $skripsi3->id,
                 'seminar_skripsi_id' => $seminar3->id,
-                'program_studi_id' => $si->id,
+                'program_studi_id' => $agb->id,
                 'tgl_surat' => now()->subMonth(),
                 'versi' => 1,
                 'status' => 'aktif',
-                'diterbitkan_oleh' => $adminSi->id,
+                'diterbitkan_oleh' => $adminAgb->id,
                 'keterangan' => 'Penerbitan SK Penguji Seminar',
             ]);
 
@@ -269,7 +269,7 @@ class DatabaseSeeder extends Seeder
                 'nomor_induk' => '221000000003',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Mahasiswa,
-                'program_studi_id' => $ti->id,
+                'program_studi_id' => $agt->id,
                 'no_hp' => '081300000004',
             ]);
 
@@ -277,29 +277,29 @@ class DatabaseSeeder extends Seeder
             AktivitasLog::create([
                 'user_id' => $mhs1->id,
                 'aksi' => 'Pengajuan Judul Skripsi',
-                'deskripsi' => "Mahasiswa Andi Saputra (221000000001) mengajukan judul skripsi: 'Rancang Bangun Sistem Klasifikasi Citra Medis Menggunakan Convolutional Neural Network'",
+                'deskripsi' => "Mahasiswa Andi Saputra (221000000001) mengajukan judul skripsi: 'Pengaruh Konsentrasi Pupuk Organik Cair Limbah Kulit Pisang terhadap Pertumbuhan Bibit Kelapa Sawit'",
                 'ip_address' => '127.0.0.1',
                 'created_at' => now()->subDays(3),
             ]);
 
             AktivitasLog::create([
-                'user_id' => $kaprodiTi->id,
+                'user_id' => $kaprodiAgt->id,
                 'aksi' => 'Penetapan Dosen Pembimbing',
-                'deskripsi' => "Kaprodi Dr. Ratna Wijaya menyetujui judul & menetapkan Pembimbing untuk Siti Rahma (221000000002)",
+                'deskripsi' => "Kaprodi Dr. Ir. Ratna Wijaya, M.P. menyetujui judul & menetapkan Pembimbing untuk Siti Rahma (221000000002)",
                 'ip_address' => '127.0.0.1',
                 'created_at' => now()->subDays(2),
             ]);
 
             AktivitasLog::create([
-                'user_id' => $adminTi->id,
+                'user_id' => $adminAgt->id,
                 'aksi' => 'Penerbitan SK Bimbingan',
-                'deskripsi' => "Admin menerbitkan SK Bimbingan No. SK/001/FPST/TI/2026 untuk Siti Rahma (221000000002)",
+                'deskripsi' => "Admin menerbitkan SK Bimbingan No. SK/001/FPST/AGT/2026 untuk Siti Rahma (221000000002)",
                 'ip_address' => '127.0.0.1',
                 'created_at' => now()->subDays(1),
             ]);
 
             AktivitasLog::create([
-                'user_id' => $adminSi->id,
+                'user_id' => $adminAgb->id,
                 'aksi' => 'Finalisasi Nilai Seminar',
                 'deskripsi' => "Admin menginput nilai seminar (86.50) untuk mahasiswa Rizky Maulana (222000000001)",
                 'ip_address' => '127.0.0.1',
@@ -310,7 +310,7 @@ class DatabaseSeeder extends Seeder
             Notifikasi::create([
                 'user_id' => $mhs2->id,
                 'judul' => 'SK Bimbingan Resmi Diterbitkan',
-                'pesan' => 'Surat Keputusan (SK) Bimbingan Anda No: SK/001/FPST/TI/2026 telah resmi diterbitkan. Anda kini dapat memulai bimbingan dan mendaftar seminar.',
+                'pesan' => 'Surat Keputusan (SK) Bimbingan Anda No: SK/001/FPST/AGT/2026 telah resmi diterbitkan. Anda kini dapat memulai bimbingan dan mendaftar seminar.',
                 'link' => route('mahasiswa.skripsi.index'),
                 'dibaca' => false,
                 'created_at' => now()->subDays(1),
@@ -319,7 +319,7 @@ class DatabaseSeeder extends Seeder
             Notifikasi::create([
                 'user_id' => $dosen1->id,
                 'judul' => 'Penugasan Pembimbing Utama (1)',
-                'pesan' => 'Anda ditetapkan sebagai Pembimbing Utama untuk mahasiswa Siti Rahma (221000000002) dengan judul "Pengembangan Aplikasi Pemantauan Emisi Karbon Berbasis Internet of Things".',
+                'pesan' => 'Anda ditetapkan sebagai Pembimbing Utama untuk mahasiswa Siti Rahma (221000000002) dengan judul "Efektivitas Sistem Irigasi Tetes Berbasis Sensor Kelembaban Tanah pada Budidaya Tanaman Tomat".',
                 'link' => route('dosen.bimbingan.index'),
                 'dibaca' => false,
                 'created_at' => now()->subDays(2),

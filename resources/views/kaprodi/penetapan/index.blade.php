@@ -146,6 +146,42 @@
                                         👨‍🏫 Pembimbing: 1. {{ $skripsi->pembimbing1->name }} {{ $skripsi->pembimbing2 ? '| 2. ' . $skripsi->pembimbing2->name : '' }}
                                     </div>
                                 @endif
+
+                                @php
+                                    $penolakanP1 = $skripsi->penugasanDosen->where('peran', 'pembimbing_1')->where('status', \App\Enums\StatusPenugasanDosen::Ditolak)->first();
+                                    $penolakanP2 = $skripsi->penugasanDosen->where('peran', 'pembimbing_2')->where('status', \App\Enums\StatusPenugasanDosen::Ditolak)->first();
+                                    $waitingP1 = $skripsi->penugasanDosen->where('peran', 'pembimbing_1')->where('status', \App\Enums\StatusPenugasanDosen::Menunggu)->first();
+                                    $waitingP2 = $skripsi->penugasanDosen->where('peran', 'pembimbing_2')->where('status', \App\Enums\StatusPenugasanDosen::Menunggu)->first();
+                                    $p1Confirmed = $skripsi->penugasanDosen->where('peran', 'pembimbing_1')->where('status', \App\Enums\StatusPenugasanDosen::Disetujui)->count() > 0;
+                                    $p2Confirmed = $skripsi->penugasanDosen->where('peran', 'pembimbing_2')->where('status', \App\Enums\StatusPenugasanDosen::Disetujui)->count() > 0;
+                                    $needsReplacementP = ($penolakanP1 && !$skripsi->pembimbing_1_id) || ($penolakanP2 && !$skripsi->pembimbing_2_id);
+                                    $isLockedJudul = ($skripsi->pembimbing_1_id !== null && !$needsReplacementP && !$user->isAdminUtama());
+                                @endphp
+
+                                @if ($waitingP1 || $waitingP2)
+                                    <div style="font-size: 0.72rem; color: #b45309; margin-top: 0.25rem; background: #fffbeb; border: 1px solid #fde68a; padding: 0.2rem 0.45rem; border-radius: 0.35rem; display: inline-block;">
+                                        ⏳ Menunggu respon konfirmasi dosen pembimbing
+                                    </div>
+                                @endif
+
+                                @if ($penolakanP1 && !$skripsi->pembimbing_1_id)
+                                    <div style="font-size: 0.75rem; color: #9f1239; margin-top: 0.3rem; background: #fff1f2; border: 1px solid #fecdd3; padding: 0.3rem 0.5rem; border-radius: 0.35rem; line-height: 1.4;">
+                                        ⚠️ <strong>Ditolak Pembimbing 1 ({{ $penolakanP1->dosen ? $penolakanP1->dosen->name : '' }}):</strong> "{{ $penolakanP1->alasan_penolakan }}"
+                                        @if ($penolakanP1->rekomendasiDosen)
+                                            <br>💡 <em>Usulan Dosen Pengganti: {{ $penolakanP1->rekomendasiDosen->name }}</em>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if ($penolakanP2 && !$skripsi->pembimbing_2_id)
+                                    <div style="font-size: 0.75rem; color: #9f1239; margin-top: 0.3rem; background: #fff1f2; border: 1px solid #fecdd3; padding: 0.3rem 0.5rem; border-radius: 0.35rem; line-height: 1.4;">
+                                        ⚠️ <strong>Ditolak Pembimbing 2 ({{ $penolakanP2->dosen ? $penolakanP2->dosen->name : '' }}):</strong> "{{ $penolakanP2->alasan_penolakan }}"
+                                        @if ($penolakanP2->rekomendasiDosen)
+                                            <br>💡 <em>Usulan Dosen Pengganti: {{ $penolakanP2->rekomendasiDosen->name }}</em>
+                                        @endif
+                                    </div>
+                                @endif
+
                                 <!-- Berkas Links -->
                                 <div style="display: flex; gap: 0.35rem; margin-top: 0.35rem; flex-wrap: wrap;">
                                     @if ($skripsi->file_proposal)
@@ -169,7 +205,7 @@
                                 <span class="badge badge-{{ $skripsi->status->value }}">{{ $skripsi->status->label() }}</span>
                             </td>
                             <td style="text-align: center;">
-                                <button type="button" class="btn {{ $isWaiting ? 'btn-primary' : 'btn-secondary' }} btn-sm" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;" onclick="openDrawerJudul({{ json_encode([
+                                <button type="button" class="btn {{ $isWaiting || $needsReplacementP ? 'btn-primary' : 'btn-secondary' }} btn-sm" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;" onclick="openDrawerJudul({{ json_encode([
                                     'id' => $skripsi->id,
                                     'mhs_name' => $skripsi->mahasiswa->name,
                                     'mhs_nim' => $skripsi->mahasiswa->nomor_induk,
@@ -182,14 +218,26 @@
                                     'pembimbing_2_id' => $skripsi->pembimbing_2_id,
                                     'pembimbing1_name' => $skripsi->pembimbing1 ? $skripsi->pembimbing1->name : null,
                                     'pembimbing2_name' => $skripsi->pembimbing2 ? $skripsi->pembimbing2->name : null,
-                                    'is_locked' => ($skripsi->pembimbing_1_id !== null && !$user->isAdminUtama()),
+                                    'is_locked' => $isLockedJudul,
                                     'is_admin' => $user->isAdminUtama(),
+                                    'p1_is_confirmed' => $p1Confirmed,
+                                    'p2_is_confirmed' => $p2Confirmed,
                                     'file_proposal' => $skripsi->file_proposal ? route('dokumen.download', base64_encode($skripsi->file_proposal)) : null,
                                     'file_transkrip' => $skripsi->file_transkrip ? route('dokumen.download', base64_encode($skripsi->file_transkrip)) : null,
                                     'file_bukti_bayar' => $skripsi->file_bukti_bayar ? route('dokumen.download', base64_encode($skripsi->file_bukti_bayar)) : null,
                                     'form_action' => route('kaprodi.skripsi.review', $skripsi->id),
+                                    'riwayat_penugasan' => $skripsi->penugasanDosen->map(fn($p) => [
+                                        'dosen' => $p->dosen ? $p->dosen->name : '-',
+                                        'peran' => $p->labelPeran(),
+                                        'status' => $p->status->label(),
+                                        'status_val' => $p->status->value,
+                                        'alasan' => $p->alasan_penolakan,
+                                        'rekomendasi' => $p->rekomendasiDosen ? $p->rekomendasiDosen->name : null,
+                                        'is_mandat' => $p->is_mandat_admin_utama,
+                                        'tgl' => $p->created_at->translatedFormat('d M Y, H:i'),
+                                    ])->values(),
                                 ]) }})">
-                                    {{ $isWaiting ? '✓ Tetapkan' : ($user->isAdminUtama() ? '✏️ Ubah' : '👁️ Detail') }}
+                                    {{ $needsReplacementP ? '🔄 Ganti Dosen' : ($isWaiting ? '✓ Tetapkan' : ($user->isAdminUtama() ? '✏️ Ubah' : '👁️ Detail')) }}
                                 </button>
                             </td>
                         </tr>
@@ -312,6 +360,27 @@
                                         🎓 Penguji: {{ $seminar->penguji->name }}
                                     </div>
                                 @endif
+
+                                @php
+                                    $penolakanPengujiSem = $seminar->penugasanDosen->where('peran', 'penguji_seminar')->where('status', \App\Enums\StatusPenugasanDosen::Ditolak)->first();
+                                    $waitingPengujiSem = $seminar->penugasanDosen->where('peran', 'penguji_seminar')->where('status', \App\Enums\StatusPenugasanDosen::Menunggu)->first();
+                                @endphp
+
+                                @if ($waitingPengujiSem)
+                                    <div style="font-size: 0.72rem; color: #b45309; margin-top: 0.25rem; background: #fffbeb; border: 1px solid #fde68a; padding: 0.2rem 0.45rem; border-radius: 0.35rem; display: inline-block;">
+                                        ⏳ Menunggu respon konfirmasi dosen penguji seminar
+                                    </div>
+                                @endif
+
+                                @if ($penolakanPengujiSem && !$seminar->penguji_seminar_id)
+                                    <div style="font-size: 0.75rem; color: #9f1239; margin-top: 0.3rem; background: #fff1f2; border: 1px solid #fecdd3; padding: 0.3rem 0.5rem; border-radius: 0.35rem; line-height: 1.4;">
+                                        ⚠️ <strong>Ditolak Penguji ({{ $penolakanPengujiSem->dosen ? $penolakanPengujiSem->dosen->name : '' }}):</strong> "{{ $penolakanPengujiSem->alasan_penolakan }}"
+                                        @if ($penolakanPengujiSem->rekomendasiDosen)
+                                            <br>💡 <em>Usulan Dosen Pengganti: {{ $penolakanPengujiSem->rekomendasiDosen->name }}</em>
+                                        @endif
+                                    </div>
+                                @endif
+
                                 <!-- Berkas Links -->
                                 <div style="display: flex; gap: 0.35rem; margin-top: 0.35rem; flex-wrap: wrap;">
                                     @if ($seminar->file_naskah_seminar)
@@ -340,26 +409,44 @@
                                 <span class="badge badge-{{ $seminar->status->value }}">{{ $seminar->status->label() }}</span>
                             </td>
                             <td style="text-align: center;">
-                                <button type="button" class="btn {{ $isWaiting ? 'btn-primary' : 'btn-secondary' }} btn-sm" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;" onclick="openDrawerSeminar({{ json_encode([
+                                @php
+                                    $pengujiSemConfirmed = $seminar->penugasanDosen->where('peran', 'penguji_seminar')->where('status', \App\Enums\StatusPenugasanDosen::Disetujui)->count() > 0;
+                                    $needsReplacementSem = ($penolakanPengujiSem && !$seminar->penguji_seminar_id);
+                                    $isLockedSem = ($seminar->penguji_seminar_id !== null && !$needsReplacementSem && !$user->isAdminUtama());
+                                @endphp
+                                <button type="button" class="btn {{ $isWaiting || $needsReplacementSem ? 'btn-primary' : 'btn-secondary' }} btn-sm" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;" onclick="openDrawerSeminar({{ json_encode([
                                     'id' => $seminar->id,
                                     'mhs_name' => $sk->mahasiswa->name,
                                     'mhs_nim' => $sk->mahasiswa->nomor_induk,
                                     'judul' => $sk->judul,
+                                    'pembimbing_1_id' => $sk->pembimbing_1_id,
+                                    'pembimbing_2_id' => $sk->pembimbing_2_id,
                                     'pembimbing_info' => 'Pembimbing 1: ' . ($sk->pembimbing1 ? $sk->pembimbing1->name : '-') . ' | Pembimbing 2: ' . ($sk->pembimbing2 ? $sk->pembimbing2->name : '-'),
                                     'status_label' => $seminar->status->label(),
                                     'status_val' => $seminar->status->value,
                                     'tgl_pengajuan' => $seminar->created_at->translatedFormat('d F Y, H:i') . ' (' . $seminar->created_at->diffForHumans() . ')',
                                     'penguji_seminar_id' => $seminar->penguji_seminar_id,
                                     'penguji_name' => $seminar->penguji ? $seminar->penguji->name : null,
-                                    'is_locked' => ($seminar->penguji_seminar_id !== null && !$user->isAdminUtama()),
+                                    'is_locked' => $isLockedSem,
                                     'is_admin' => $user->isAdminUtama(),
+                                    'penguji_is_confirmed' => $pengujiSemConfirmed,
                                     'file_naskah' => $seminar->file_naskah_seminar ? route('dokumen.download', base64_encode($seminar->file_naskah_seminar)) : null,
                                     'file_acc' => $seminar->file_acc_pembimbing ? route('dokumen.download', base64_encode($seminar->file_acc_pembimbing)) : null,
                                     'file_bayar' => $seminar->file_bukti_bayar_seminar ? route('dokumen.download', base64_encode($seminar->file_bukti_bayar_seminar)) : null,
                                     'file_toefl' => $seminar->file_toefl ? route('dokumen.download', base64_encode($seminar->file_toefl)) : null,
                                     'form_action' => route('kaprodi.seminar.penguji', $seminar->id),
+                                    'riwayat_penugasan' => $seminar->penugasanDosen->map(fn($p) => [
+                                        'dosen' => $p->dosen ? $p->dosen->name : '-',
+                                        'peran' => $p->labelPeran(),
+                                        'status' => $p->status->label(),
+                                        'status_val' => $p->status->value,
+                                        'alasan' => $p->alasan_penolakan,
+                                        'rekomendasi' => $p->rekomendasiDosen ? $p->rekomendasiDosen->name : null,
+                                        'is_mandat' => $p->is_mandat_admin_utama,
+                                        'tgl' => $p->created_at->translatedFormat('d M Y, H:i'),
+                                    ])->values(),
                                 ]) }})">
-                                    {{ $isWaiting ? '✓ Tetapkan' : ($user->isAdminUtama() ? '✏️ Ubah' : '👁️ Detail') }}
+                                    {{ $needsReplacementSem ? '🔄 Ganti Dosen' : ($isWaiting ? '✓ Tetapkan' : ($user->isAdminUtama() ? '✏️ Ubah' : '👁️ Detail')) }}
                                 </button>
                             </td>
                         </tr>
@@ -384,7 +471,7 @@
     <!-- ========================================== -->
     <div id="tab-sidang" class="tab-content {{ request('tab') === 'sidang' ? 'active' : '' }}">
         <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-            Daftar pengajuan sidang meja hijau. Tetapkan 2 Orang Dosen Penguji Sidang untuk setiap mahasiswa berdasarkan antrean.
+            Daftar pengajuan sidang skripsi. Tetapkan 2 Orang Dosen Penguji Sidang untuk setiap mahasiswa berdasarkan antrean.
         </div>
 
         <!-- Filter & Search Toolbar Tab 3 -->
@@ -482,6 +569,38 @@
                                         ⚖️ Penguji Sidang: 1. {{ $sidang->penguji1 ? $sidang->penguji1->name : '-' }} | 2. {{ $sidang->penguji2 ? $sidang->penguji2->name : '-' }}
                                     </div>
                                 @endif
+
+                                @php
+                                    $penolakanPenguji1 = $sidang->penugasanDosen->where('peran', 'penguji_1')->where('status', \App\Enums\StatusPenugasanDosen::Ditolak)->first();
+                                    $penolakanPenguji2 = $sidang->penugasanDosen->where('peran', 'penguji_2')->where('status', \App\Enums\StatusPenugasanDosen::Ditolak)->first();
+                                    $waitingPenguji1 = $sidang->penugasanDosen->where('peran', 'penguji_1')->where('status', \App\Enums\StatusPenugasanDosen::Menunggu)->first();
+                                    $waitingPenguji2 = $sidang->penugasanDosen->where('peran', 'penguji_2')->where('status', \App\Enums\StatusPenugasanDosen::Menunggu)->first();
+                                @endphp
+
+                                @if ($waitingPenguji1 || $waitingPenguji2)
+                                    <div style="font-size: 0.72rem; color: #b45309; margin-top: 0.25rem; background: #fffbeb; border: 1px solid #fde68a; padding: 0.2rem 0.45rem; border-radius: 0.35rem; display: inline-block;">
+                                        ⏳ Menunggu respon konfirmasi dewan penguji sidang
+                                    </div>
+                                @endif
+
+                                @if ($penolakanPenguji1 && !$sidang->penguji_1_id)
+                                    <div style="font-size: 0.75rem; color: #9f1239; margin-top: 0.3rem; background: #fff1f2; border: 1px solid #fecdd3; padding: 0.3rem 0.5rem; border-radius: 0.35rem; line-height: 1.4;">
+                                        ⚠️ <strong>Ditolak Penguji 1 ({{ $penolakanPenguji1->dosen ? $penolakanPenguji1->dosen->name : '' }}):</strong> "{{ $penolakanPenguji1->alasan_penolakan }}"
+                                        @if ($penolakanPenguji1->rekomendasiDosen)
+                                            <br>💡 <em>Usulan Dosen Pengganti: {{ $penolakanPenguji1->rekomendasiDosen->name }}</em>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if ($penolakanPenguji2 && !$sidang->penguji_2_id)
+                                    <div style="font-size: 0.75rem; color: #9f1239; margin-top: 0.3rem; background: #fff1f2; border: 1px solid #fecdd3; padding: 0.3rem 0.5rem; border-radius: 0.35rem; line-height: 1.4;">
+                                        ⚠️ <strong>Ditolak Penguji 2 ({{ $penolakanPenguji2->dosen ? $penolakanPenguji2->dosen->name : '' }}):</strong> "{{ $penolakanPenguji2->alasan_penolakan }}"
+                                        @if ($penolakanPenguji2->rekomendasiDosen)
+                                            <br>💡 <em>Usulan Dosen Pengganti: {{ $penolakanPenguji2->rekomendasiDosen->name }}</em>
+                                        @endif
+                                    </div>
+                                @endif
+
                                 <!-- Berkas Links -->
                                 <div style="display: flex; gap: 0.35rem; margin-top: 0.35rem; flex-wrap: wrap;">
                                     @if ($sidang->file_naskah_sidang)
@@ -510,11 +629,19 @@
                                 <span class="badge badge-{{ $sidang->status->value }}">{{ $sidang->status->label() }}</span>
                             </td>
                             <td style="text-align: center;">
-                                <button type="button" class="btn {{ $isWaiting ? 'btn-primary' : 'btn-secondary' }} btn-sm" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;" onclick="openDrawerSidang({{ json_encode([
+                                @php
+                                    $p1SidangConfirmed = $sidang->penugasanDosen->where('peran', 'penguji_1')->where('status', \App\Enums\StatusPenugasanDosen::Disetujui)->count() > 0;
+                                    $p2SidangConfirmed = $sidang->penugasanDosen->where('peran', 'penguji_2')->where('status', \App\Enums\StatusPenugasanDosen::Disetujui)->count() > 0;
+                                    $needsReplacementSidang = ($penolakanPenguji1 && !$sidang->penguji_1_id) || ($penolakanPenguji2 && !$sidang->penguji_2_id);
+                                    $isLockedSidang = ($sidang->penguji_1_id !== null && $sidang->penguji_2_id !== null && !$needsReplacementSidang && !$user->isAdminUtama());
+                                @endphp
+                                <button type="button" class="btn {{ $isWaiting || $needsReplacementSidang ? 'btn-primary' : 'btn-secondary' }} btn-sm" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;" onclick="openDrawerSidang({{ json_encode([
                                     'id' => $sidang->id,
                                     'mhs_name' => $sk->mahasiswa->name,
                                     'mhs_nim' => $sk->mahasiswa->nomor_induk,
                                     'judul' => $sk->judul,
+                                    'pembimbing_1_id' => $sk->pembimbing_1_id,
+                                    'pembimbing_2_id' => $sk->pembimbing_2_id,
                                     'pembimbing_info' => 'Pembimbing 1: ' . ($sk->pembimbing1 ? $sk->pembimbing1->name : '-') . ' | Pembimbing 2: ' . ($sk->pembimbing2 ? $sk->pembimbing2->name : '-'),
                                     'status_label' => $sidang->status->label(),
                                     'status_val' => $sidang->status->value,
@@ -523,15 +650,27 @@
                                     'penguji_2_id' => $sidang->penguji_2_id,
                                     'penguji1_name' => $sidang->penguji1 ? $sidang->penguji1->name : null,
                                     'penguji2_name' => $sidang->penguji2 ? $sidang->penguji2->name : null,
-                                    'is_locked' => (($sidang->penguji_1_id !== null || $sidang->penguji_2_id !== null) && !$user->isAdminUtama()),
+                                    'is_locked' => $isLockedSidang,
                                     'is_admin' => $user->isAdminUtama(),
+                                    'penguji1_is_confirmed' => $p1SidangConfirmed,
+                                    'penguji2_is_confirmed' => $p2SidangConfirmed,
                                     'file_naskah' => $sidang->file_naskah_sidang ? route('dokumen.download', base64_encode($sidang->file_naskah_sidang)) : null,
                                     'file_acc' => $sidang->file_acc_sidang ? route('dokumen.download', base64_encode($sidang->file_acc_sidang)) : null,
                                     'file_bebas' => $sidang->file_bebas_revisi_seminar ? route('dokumen.download', base64_encode($sidang->file_bebas_revisi_seminar)) : null,
                                     'file_bayar' => $sidang->file_bukti_bayar_sidang ? route('dokumen.download', base64_encode($sidang->file_bukti_bayar_sidang)) : null,
                                     'form_action' => route('kaprodi.sidang.penguji', $sidang->id),
+                                    'riwayat_penugasan' => $sidang->penugasanDosen->map(fn($p) => [
+                                        'dosen' => $p->dosen ? $p->dosen->name : '-',
+                                        'peran' => $p->labelPeran(),
+                                        'status' => $p->status->label(),
+                                        'status_val' => $p->status->value,
+                                        'alasan' => $p->alasan_penolakan,
+                                        'rekomendasi' => $p->rekomendasiDosen ? $p->rekomendasiDosen->name : null,
+                                        'is_mandat' => $p->is_mandat_admin_utama,
+                                        'tgl' => $p->created_at->translatedFormat('d M Y, H:i'),
+                                    ])->values(),
                                 ]) }})">
-                                    {{ $isWaiting ? '✓ Tetapkan' : ($user->isAdminUtama() ? '✏️ Ubah' : '👁️ Detail') }}
+                                    {{ $needsReplacementSidang ? '🔄 Ganti Dosen' : ($isWaiting ? '✓ Tetapkan' : ($user->isAdminUtama() ? '✏️ Ubah' : '👁️ Detail')) }}
                                 </button>
                             </td>
                         </tr>
@@ -576,16 +715,68 @@
     </div>
 </div>
 
-<!-- TEMPLATE DOSEN OPTIONS UNTUK JS -->
-<template id="dosen-options-template">
-    @foreach ($daftarDosen as $dosen)
-        <option value="{{ $dosen->id }}">{{ $dosen->name }} ({{ $dosen->nomor_induk }})</option>
-    @endforeach
-</template>
-
 <script>
     const csrfToken = '{{ csrf_token() }}';
-    const dosenOptionsHtml = document.getElementById('dosen-options-template').innerHTML;
+    const daftarDosenList = {!! json_encode($daftarDosen->map(fn($d) => ['id' => (string)$d->id, 'name' => $d->name, 'nomor_induk' => $d->nomor_induk])) !!};
+
+    /**
+     * Membangun daftar <option> dosen dengan mengecualikan ID dosen tertentu (excludeIds).
+     * Aturan:
+     * 1. Dosen pembimbing 1 atau 2 pada mahasiswa yang sama tidak boleh muncul pada select option penguji seminar/sidang.
+     * 2. Pembimbing 1 dan 2 tidak boleh sama.
+     * 3. Penguji Sidang 1 dan 2 tidak boleh sama.
+     * 4. Jika mahasiswanya berbeda, dosen tetap muncul secara normal.
+     */
+    function buildDosenOptionsHtml(defaultLabel, selectedVal, excludeIds = []) {
+        const selStr = selectedVal ? String(selectedVal) : '';
+        const exclSet = new Set(excludeIds.map(id => String(id)).filter(Boolean));
+
+        let html = `<option value="">${defaultLabel}</option>`;
+        daftarDosenList.forEach(d => {
+            const dIdStr = String(d.id);
+            // Hilangkan jika masuk dalam daftar exclude
+            if (exclSet.has(dIdStr)) {
+                return;
+            }
+            const isSelected = (dIdStr === selStr) ? 'selected' : '';
+            html += `<option value="${d.id}" ${isSelected}>${d.name} (${d.nomor_induk})</option>`;
+        });
+        return html;
+    }
+
+    function buildRiwayatHtml(riwayat) {
+        if (!riwayat || riwayat.length === 0) return '';
+        let html = `
+            <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">
+                <div style="font-weight: 700; font-size: 0.82rem; color: #1e293b; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <span>📜</span> Riwayat Penugasan & Respon Dosen
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        `;
+        riwayat.forEach(item => {
+            let borderCol = item.status_val === 'disetujui' ? '#22c55e' : (item.status_val === 'ditolak' ? '#ef4444' : '#f59e0b');
+            let badgeStyle = item.status_val === 'disetujui' ? 'background: #dcfce7; color: #166534;' : (item.status_val === 'ditolak' ? 'background: #ffe4e6; color: #9f1239;' : 'background: #fef3c7; color: #92400e;');
+            html += `
+                <div style="border-left: 3px solid ${borderCol}; background: #fff; padding: 0.6rem 0.75rem; border-radius: 0 0.35rem 0.35rem 0; font-size: 0.78rem; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="color: #0f172a;">${item.dosen}</strong>
+                        <span style="font-size: 0.7rem; padding: 0.15rem 0.45rem; border-radius: 0.25rem; font-weight: 700; ${badgeStyle}">${item.status}${item.is_mandat ? ' (Mandat)' : ''}</span>
+                    </div>
+                    <div style="color: #64748b; font-size: 0.72rem; margin-top: 0.15rem;">
+                        ${item.peran} &bull; ${item.tgl}
+                    </div>
+                    ${item.alasan ? `
+                        <div style="margin-top: 0.35rem; color: #9f1239; background: #fff1f2; border: 1px solid #fecdd3; padding: 0.4rem 0.6rem; border-radius: 0.35rem; line-height: 1.4;">
+                            <strong>Alasan Penolakan:</strong> "${item.alasan}"
+                            ${item.rekomendasi ? `<div style="margin-top: 0.2rem; color: #1e40af;">💡 Rekomendasi Dosen Pengganti: <b>${item.rekomendasi}</b></div>` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+        html += `</div></div>`;
+        return html;
+    }
 
     function openDrawerJudul(data) {
         const panel = document.getElementById('drawer-panel');
@@ -620,6 +811,8 @@
             </div>
         `;
 
+        content += buildRiwayatHtml(data.riwayat_penugasan);
+
         if (data.is_locked) {
             content += `
                 <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 1rem;">
@@ -649,18 +842,22 @@
                         <input type="hidden" name="_token" value="${csrfToken}">
                         
                         <div class="form-group">
-                            <label class="form-label" style="font-size: 0.78rem;">Dosen Pembimbing 1 (Utama) *</label>
+                            <label class="form-label" style="font-size: 0.78rem;">
+                                Dosen Pembimbing 1 (Utama) *
+                                ${data.p1_is_confirmed ? '<span style="color: #166534; background: #dcfce7; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-weight: 700; margin-left: 0.35rem;">✓ Sudah Menyetujui</span>' : ''}
+                            </label>
                             <select name="pembimbing_1_id" class="form-control" style="font-size: 0.85rem;" required id="drawer_p1">
                                 <option value="">-- Pilih Pembimbing 1 --</option>
-                                ${dosenOptionsHtml}
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label" style="font-size: 0.78rem;">Dosen Pembimbing 2 (Opsional)</label>
+                            <label class="form-label" style="font-size: 0.78rem;">
+                                Dosen Pembimbing 2 (Opsional)
+                                ${data.p2_is_confirmed ? '<span style="color: #166534; background: #dcfce7; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-weight: 700; margin-left: 0.35rem;">✓ Sudah Menyetujui</span>' : ''}
+                            </label>
                             <select name="pembimbing_2_id" class="form-control" style="font-size: 0.85rem;" id="drawer_p2">
                                 <option value="">-- Tanpa Pembimbing 2 --</option>
-                                ${dosenOptionsHtml}
                             </select>
                         </div>
 
@@ -690,10 +887,38 @@
 
         body.innerHTML = content;
 
-        // Set selected values
+        // Dynamic select options synchronization for Pembimbing 1 & 2
         if (!data.is_locked) {
-            if (data.pembimbing_1_id) document.getElementById('drawer_p1').value = data.pembimbing_1_id;
-            if (data.pembimbing_2_id) document.getElementById('drawer_p2').value = data.pembimbing_2_id;
+            const p1Select = document.getElementById('drawer_p1');
+            const p2Select = document.getElementById('drawer_p2');
+
+            let currentP1 = data.pembimbing_1_id ? String(data.pembimbing_1_id) : '';
+            let currentP2 = data.pembimbing_2_id ? String(data.pembimbing_2_id) : '';
+
+            function refreshPembimbingOptions() {
+                let val1 = p1Select.value;
+                let val2 = p2Select.value;
+
+                // Jika bentrok sama, reset yang lain
+                if (val1 && val1 === val2) {
+                    val2 = '';
+                }
+
+                p1Select.innerHTML = buildDosenOptionsHtml('-- Pilih Pembimbing 1 --', val1, [val2]);
+                if (val1) p1Select.value = val1;
+
+                p2Select.innerHTML = buildDosenOptionsHtml('-- Tanpa Pembimbing 2 --', val2, [val1]);
+                if (val2) p2Select.value = val2;
+            }
+
+            p1Select.innerHTML = buildDosenOptionsHtml('-- Pilih Pembimbing 1 --', currentP1, [currentP2]);
+            if (currentP1) p1Select.value = currentP1;
+
+            p2Select.innerHTML = buildDosenOptionsHtml('-- Tanpa Pembimbing 2 --', currentP2, [currentP1]);
+            if (currentP2) p2Select.value = currentP2;
+
+            p1Select.addEventListener('change', refreshPembimbingOptions);
+            p2Select.addEventListener('change', refreshPembimbingOptions);
         }
 
         showDrawer();
@@ -725,6 +950,8 @@
             </div>
         `;
 
+        content += buildRiwayatHtml(data.riwayat_penugasan);
+
         if (data.is_locked) {
             content += `
                 <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 1rem;">
@@ -752,10 +979,12 @@
                         <input type="hidden" name="_token" value="${csrfToken}">
                         
                         <div class="form-group">
-                            <label class="form-label" style="font-size: 0.78rem;">Dosen Penguji Seminar *</label>
+                            <label class="form-label" style="font-size: 0.78rem;">
+                                Dosen Penguji Seminar *
+                                ${data.penguji_is_confirmed ? '<span style="color: #166534; background: #dcfce7; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-weight: 700; margin-left: 0.35rem;">✓ Sudah Menyetujui</span>' : ''}
+                            </label>
                             <select name="penguji_seminar_id" class="form-control" style="font-size: 0.85rem;" required id="drawer_penguji_seminar">
                                 <option value="">-- Pilih Dosen Penguji Seminar --</option>
-                                ${dosenOptionsHtml}
                             </select>
                         </div>
 
@@ -771,8 +1000,19 @@
         }
 
         body.innerHTML = content;
-        if (!data.is_locked && data.penguji_seminar_id) {
-            document.getElementById('drawer_penguji_seminar').value = data.penguji_seminar_id;
+
+        // Dynamic select options for Seminar: Hilangkan dosen Pembimbing 1 & 2 mahasiswa yang sama
+        if (!data.is_locked) {
+            const pengujiSemSelect = document.getElementById('drawer_penguji_seminar');
+            const currentPenguji = data.penguji_seminar_id ? String(data.penguji_seminar_id) : '';
+            const excludedFromSeminar = [data.pembimbing_1_id, data.pembimbing_2_id].filter(Boolean);
+
+            pengujiSemSelect.innerHTML = buildDosenOptionsHtml(
+                '-- Pilih Dosen Penguji Seminar --',
+                currentPenguji,
+                excludedFromSeminar
+            );
+            if (currentPenguji) pengujiSemSelect.value = currentPenguji;
         }
 
         showDrawer();
@@ -781,7 +1021,7 @@
     function openDrawerSidang(data) {
         const body = document.getElementById('drawer-body');
 
-        document.getElementById('drawer-title').innerText = 'Penetapan 2 Dosen Penguji Sidang Meja Hijau';
+        document.getElementById('drawer-title').innerText = 'Penetapan 2 Dosen Penguji Sidang Skripsi';
         const badge = document.getElementById('drawer-badge');
         badge.className = `badge badge-${data.status_val}`;
         badge.innerText = data.status_label;
@@ -803,6 +1043,8 @@
                 </div>
             </div>
         `;
+
+        content += buildRiwayatHtml(data.riwayat_penugasan);
 
         if (data.is_locked) {
             content += `
@@ -832,18 +1074,22 @@
                         <input type="hidden" name="_token" value="${csrfToken}">
                         
                         <div class="form-group">
-                            <label class="form-label" style="font-size: 0.78rem;">Dosen Penguji Sidang 1 *</label>
+                            <label class="form-label" style="font-size: 0.78rem;">
+                                Dosen Penguji Sidang 1 *
+                                ${data.penguji1_is_confirmed ? '<span style="color: #166534; background: #dcfce7; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-weight: 700; margin-left: 0.35rem;">✓ Sudah Menyetujui</span>' : ''}
+                            </label>
                             <select name="penguji_1_id" class="form-control" style="font-size: 0.85rem;" required id="drawer_penguji_1">
                                 <option value="">-- Pilih Penguji Sidang 1 --</option>
-                                ${dosenOptionsHtml}
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label" style="font-size: 0.78rem;">Dosen Penguji Sidang 2 *</label>
+                            <label class="form-label" style="font-size: 0.78rem;">
+                                Dosen Penguji Sidang 2 *
+                                ${data.penguji2_is_confirmed ? '<span style="color: #166534; background: #dcfce7; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-weight: 700; margin-left: 0.35rem;">✓ Sudah Menyetujui</span>' : ''}
+                            </label>
                             <select name="penguji_2_id" class="form-control" style="font-size: 0.85rem;" required id="drawer_penguji_2">
                                 <option value="">-- Pilih Penguji Sidang 2 --</option>
-                                ${dosenOptionsHtml}
                             </select>
                         </div>
 
@@ -859,9 +1105,44 @@
         }
 
         body.innerHTML = content;
+
+        // Dynamic select options synchronization for Penguji Sidang 1 & 2
+        // Hilangkan Pembimbing 1 & 2 mahasiswa yang sama, dan hilangkan Penguji 1 dari Penguji 2 (dan sebaliknya)
         if (!data.is_locked) {
-            if (data.penguji_1_id) document.getElementById('drawer_penguji_1').value = data.penguji_1_id;
-            if (data.penguji_2_id) document.getElementById('drawer_penguji_2').value = data.penguji_2_id;
+            const p1SidangSelect = document.getElementById('drawer_penguji_1');
+            const p2SidangSelect = document.getElementById('drawer_penguji_2');
+
+            let currentSdg1 = data.penguji_1_id ? String(data.penguji_1_id) : '';
+            let currentSdg2 = data.penguji_2_id ? String(data.penguji_2_id) : '';
+
+            const basePembimbingExclude = [data.pembimbing_1_id, data.pembimbing_2_id].filter(Boolean);
+
+            function refreshPengujiSidangOptions() {
+                let val1 = p1SidangSelect.value;
+                let val2 = p2SidangSelect.value;
+
+                if (val1 && val1 === val2) {
+                    val2 = '';
+                }
+
+                const excl1 = [...basePembimbingExclude, val2].filter(Boolean);
+                const excl2 = [...basePembimbingExclude, val1].filter(Boolean);
+
+                p1SidangSelect.innerHTML = buildDosenOptionsHtml('-- Pilih Penguji Sidang 1 --', val1, excl1);
+                if (val1) p1SidangSelect.value = val1;
+
+                p2SidangSelect.innerHTML = buildDosenOptionsHtml('-- Pilih Penguji Sidang 2 --', val2, excl2);
+                if (val2) p2SidangSelect.value = val2;
+            }
+
+            p1SidangSelect.innerHTML = buildDosenOptionsHtml('-- Pilih Penguji Sidang 1 --', currentSdg1, [...basePembimbingExclude, currentSdg2]);
+            if (currentSdg1) p1SidangSelect.value = currentSdg1;
+
+            p2SidangSelect.innerHTML = buildDosenOptionsHtml('-- Pilih Penguji Sidang 2 --', currentSdg2, [...basePembimbingExclude, currentSdg1]);
+            if (currentSdg2) p2SidangSelect.value = currentSdg2;
+
+            p1SidangSelect.addEventListener('change', refreshPengujiSidangOptions);
+            p2SidangSelect.addEventListener('change', refreshPengujiSidangOptions);
         }
 
         showDrawer();

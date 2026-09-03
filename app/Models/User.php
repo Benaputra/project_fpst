@@ -126,4 +126,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Surat::class, 'diterbitkan_oleh')->latest();
     }
+
+    public function penugasanDosen(): HasMany
+    {
+        return $this->hasMany(PenugasanDosen::class, 'dosen_id')->latest();
+    }
+
+    public function pendingPenugasanDosenCount(): int
+    {
+        return $this->penugasanDosen()->where('status', \App\Enums\StatusPenugasanDosen::Menunggu)->count();
+    }
 }

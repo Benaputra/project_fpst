@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Enums\StatusPengajuan;
+use App\Enums\StatusPenugasanDosen;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class SeminarSkripsi extends Model
 {
@@ -55,6 +57,34 @@ class SeminarSkripsi extends Model
     public function surat(): HasMany
     {
         return $this->hasMany(Surat::class, 'seminar_skripsi_id')->latest();
+    }
+
+    public function penugasanDosen(): MorphMany
+    {
+        return $this->morphMany(PenugasanDosen::class, 'assignable')->latest('id');
+    }
+
+    public function latestPenugasanPenguji(): ?PenugasanDosen
+    {
+        return $this->penugasanDosen()->where('peran', 'penguji_seminar')->latest('id')->first();
+    }
+
+    public function isPengujiConfirmed(): bool
+    {
+        $hasPending = $this->penugasanDosen()
+            ->where('peran', 'penguji_seminar')
+            ->where('status', StatusPenugasanDosen::Menunggu)
+            ->exists();
+
+        if ($hasPending) {
+            return false;
+        }
+
+        if (!$this->penguji_seminar_id) {
+            return false;
+        }
+
+        return true;
     }
 
     public function isSelesai(): bool

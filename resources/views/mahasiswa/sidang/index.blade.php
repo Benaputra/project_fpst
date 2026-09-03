@@ -15,7 +15,7 @@
         <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
         <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">Tahap Sidang Skripsi Belum Terbuka</h2>
         <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 1.5rem; font-size: 0.9rem;">
-            Untuk dapat mengajukan Sidang Skripsi (Meja Hijau), Anda harus telah <strong>Lulus Tahap 2: Seminar Skripsi</strong> dan menyelesaikan revisi seminar.
+            Untuk dapat mengajukan Sidang Skripsi, Anda harus telah <strong>Lulus Tahap 2: Seminar Skripsi</strong> dan menyelesaikan revisi seminar.
         </p>
         <a href="{{ route('mahasiswa.seminar.index') }}" class="btn btn-secondary">
             Periksa Status Seminar Skripsi
@@ -24,7 +24,7 @@
 @elseif (!$sidang)
     <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
         <div style="font-size: 3rem; margin-bottom: 1rem;">🎓</div>
-        <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">Siap Mengajukan Sidang Skripsi (Meja Hijau)</h2>
+        <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">Siap Mengajukan Sidang Skripsi</h2>
         <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 1.5rem; font-size: 0.9rem;">
             Selamat! Anda telah lulus seminar dengan nilai <strong>{{ number_format($skripsi->seminar->nilai_seminar, 2) }}</strong>. Silakan siapkan naskah skripsi final, lembar ACC sidang dari pembimbing, lembar bebas revisi seminar, dan bukti bayar sidang/SPP.
         </p>
@@ -37,7 +37,7 @@
     <div class="card">
         <div class="card-header">
             <div>
-                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Status Sidang Meja Hijau</span>
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Status Sidang Skripsi</span>
                 <h2 class="card-title" style="margin-top: 0.2rem;">
                     Tahap 3: {{ $sidang->status->label() }}
                 </h2>
@@ -105,7 +105,7 @@
                                 {{ number_format($sidang->nilai_sidang, 2) }}
                             </div>
                         </div>
-                        <span class="badge badge-selesai" style="font-size: 0.9rem; padding: 0.5rem 1rem;">LULUS MEJA HIJAU</span>
+                        <span class="badge badge-selesai" style="font-size: 0.9rem; padding: 0.5rem 1rem;">LULUS SIDANG SKRIPSI</span>
                     </div>
                     @if ($sidang->catatan)
                         <div style="font-size: 0.85rem; color: #065f46; margin-top: 0.75rem; border-top: 1px dashed #a7f3d0; padding-top: 0.5rem;">

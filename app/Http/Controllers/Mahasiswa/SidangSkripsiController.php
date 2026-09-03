@@ -75,14 +75,14 @@ class SidangSkripsiController extends Controller
         AktivitasLog::catat(
             $user,
             'Pengajuan Sidang Skripsi',
-            "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan sidang meja hijau untuk judul: '{$skripsi->judul}'"
+            "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan sidang skripsi untuk judul: '{$skripsi->judul}'"
         );
 
         // Notifikasi ke Pengelola (Kaprodi, Admin Prodi, Admin Utama)
         Notifikasi::kirimKePengelola(
             $user->program_studi_id,
             'Pendaftaran Sidang Skripsi Baru',
-            "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan pendaftaran sidang skripsi (meja hijau) untuk judul: '{$skripsi->judul}'.",
+            "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan pendaftaran sidang skripsi untuk judul: '{$skripsi->judul}'.",
             null,
             $user->id
         );

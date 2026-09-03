@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Enums\StatusPengajuan;
+use App\Enums\StatusPenugasanDosen;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class SidangSkripsi extends Model
 {
@@ -61,6 +63,39 @@ class SidangSkripsi extends Model
     public function surat(): HasMany
     {
         return $this->hasMany(Surat::class, 'sidang_skripsi_id')->latest();
+    }
+
+    public function penugasanDosen(): MorphMany
+    {
+        return $this->morphMany(PenugasanDosen::class, 'assignable')->latest('id');
+    }
+
+    public function latestPenugasanPenguji1(): ?PenugasanDosen
+    {
+        return $this->penugasanDosen()->where('peran', 'penguji_1')->latest('id')->first();
+    }
+
+    public function latestPenugasanPenguji2(): ?PenugasanDosen
+    {
+        return $this->penugasanDosen()->where('peran', 'penguji_2')->latest('id')->first();
+    }
+
+    public function isDewanPengujiConfirmed(): bool
+    {
+        $hasPending = $this->penugasanDosen()
+            ->whereIn('peran', ['penguji_1', 'penguji_2'])
+            ->where('status', StatusPenugasanDosen::Menunggu)
+            ->exists();
+
+        if ($hasPending) {
+            return false;
+        }
+
+        if (!$this->penguji_1_id || !$this->penguji_2_id) {
+            return false;
+        }
+
+        return true;
     }
 
     public function isSelesai(): bool

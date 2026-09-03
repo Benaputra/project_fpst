@@ -38,13 +38,13 @@ class NotifikasiRoleTest extends TestCase
         Storage::fake('local');
 
         $this->prodiTI = ProgramStudi::create([
-            'nama' => 'Teknik Informatika',
-            'kode' => 'TI',
+            'nama' => 'Agroteknologi',
+            'kode' => 'AGT',
         ]);
 
         $this->prodiSI = ProgramStudi::create([
-            'nama' => 'Sistem Informasi',
-            'kode' => 'SI',
+            'nama' => 'Agribisnis',
+            'kode' => 'AGB',
         ]);
 
         $this->mahasiswa = User::create([

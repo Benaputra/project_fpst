@@ -25,7 +25,7 @@ class PenetapanTabAndFIFOTest extends TestCase
     {
         parent::setUp();
 
-        $this->prodiTI = ProgramStudi::create(['nama' => 'Teknik Informatika', 'kode' => 'TI']);
+        $this->prodiTI = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
 
         $this->kaprodiTI = User::create([
             'name' => 'Dr. Ratna Wijaya',

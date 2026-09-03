@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use App\Enums\StatusPengajuan;
+use App\Enums\StatusPenugasanDosen;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class PengajuanSkripsi extends Model
 {
@@ -73,6 +75,41 @@ class PengajuanSkripsi extends Model
     public function surat(): HasMany
     {
         return $this->hasMany(Surat::class, 'pengajuan_skripsi_id')->latest();
+    }
+
+    public function penugasanDosen(): MorphMany
+    {
+        return $this->morphMany(PenugasanDosen::class, 'assignable')->latest('id');
+    }
+
+    public function latestPenugasanPembimbing1(): ?PenugasanDosen
+    {
+        return $this->penugasanDosen()->where('peran', 'pembimbing_1')->latest('id')->first();
+    }
+
+    public function latestPenugasanPembimbing2(): ?PenugasanDosen
+    {
+        return $this->penugasanDosen()->where('peran', 'pembimbing_2')->latest('id')->first();
+    }
+
+    public function isPembimbingConfirmed(): bool
+    {
+        // Jika ada penugasan yang masih 'menunggu' atau 'ditolak', maka belum konfirm
+        $hasPending = $this->penugasanDosen()
+            ->whereIn('peran', ['pembimbing_1', 'pembimbing_2'])
+            ->where('status', StatusPenugasanDosen::Menunggu)
+            ->exists();
+
+        if ($hasPending) {
+            return false;
+        }
+
+        // Jika pembimbing 1 belum ditentukan
+        if (!$this->pembimbing_1_id) {
+            return false;
+        }
+
+        return true;
     }
 
     // Helper status

@@ -28,8 +28,8 @@ class MasterDataAdminUtamaTest extends TestCase
     {
         parent::setUp();
 
-        $this->prodiTi = ProgramStudi::create(['nama' => 'Teknik Informatika', 'kode' => 'TI']);
-        $this->prodiSi = ProgramStudi::create(['nama' => 'Sistem Informasi', 'kode' => 'SI']);
+        $this->prodiTi = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
+        $this->prodiSi = ProgramStudi::create(['nama' => 'Agribisnis', 'kode' => 'AGB']);
 
         $this->adminUtama = User::create([
             'name' => 'Admin Utama FPST',
@@ -176,9 +176,9 @@ class MasterDataAdminUtamaTest extends TestCase
 
         // 2. Buat file CSV valid
         $csvContent = "nama,nim,email,kode_prodi,no_hp,password\n"
-            . "Mahasiswa CSV Satu,221000001001,csv1@test.com,TI,081111111111,pass123\n"
-            . "Mahasiswa CSV Dua,222000001002,csv2@test.com,SI,082222222222,\n"
-            . "Mahasiswa CSV Gagal Duplikat,221000001001,csv3@test.com,TI,083333333333,\n" // NIM duplikat
+            . "Mahasiswa CSV Satu,221000001001,csv1@test.com,AGT,081111111111,pass123\n"
+            . "Mahasiswa CSV Dua,222000001002,csv2@test.com,AGB,082222222222,\n"
+            . "Mahasiswa CSV Gagal Duplikat,221000001001,csv3@test.com,AGT,083333333333,\n" // NIM duplikat
             . "Mahasiswa CSV Gagal Prodi,221000001004,csv4@test.com,PRODI_ASING,084444444444,\n";
 
         $file = UploadedFile::fake()->createWithContent('import.csv', $csvContent);

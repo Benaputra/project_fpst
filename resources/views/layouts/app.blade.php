@@ -612,6 +612,134 @@
         .stat-box-value { font-size: 1.6rem; font-weight: 800; color: #1c2b20; margin-top: 0.2rem; }
 
         /* ==================================================== */
+        /* PAGINATION (DESKTOP & MOBILE RESPONSIVE)             */
+        /* ==================================================== */
+        .pagination-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.85rem;
+            padding-top: 1rem;
+            margin-top: 0.75rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+        .pagination-info {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+        .pagination-info-bold {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .pagination-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+        .pagination-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.75rem;
+            min-height: 36px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #2c3f31;
+            background: #ffffff;
+            border: 1px solid #cbd8ce;
+            border-radius: 0.45rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            line-height: 1;
+        }
+        .pagination-btn:hover:not(.pagination-btn-disabled) {
+            background: #eaf1eb;
+            border-color: #446850;
+            color: #1e3525;
+        }
+        .pagination-btn-disabled {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .pagination-icon {
+            width: 1rem !important;
+            height: 1rem !important;
+            min-width: 1rem !important;
+            max-width: 1rem !important;
+            max-height: 1rem !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+            flex-shrink: 0;
+        }
+        .pagination-pages {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .pagination-page-item {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            padding: 0 0.45rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #2c3f31;
+            background: #ffffff;
+            border: 1px solid #cbd8ce;
+            border-radius: 0.45rem;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            user-select: none;
+            line-height: 1;
+        }
+        .pagination-page-item:hover:not(.pagination-active):not(.pagination-dots) {
+            background: #eaf1eb;
+            border-color: #446850;
+            color: #1e3525;
+        }
+        .pagination-page-item.pagination-active {
+            background: #446850;
+            border-color: #446850;
+            color: #ffffff;
+            font-weight: 700;
+            cursor: default;
+            box-shadow: 0 1px 2px rgba(68, 104, 80, 0.25);
+        }
+        .pagination-page-item.pagination-dots {
+            border: none;
+            background: transparent;
+            color: #64748b;
+            cursor: default;
+            min-width: 20px;
+            padding: 0;
+        }
+        /* Fallback defensive rules against unstyled SVGs in pagination */
+        nav[role="navigation"] svg,
+        .pagination svg,
+        .pagination-wrapper svg,
+        svg.w-5,
+        svg.h-5 {
+            width: 1rem !important;
+            height: 1rem !important;
+            max-width: 1rem !important;
+            max-height: 1rem !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+        }
+
+        /* ==================================================== */
         /* MEDIA QUERIES UNTUK SMARTPHONE / TABLET (< 768px)    */
         /* ==================================================== */
         @media (max-width: 768px) {
@@ -674,6 +802,56 @@
             .step-label {
                 font-size: 0.65rem;
             }
+
+            /* Responsive Pagination Mobile */
+            .pagination-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            .pagination-info {
+                text-align: center;
+                width: 100%;
+                font-size: 0.78rem;
+            }
+            .pagination-controls {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                gap: 0.35rem;
+            }
+            .pagination-btn {
+                flex: 1;
+                min-height: 38px;
+                padding: 0.4rem 0.5rem;
+                font-size: 0.78rem;
+                gap: 0.25rem;
+            }
+            .pagination-pages {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.2rem;
+            }
+            .pagination-page-item {
+                min-width: 32px;
+                height: 34px;
+                font-size: 0.78rem;
+                padding: 0 0.35rem;
+            }
+        }
+
+        @media (max-width: 440px) {
+            .pagination-btn {
+                padding: 0.4rem 0.35rem;
+                font-size: 0.72rem;
+            }
+            .pagination-page-item {
+                min-width: 28px;
+                height: 32px;
+                font-size: 0.72rem;
+            }
         }
     </style>
 </head>
@@ -693,7 +871,7 @@
                     <img src="{{ asset('images/logo.png') }}" alt="Logo FPST Universitas Panca Bhakti" class="brand-logo-img">
                     <div class="brand-text">
                         <div class="brand-title">Portal Skripsi</div>
-                        <div class="brand-subtitle">{{ $user->programStudi ? $user->programStudi->nama : 'Fakultas FPST UPB' }}</div>
+                        <div class="brand-subtitle">{{ $user->programStudi ? $user->programStudi->nama : 'Fakultas Pertanian, Sains dan Teknologi (FPST)' }}</div>
                     </div>
                 </a>
 

@@ -27,7 +27,7 @@ class AdministrasiSkripsiController extends Controller
         $cariSurat = $request->input('q_surat');
 
         // Tab 1: SK Bimbingan
-        $querySkripsi = PengajuanSkripsi::with(['mahasiswa', 'programStudi', 'pembimbing1', 'pembimbing2']);
+        $querySkripsi = PengajuanSkripsi::with(['mahasiswa', 'programStudi', 'pembimbing1', 'pembimbing2', 'penugasanDosen.dosen']);
         if ($prodiFilter) {
             $querySkripsi->where('program_studi_id', $prodiFilter);
         }
@@ -177,6 +177,11 @@ class AdministrasiSkripsiController extends Controller
     {
         $user = $request->user();
 
+        // Cek konfirmasi pembimbing (Admin Utama berhak bypass/override)
+        if (!$user->isAdminUtama() && !$skripsi->isPembimbingConfirmed()) {
+            return back()->with('error', 'SK Bimbingan belum dapat diterbitkan karena penunjukan dosen pembimbing masih menunggu konfirmasi kesediaan atau belum disetujui.');
+        }
+
         $validated = $request->validate([
             'nomor_sk_bimbingan' => ['required', 'string', 'max:100'],
             'tgl_sk_bimbingan' => ['required', 'date'],
@@ -288,6 +293,11 @@ class AdministrasiSkripsiController extends Controller
     public function updateJadwalDanSkSeminar(Request $request, SeminarSkripsi $seminar): RedirectResponse
     {
         $user = $request->user();
+
+        // Cek konfirmasi penguji seminar (Admin Utama berhak bypass/override)
+        if (!$user->isAdminUtama() && !$seminar->isPengujiConfirmed()) {
+            return back()->with('error', 'Jadwal dan dokumen seminar belum dapat diterbitkan karena penugasan dosen penguji seminar masih menunggu konfirmasi kesediaan atau belum disetujui.');
+        }
 
         $validated = $request->validate([
             'tgl_seminar' => ['required', 'date'],
@@ -497,6 +507,11 @@ class AdministrasiSkripsiController extends Controller
     {
         $user = $request->user();
 
+        // Cek konfirmasi dewan penguji sidang (Admin Utama berhak bypass/override)
+        if (!$user->isAdminUtama() && !$sidang->isDewanPengujiConfirmed()) {
+            return back()->with('error', 'Jadwal dan dokumen sidang belum dapat diterbitkan karena penugasan dewan penguji sidang masih menunggu konfirmasi kesediaan atau belum disetujui.');
+        }
+
         $validated = $request->validate([
             'tgl_sidang' => ['required', 'date'],
             'jam_sidang' => ['required', 'string'],
@@ -600,7 +615,7 @@ class AdministrasiSkripsiController extends Controller
         Notifikasi::kirim(
             $mhs->id,
             'Jadwal & Dokumen Sidang Diterbitkan',
-            "Jadwal sidang meja hijau Anda telah ditetapkan: {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}. Silakan unduh surat undangan sidang.",
+            "Jadwal sidang skripsi Anda telah ditetapkan: {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}. Silakan unduh surat undangan sidang.",
             route('mahasiswa.sidang.index')
         );
 
@@ -609,7 +624,7 @@ class AdministrasiSkripsiController extends Controller
             Notifikasi::kirim(
                 $sidang->penguji_1_id,
                 'Jadwal Sidang Skripsi Mahasiswa Ditetapkan',
-                "Jadwal sidang meja hijau untuk mahasiswa {$mhs->name} ({$nim}) telah ditetapkan: {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}.",
+                "Jadwal sidang skripsi untuk mahasiswa {$mhs->name} ({$nim}) telah ditetapkan: {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}.",
                 route('dosen.bimbingan.index')
             );
         }
@@ -618,7 +633,7 @@ class AdministrasiSkripsiController extends Controller
             Notifikasi::kirim(
                 $sidang->penguji_2_id,
                 'Jadwal Sidang Skripsi Mahasiswa Ditetapkan',
-                "Jadwal sidang meja hijau untuk mahasiswa {$mhs->name} ({$nim}) telah ditetapkan: {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}.",
+                "Jadwal sidang skripsi untuk mahasiswa {$mhs->name} ({$nim}) telah ditetapkan: {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}.",
                 route('dosen.bimbingan.index')
             );
         }
@@ -629,7 +644,7 @@ class AdministrasiSkripsiController extends Controller
             Notifikasi::kirim(
                 $skripsi->pembimbing_1_id,
                 'Undangan Sidang Skripsi Mahasiswa Bimbingan',
-                "Mahasiswa bimbingan Anda {$mhs->name} ({$nim}) telah dijadwalkan sidang meja hijau pada {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}. Surat undangan sidang telah diterbitkan.",
+                "Mahasiswa bimbingan Anda {$mhs->name} ({$nim}) telah dijadwalkan sidang skripsi pada {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}. Surat undangan sidang telah diterbitkan.",
                 route('dosen.bimbingan.index')
             );
         }
@@ -638,7 +653,7 @@ class AdministrasiSkripsiController extends Controller
             Notifikasi::kirim(
                 $skripsi->pembimbing_2_id,
                 'Undangan Sidang Skripsi Mahasiswa Bimbingan',
-                "Mahasiswa bimbingan Anda {$mhs->name} ({$nim}) telah dijadwalkan sidang meja hijau pada {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}. Surat undangan sidang telah diterbitkan.",
+                "Mahasiswa bimbingan Anda {$mhs->name} ({$nim}) telah dijadwalkan sidang skripsi pada {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}. Surat undangan sidang telah diterbitkan.",
                 route('dosen.bimbingan.index')
             );
         }
@@ -647,7 +662,7 @@ class AdministrasiSkripsiController extends Controller
         Notifikasi::kirimKePengelola(
             $sidang->pengajuanSkripsi->program_studi_id,
             'Jadwal Sidang Skripsi Ditetapkan',
-            "Jadwal sidang meja hijau untuk mahasiswa {$mhs->name} ({$nim}) telah ditetapkan pada {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}.",
+            "Jadwal sidang skripsi untuk mahasiswa {$mhs->name} ({$nim}) telah ditetapkan pada {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}.",
             null,
             $user->id,
             [UserRole::AdminUtama, UserRole::Kaprodi]
@@ -692,7 +707,7 @@ class AdministrasiSkripsiController extends Controller
         Notifikasi::kirim(
             $mhs->id,
             $isUpdateNilai ? 'Pembaruan Nilai Sidang Skripsi' : 'Selamat! Anda Dinyatakan LULUS Sidang Skripsi',
-            "Nilai akhir sidang meja hijau Anda adalah: {$validated['nilai_sidang']}. Anda resmi dinyatakan LULUS Sidang Skripsi.",
+            "Nilai akhir sidang skripsi Anda adalah: {$validated['nilai_sidang']}. Anda resmi dinyatakan LULUS Sidang Skripsi.",
             route('mahasiswa.sidang.index')
         );
 
@@ -700,7 +715,7 @@ class AdministrasiSkripsiController extends Controller
         Notifikasi::kirimKePengelola(
             $sidang->pengajuanSkripsi->program_studi_id,
             'Hasil & Nilai Akhir Sidang Skripsi',
-            "Sidang meja hijau mahasiswa {$mhs->name} ({$nim}) telah selesai dinilai dengan hasil skor {$validated['nilai_sidang']}.",
+            "Sidang skripsi mahasiswa {$mhs->name} ({$nim}) telah selesai dinilai dengan hasil skor {$validated['nilai_sidang']}.",
             null,
             $user->id,
             [UserRole::AdminUtama, UserRole::Kaprodi]

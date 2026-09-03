@@ -28,13 +28,14 @@ class PengajuanSkripsiWorkflowTest extends TestCase
     private User $dosen1;
     private User $dosen2;
     private User $dosen3;
+    private User $dosen4;
 
     protected function setUp(): void
     {
         parent::setUp();
         Storage::fake('local');
 
-        $this->prodi = ProgramStudi::create(['nama' => 'Teknik Informatika', 'kode' => 'TI']);
+        $this->prodi = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
 
         $this->mahasiswa = User::create([
             'name' => 'Budi Santoso',
@@ -97,6 +98,15 @@ class PengajuanSkripsiWorkflowTest extends TestCase
             'role' => UserRole::Dosen,
             'program_studi_id' => $this->prodi->id,
         ]);
+
+        $this->dosen4 = User::create([
+            'name' => 'Siti Aminah, M.Kom.',
+            'email' => 'siti@example.test',
+            'nomor_induk' => '1000000007',
+            'password' => 'password',
+            'role' => UserRole::Dosen,
+            'program_studi_id' => $this->prodi->id,
+        ]);
     }
 
     public function test_full_3_phase_lifecycle_end_to_end_with_logs_and_notifications(): void
@@ -146,7 +156,21 @@ class PengajuanSkripsiWorkflowTest extends TestCase
             'judul' => 'Penugasan Pembimbing Utama (1)',
         ]);
 
-        // 3. Admin menerbitkan SK Bimbingan
+        // 2b. Admin mencoba terbitkan SK sebelum dosen menyetujui -> Diblokir!
+        $responseBlocked = $this->actingAs($this->admin)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
+            'nomor_sk_bimbingan' => 'SK/099/FPST/TI/2026',
+            'tgl_sk_bimbingan' => '2026-09-01',
+        ]);
+        $responseBlocked->assertSessionHas('error');
+
+        // 2c. Dosen 1 & 2 mengonfirmasi kesediaan (menyetujui)
+        $penugasanP1 = \App\Models\PenugasanDosen::where('assignable_type', PengajuanSkripsi::class)->where('dosen_id', $this->dosen1->id)->first();
+        $this->actingAs($this->dosen1)->post(route('dosen.penugasan.respon', $penugasanP1->id), ['aksi' => 'terima']);
+
+        $penugasanP2 = \App\Models\PenugasanDosen::where('assignable_type', PengajuanSkripsi::class)->where('dosen_id', $this->dosen2->id)->first();
+        $this->actingAs($this->dosen2)->post(route('dosen.penugasan.respon', $penugasanP2->id), ['aksi' => 'terima']);
+
+        // 3. Admin menerbitkan SK Bimbingan setelah konfirmasi lengkap
         $response = $this->actingAs($this->admin)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
             'nomor_sk_bimbingan' => 'SK/099/FPST/TI/2026',
             'tgl_sk_bimbingan' => '2026-09-01',
@@ -191,6 +215,10 @@ class PengajuanSkripsiWorkflowTest extends TestCase
             'judul' => 'Penugasan Dosen Penguji Seminar',
         ]);
 
+        // 5b. Dosen Penguji Seminar menyetujui penugasan
+        $penugasanSem = \App\Models\PenugasanDosen::where('assignable_type', SeminarSkripsi::class)->where('dosen_id', $this->dosen3->id)->first();
+        $this->actingAs($this->dosen3)->post(route('dosen.penugasan.respon', $penugasanSem->id), ['aksi' => 'terima']);
+
         // 6. Admin input jadwal & SK seminar, kemudian finalisasi nilai seminar
         $this->actingAs($this->admin)->post(route('admin.seminar.jadwal-sk', $seminar->id), [
             'tgl_seminar' => '2026-09-15',
@@ -215,7 +243,7 @@ class PengajuanSkripsiWorkflowTest extends TestCase
         ]);
 
         // ==========================================
-        // FASE 3: Pengajuan Sidang Skripsi (Meja Hijau)
+        // FASE 3: Pengajuan Sidang Skripsi
         // ==========================================
 
         // 7. Mahasiswa ajukan sidang skripsi + 4 berkas
@@ -230,18 +258,32 @@ class PengajuanSkripsiWorkflowTest extends TestCase
         $sidang = SidangSkripsi::first();
         $this->assertNotNull($sidang);
 
-        // 8. Kaprodi tetapkan 2 Dosen Penguji Sidang
-        $response = $this->actingAs($this->kaprodi)->post(route('kaprodi.sidang.penguji', $sidang->id), [
+        // 8a. Coba tetapkan Pembimbing 2 sebagai penguji sidang -> Harus diblokir oleh aturan sistem!
+        $responseBlocked = $this->actingAs($this->kaprodi)->post(route('kaprodi.sidang.penguji', $sidang->id), [
             'penguji_1_id' => $this->dosen2->id,
             'penguji_2_id' => $this->dosen3->id,
         ]);
+        $responseBlocked->assertSessionHasErrors(['penguji_1_id']);
+
+        // 8. Kaprodi tetapkan 2 Dosen Penguji Sidang yang sah (Dosen 4 dan Dosen 3 / Penguji Seminar)
+        $response = $this->actingAs($this->kaprodi)->post(route('kaprodi.sidang.penguji', $sidang->id), [
+            'penguji_1_id' => $this->dosen4->id,
+            'penguji_2_id' => $this->dosen3->id,
+        ]);
         $response->assertSessionHas('success');
+
+        // 8b. Penguji 1 & 2 menyetujui penugasan sidang
+        $penugasanSdg1 = \App\Models\PenugasanDosen::where('assignable_type', SidangSkripsi::class)->where('dosen_id', $this->dosen4->id)->first();
+        $this->actingAs($this->dosen4)->post(route('dosen.penugasan.respon', $penugasanSdg1->id), ['aksi' => 'terima']);
+
+        $penugasanSdg2 = \App\Models\PenugasanDosen::where('assignable_type', SidangSkripsi::class)->where('dosen_id', $this->dosen3->id)->first();
+        $this->actingAs($this->dosen3)->post(route('dosen.penugasan.respon', $penugasanSdg2->id), ['aksi' => 'terima']);
 
         // 9. Admin input jadwal & SK sidang, kemudian finalisasi kelulusan
         $this->actingAs($this->admin)->post(route('admin.sidang.jadwal-sk', $sidang->id), [
             'tgl_sidang' => '2026-09-25',
             'jam_sidang' => '13:00 - 15:00',
-            'ruangan' => 'Ruang Meja Hijau',
+            'ruangan' => 'Ruang Sidang Skripsi',
             'nomor_undangan_sidang' => 'UND-SDG/01/2026',
             'nomor_sk_sidang' => 'SK-SDG/01/2026',
         ]);

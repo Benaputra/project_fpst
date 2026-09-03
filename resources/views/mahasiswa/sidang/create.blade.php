@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Pendaftaran Sidang Skripsi')
-@section('page_title', 'Formulir Pendaftaran Sidang Skripsi (Meja Hijau)')
+@section('page_title', 'Formulir Pendaftaran Sidang Skripsi')
 
 @section('content')
 
@@ -26,7 +26,7 @@
             </div>
 
             <h3 style="font-size: 0.95rem; font-weight: 700; color: #142017; margin-bottom: 0.35rem;">Unggah 4 Berkas Persyaratan Sidang Skripsi:</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">Semua berkas di bawah ini wajib diunggah untuk kelengkapan berkas meja hijau.</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">Semua berkas di bawah ini wajib diunggah untuk kelengkapan berkas sidang skripsi.</p>
 
             <div class="form-group">
                 <label for="file_naskah_sidang" class="form-label">1. File Naskah Skripsi Lengkap Final (PDF, Maks 15MB) <span style="color: #dc2626;">*</span></label>

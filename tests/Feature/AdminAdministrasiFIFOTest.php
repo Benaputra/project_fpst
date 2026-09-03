@@ -25,7 +25,7 @@ class AdminAdministrasiFIFOTest extends TestCase
     {
         parent::setUp();
 
-        $this->prodiTI = ProgramStudi::create(['nama' => 'Teknik Informatika', 'kode' => 'TI']);
+        $this->prodiTI = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
 
         $this->adminTI = User::create([
             'name' => 'Admin Prodi TI',
