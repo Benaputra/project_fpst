@@ -6,6 +6,7 @@ use App\Enums\StatusPengajuan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SeminarSkripsi extends Model
 {
@@ -49,6 +50,11 @@ class SeminarSkripsi extends Model
     public function penguji(): BelongsTo
     {
         return $this->belongsTo(User::class, 'penguji_seminar_id');
+    }
+
+    public function surat(): HasMany
+    {
+        return $this->hasMany(Surat::class, 'seminar_skripsi_id')->latest();
     }
 
     public function isSelesai(): bool

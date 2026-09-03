@@ -3,16 +3,17 @@
 @section('title', 'Masuk - Portal Skripsi')
 
 @section('content')
-<div style="max-width: 420px; width: 100%;">
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <div style="display: inline-flex; width: 3.5rem; height: 3.5rem; background: linear-gradient(135deg, #5b8769, #385642); border-radius: 1rem; align-items: center; justify-content: center; color: #fff; font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; box-shadow: 0 10px 25px rgba(68,104,80,0.25);">
-            FP
+<div style="max-width: 440px; width: 100%; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 1.75rem;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.85rem;">
+            <img src="{{ asset('images/logo.png') }}" alt="Logo Fakultas Pertanian, Sains dan Teknologi - UPB" style="width: 5.25rem; height: 5.25rem; max-width: 100%; object-fit: contain; filter: drop-shadow(0 8px 20px rgba(0,0,0,0.15)); transition: transform 0.2s ease;">
         </div>
-        <h1 style="font-size: 1.5rem; font-weight: 800; color: #142017;">Portal Skripsi</h1>
-        <p style="font-size: 0.88rem; color: #576d5c; margin-top: 0.25rem;">Masuk ke sistem pengajuan & administrasi skripsi</p>
+        <h1 style="font-size: 1.45rem; font-weight: 800; color: #142017; letter-spacing: -0.01em;">Portal Skripsi</h1>
+        <p style="font-size: 0.88rem; font-weight: 600; color: #446850; margin-top: 0.2rem;">Fakultas Pertanian, Sains dan Teknologi</p>
+        <p style="font-size: 0.78rem; color: #627967; margin-top: 0.1rem;">Universitas Panca Bhakti</p>
     </div>
 
-    <div class="card" style="padding: 2rem; box-shadow: 0 20px 40px rgba(24,36,28,0.06);">
+    <div class="card" style="padding: 1.75rem; box-shadow: 0 20px 40px rgba(24,36,28,0.06); border-radius: 1rem;">
         <form method="POST" action="{{ route('login.store') }}">
             @csrf
 

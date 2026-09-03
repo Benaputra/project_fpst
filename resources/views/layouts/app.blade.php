@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
     <title>@yield('title', 'Sistem Administrasi Skripsi')</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -52,36 +54,51 @@
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .sidebar-brand {
-            padding: 1.25rem 1.25rem;
+            padding: 1.15rem 1.25rem;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.85rem;
             border-bottom: 1px solid var(--sidebar-border);
             text-decoration: none;
             color: inherit;
+            transition: background 0.15s ease;
         }
-        .brand-icon {
-            width: 2.25rem;
-            height: 2.25rem;
-            background: linear-gradient(135deg, #5b8769, #385642);
-            border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            color: #fff;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        .sidebar-brand:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .brand-logo-img {
+            width: 2.6rem;
+            height: 2.6rem;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
             flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+        .sidebar-brand:hover .brand-logo-img {
+            transform: scale(1.05);
+        }
+        .brand-text {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
         }
         .brand-title {
             font-size: 0.95rem;
             font-weight: 700;
             line-height: 1.2;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .brand-subtitle {
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             color: #9cb1a0;
+            line-height: 1.25;
+            margin-top: 0.15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .sidebar-menu {
             padding: 1rem 0.75rem;
@@ -201,6 +218,20 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            min-width: 0;
+        }
+        .topbar-brand-mobile {
+            display: none;
+            align-items: center;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .topbar-logo-img {
+            width: 2.1rem;
+            height: 2.1rem;
+            object-fit: contain;
+            display: block;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
         }
         .menu-toggle-btn {
             display: none;
@@ -214,6 +245,7 @@
             font-size: 1.15rem;
             color: var(--text-main);
             cursor: pointer;
+            flex-shrink: 0;
         }
         .topbar-title {
             font-size: 1.05rem;
@@ -601,6 +633,9 @@
             .menu-toggle-btn {
                 display: flex;
             }
+            .topbar-brand-mobile {
+                display: flex;
+            }
             .topbar {
                 padding: 0.65rem 1rem;
             }
@@ -655,10 +690,10 @@
             <!-- Sidebar (Desktop & Mobile Drawer) -->
             <aside class="sidebar" id="sidebar">
                 <a href="{{ route('dashboard') }}" class="sidebar-brand">
-                    <div class="brand-icon">FP</div>
-                    <div>
+                    <img src="{{ asset('images/logo.png') }}" alt="Logo FPST Universitas Panca Bhakti" class="brand-logo-img">
+                    <div class="brand-text">
                         <div class="brand-title">Portal Skripsi</div>
-                        <div class="brand-subtitle">{{ $user->programStudi ? $user->programStudi->nama : 'Fakultas FPST' }}</div>
+                        <div class="brand-subtitle">{{ $user->programStudi ? $user->programStudi->nama : 'Fakultas FPST UPB' }}</div>
                     </div>
                 </a>
 
@@ -688,8 +723,8 @@
                         </a>
                     @endif
 
-                    @if ($user->isKaprodi())
-                        <div class="menu-label">Menu Kaprodi</div>
+                    @if ($user->isKaprodi() || $user->isAdminUtama())
+                        <div class="menu-label">{{ $user->isAdminUtama() ? 'Penetapan Pembimbing & Penguji' : 'Menu Kaprodi' }}</div>
                         <a href="{{ route('kaprodi.penetapan.index') }}" class="nav-link {{ request()->routeIs('kaprodi.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
                             <span>⚖️</span> Penetapan Pembimbing & Penguji
                         </a>
@@ -734,6 +769,9 @@
                         <button type="button" class="menu-toggle-btn" onclick="toggleSidebar(true)" title="Menu">
                             ☰
                         </button>
+                        <a href="{{ route('dashboard') }}" class="topbar-brand-mobile" title="Portal Skripsi UPB">
+                            <img src="{{ asset('images/logo.png') }}" alt="Logo FPST UPB" class="topbar-logo-img">
+                        </a>
                         <div class="topbar-title">@yield('page_title', 'Administrasi Skripsi')</div>
                     </div>
 
@@ -806,9 +844,15 @@
                         <div>Bimbingan</div>
                     </a>
                 @elseif ($user->isAdmin())
+                    @if ($user->isAdminUtama())
+                        <a href="{{ route('kaprodi.penetapan.index') }}" class="bottom-nav-item {{ request()->routeIs('kaprodi.*') ? 'active' : '' }}">
+                            <div class="bottom-nav-icon">⚖️</div>
+                            <div>Penetapan</div>
+                        </a>
+                    @endif
                     <a href="{{ route('admin.administrasi.index') }}" class="bottom-nav-item {{ request()->routeIs('admin.administrasi.*') ? 'active' : '' }}">
                         <div class="bottom-nav-icon">📂</div>
-                        <div>Kelola SK</div>
+                        <div>Surat & SK</div>
                     </a>
                     @if ($user->isAdminUtama())
                         <a href="{{ route('admin.log-aktivitas.index') }}" class="bottom-nav-item {{ request()->routeIs('admin.log-aktivitas.*') ? 'active' : '' }}">

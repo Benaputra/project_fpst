@@ -6,6 +6,7 @@ use App\Enums\StatusPengajuan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PengajuanSkripsi extends Model
@@ -67,6 +68,11 @@ class PengajuanSkripsi extends Model
     public function sidang(): HasOne
     {
         return $this->hasOne(SidangSkripsi::class, 'pengajuan_skripsi_id');
+    }
+
+    public function surat(): HasMany
+    {
+        return $this->hasMany(Surat::class, 'pengajuan_skripsi_id')->latest();
     }
 
     // Helper status

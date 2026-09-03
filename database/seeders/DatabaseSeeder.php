@@ -10,6 +10,7 @@ use App\Models\PengajuanSkripsi;
 use App\Models\ProgramStudi;
 use App\Models\SeminarSkripsi;
 use App\Models\SidangSkripsi;
+use App\Models\Surat;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -164,7 +165,7 @@ class DatabaseSeeder extends Seeder
                 'program_studi_id' => $ti->id,
                 'no_hp' => '081300000002',
             ]);
-            PengajuanSkripsi::create([
+            $skripsi2 = PengajuanSkripsi::create([
                 'mahasiswa_id' => $mhs2->id,
                 'program_studi_id' => $ti->id,
                 'judul' => 'Pengembangan Aplikasi Pemantauan Emisi Karbon Berbasis Internet of Things',
@@ -174,6 +175,18 @@ class DatabaseSeeder extends Seeder
                 'nomor_sk_bimbingan' => 'SK/001/FPST/TI/2026',
                 'tgl_sk_bimbingan' => now()->subMonths(2),
                 'status' => StatusPengajuan::Selesai,
+            ]);
+            Surat::create([
+                'nomor_surat' => 'SK/001/FPST/TI/2026',
+                'jenis_surat' => 'sk_bimbingan',
+                'nama_surat' => 'SK Pembimbing Skripsi - Siti Rahma',
+                'pengajuan_skripsi_id' => $skripsi2->id,
+                'program_studi_id' => $ti->id,
+                'tgl_surat' => now()->subMonths(2),
+                'versi' => 1,
+                'status' => 'aktif',
+                'diterbitkan_oleh' => $adminTi->id,
+                'keterangan' => 'Penerbitan awal SK Pembimbing Skripsi',
             ]);
 
             // Mahasiswa 3: Seminar Selesai (Status: selesai) -> Siap ajukan sidang
@@ -197,7 +210,20 @@ class DatabaseSeeder extends Seeder
                 'tgl_sk_bimbingan' => now()->subMonths(4),
                 'status' => StatusPengajuan::Selesai,
             ]);
-            SeminarSkripsi::create([
+            Surat::create([
+                'nomor_surat' => 'SK/002/FPST/SI/2026',
+                'jenis_surat' => 'sk_bimbingan',
+                'nama_surat' => 'SK Pembimbing Skripsi - Rizky Maulana',
+                'pengajuan_skripsi_id' => $skripsi3->id,
+                'program_studi_id' => $si->id,
+                'tgl_surat' => now()->subMonths(4),
+                'versi' => 1,
+                'status' => 'aktif',
+                'diterbitkan_oleh' => $adminSi->id,
+                'keterangan' => 'Penerbitan awal SK Pembimbing Skripsi',
+            ]);
+
+            $seminar3 = SeminarSkripsi::create([
                 'pengajuan_skripsi_id' => $skripsi3->id,
                 'penguji_seminar_id' => $dosen1->id,
                 'tgl_seminar' => now()->subMonth(),
@@ -208,6 +234,32 @@ class DatabaseSeeder extends Seeder
                 'nilai_seminar' => 86.50,
                 'status' => StatusPengajuan::Selesai,
                 'catatan' => 'Lanjut ke tahap penelitian lapangan dan perbaikan instrumen kuesioner.',
+            ]);
+            Surat::create([
+                'nomor_surat' => 'UND/012/FPST/SI/2026',
+                'jenis_surat' => 'undangan_seminar',
+                'nama_surat' => 'Surat Undangan Seminar - Rizky Maulana',
+                'pengajuan_skripsi_id' => $skripsi3->id,
+                'seminar_skripsi_id' => $seminar3->id,
+                'program_studi_id' => $si->id,
+                'tgl_surat' => now()->subMonth(),
+                'versi' => 1,
+                'status' => 'aktif',
+                'diterbitkan_oleh' => $adminSi->id,
+                'keterangan' => 'Surat Undangan Seminar Skripsi',
+            ]);
+            Surat::create([
+                'nomor_surat' => 'SK-SEM/005/FPST/2026',
+                'jenis_surat' => 'sk_seminar',
+                'nama_surat' => 'SK Penguji Seminar - Rizky Maulana',
+                'pengajuan_skripsi_id' => $skripsi3->id,
+                'seminar_skripsi_id' => $seminar3->id,
+                'program_studi_id' => $si->id,
+                'tgl_surat' => now()->subMonth(),
+                'versi' => 1,
+                'status' => 'aktif',
+                'diterbitkan_oleh' => $adminSi->id,
+                'keterangan' => 'Penerbitan SK Penguji Seminar',
             ]);
 
             // Mahasiswa 4: Belum mengajukan apa-apa

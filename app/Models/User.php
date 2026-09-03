@@ -121,4 +121,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(AktivitasLog::class)->latest();
     }
+
+    public function suratDiterbitkan(): HasMany
+    {
+        return $this->hasMany(Surat::class, 'diterbitkan_oleh')->latest();
+    }
 }

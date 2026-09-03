@@ -63,9 +63,21 @@
                             </a>
                         @endif
 
+                        @if ($skripsi->seminar && $skripsi->seminar->file_undangan_seminar)
+                            <a href="{{ route('dokumen.download', base64_encode($skripsi->seminar->file_undangan_seminar)) }}" class="btn btn-success btn-sm">
+                                ✉️ Undangan Seminar (PDF)
+                            </a>
+                        @endif
+
                         @if ($skripsi->sidang && $skripsi->sidang->file_naskah_sidang)
                             <a href="{{ route('dokumen.download', base64_encode($skripsi->sidang->file_naskah_sidang)) }}" class="btn btn-secondary btn-sm">
                                 📘 Naskah Sidang Final
+                            </a>
+                        @endif
+
+                        @if ($skripsi->sidang && $skripsi->sidang->file_undangan_sidang)
+                            <a href="{{ route('dokumen.download', base64_encode($skripsi->sidang->file_undangan_sidang)) }}" class="btn btn-primary btn-sm">
+                                ✉️ Undangan Sidang (PDF)
                             </a>
                         @endif
 
@@ -75,6 +87,55 @@
                             </a>
                         @endif
                     </div>
+
+                    <!-- Undangan & Jadwal Seminar untuk Pembimbing -->
+                    @if ($skripsi->seminar && ($skripsi->seminar->tgl_seminar || $skripsi->seminar->file_undangan_seminar))
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 0.5rem; padding: 0.85rem 1rem; margin-top: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+                            <div>
+                                <div style="font-weight: 700; color: #166534; font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem;">
+                                    <span>✉️</span> Undangan Seminar Proposal/Hasil Mahasiswa Bimbingan
+                                </div>
+                                <div style="font-size: 0.82rem; color: #334155; margin-top: 0.2rem;">
+                                    <strong>Jadwal:</strong> {{ $skripsi->seminar->tgl_seminar ? $skripsi->seminar->tgl_seminar->translatedFormat('l, d F Y') . ' (' . $skripsi->seminar->jam_seminar . ')' : 'Jadwal belum ditentukan' }}
+                                    &bull; Ruangan: <strong>{{ $skripsi->seminar->ruangan ?? '-' }}</strong>
+                                    @if ($skripsi->seminar->nomor_undangan_seminar)
+                                        &bull; No. Undangan: <strong>{{ $skripsi->seminar->nomor_undangan_seminar }}</strong>
+                                    @endif
+                                    @if ($skripsi->seminar->penguji)
+                                        &bull; Penguji: <strong>{{ $skripsi->seminar->penguji->name }}</strong>
+                                    @endif
+                                </div>
+                            </div>
+                            @if ($skripsi->seminar->file_undangan_seminar)
+                                <a href="{{ route('dokumen.download', base64_encode($skripsi->seminar->file_undangan_seminar)) }}" class="btn btn-success btn-sm" style="font-weight: 600;">
+                                    📥 Unduh Undangan Seminar (PDF)
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+
+                    <!-- Undangan & Jadwal Sidang untuk Pembimbing -->
+                    @if ($skripsi->sidang && ($skripsi->sidang->tgl_sidang || $skripsi->sidang->file_undangan_sidang))
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.5rem; padding: 0.85rem 1rem; margin-top: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+                            <div>
+                                <div style="font-weight: 700; color: #1e40af; font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem;">
+                                    <span>✉️</span> Undangan Sidang Meja Hijau Mahasiswa Bimbingan
+                                </div>
+                                <div style="font-size: 0.82rem; color: #334155; margin-top: 0.2rem;">
+                                    <strong>Jadwal:</strong> {{ $skripsi->sidang->tgl_sidang ? $skripsi->sidang->tgl_sidang->translatedFormat('l, d F Y') . ' (' . $skripsi->sidang->jam_sidang . ')' : 'Jadwal belum ditentukan' }}
+                                    &bull; Ruangan: <strong>{{ $skripsi->sidang->ruangan ?? '-' }}</strong>
+                                    @if ($skripsi->sidang->nomor_undangan_sidang)
+                                        &bull; No. Undangan: <strong>{{ $skripsi->sidang->nomor_undangan_sidang }}</strong>
+                                    @endif
+                                </div>
+                            </div>
+                            @if ($skripsi->sidang->file_undangan_sidang)
+                                <a href="{{ route('dokumen.download', base64_encode($skripsi->sidang->file_undangan_sidang)) }}" class="btn btn-primary btn-sm" style="font-weight: 600;">
+                                    📥 Unduh Berkas Undangan (PDF)
+                                </a>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             @empty
                 <div style="text-align: center; color: var(--text-muted); padding: 3rem;">
@@ -128,7 +189,7 @@
                             @endif
                             @if ($seminar->file_undangan_seminar)
                                 <a href="{{ route('dokumen.download', base64_encode($seminar->file_undangan_seminar)) }}" class="btn btn-secondary btn-sm">
-                                    ✉️ Undangan
+                                    ✉️ Unduh Undangan Seminar (PDF)
                                 </a>
                             @endif
                         </div>
