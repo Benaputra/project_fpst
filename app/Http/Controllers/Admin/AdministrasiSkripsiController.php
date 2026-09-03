@@ -12,6 +12,7 @@ use App\Models\ProgramStudi;
 use App\Models\SeminarSkripsi;
 use App\Models\SidangSkripsi;
 use App\Models\Surat;
+use App\Services\SuratUndanganService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -290,7 +291,7 @@ class AdministrasiSkripsiController extends Controller
         return back()->with('success', $msg);
     }
 
-    public function updateJadwalDanSkSeminar(Request $request, SeminarSkripsi $seminar): RedirectResponse
+    public function updateJadwalDanSkSeminar(Request $request, SeminarSkripsi $seminar, SuratUndanganService $suratService): RedirectResponse
     {
         $user = $request->user();
 
@@ -325,6 +326,15 @@ class AdministrasiSkripsiController extends Controller
         if ($request->hasFile('file_undangan_seminar')) {
             $ext = $request->file('file_undangan_seminar')->getClientOriginalExtension() ?: 'pdf';
             $fileUndangan = $request->file('file_undangan_seminar')->storeAs('seminar/undangan', "Undangan_Seminar_{$nim}_" . time() . ".{$ext}");
+            $data['file_undangan_seminar'] = $fileUndangan;
+        } elseif (!empty($validated['nomor_undangan_seminar'])) {
+            // Otomatis buat surat undangan seminar jika nomor undangan diisi dan file tidak diunggah manual
+            $seminar->fill($data);
+            $fileUndangan = $suratService->generateUndanganSeminar(
+                $seminar,
+                $validated['nomor_undangan_seminar'],
+                withSignature: $user->isAdminUtama()
+            );
             $data['file_undangan_seminar'] = $fileUndangan;
         }
 
@@ -503,7 +513,7 @@ class AdministrasiSkripsiController extends Controller
         return back()->with('success', $msg);
     }
 
-    public function updateJadwalDanSkSidang(Request $request, SidangSkripsi $sidang): RedirectResponse
+    public function updateJadwalDanSkSidang(Request $request, SidangSkripsi $sidang, SuratUndanganService $suratService): RedirectResponse
     {
         $user = $request->user();
 
@@ -538,6 +548,15 @@ class AdministrasiSkripsiController extends Controller
         if ($request->hasFile('file_undangan_sidang')) {
             $ext = $request->file('file_undangan_sidang')->getClientOriginalExtension() ?: 'pdf';
             $fileUndangan = $request->file('file_undangan_sidang')->storeAs('sidang/undangan', "Undangan_Sidang_{$nim}_" . time() . ".{$ext}");
+            $data['file_undangan_sidang'] = $fileUndangan;
+        } elseif (!empty($validated['nomor_undangan_sidang'])) {
+            // Otomatis buat surat undangan sidang jika nomor undangan diisi dan file tidak diunggah manual
+            $sidang->fill($data);
+            $fileUndangan = $suratService->generateUndanganSidang(
+                $sidang,
+                $validated['nomor_undangan_sidang'],
+                withSignature: $user->isAdminUtama()
+            );
             $data['file_undangan_sidang'] = $fileUndangan;
         }
 

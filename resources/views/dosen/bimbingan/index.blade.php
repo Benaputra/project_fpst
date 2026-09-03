@@ -190,21 +190,9 @@
                             </a>
                         @endif
 
-                        @if ($skripsi->seminar && $skripsi->seminar->file_undangan_seminar)
-                            <a href="{{ route('dokumen.download', base64_encode($skripsi->seminar->file_undangan_seminar)) }}" class="btn btn-success btn-sm">
-                                ✉️ Undangan Seminar (PDF)
-                            </a>
-                        @endif
-
                         @if ($skripsi->sidang && $skripsi->sidang->file_naskah_sidang)
                             <a href="{{ route('dokumen.download', base64_encode($skripsi->sidang->file_naskah_sidang)) }}" class="btn btn-secondary btn-sm">
                                 📘 Naskah Sidang Final
-                            </a>
-                        @endif
-
-                        @if ($skripsi->sidang && $skripsi->sidang->file_undangan_sidang)
-                            <a href="{{ route('dokumen.download', base64_encode($skripsi->sidang->file_undangan_sidang)) }}" class="btn btn-primary btn-sm">
-                                ✉️ Undangan Sidang (PDF)
                             </a>
                         @endif
 
@@ -234,9 +222,14 @@
                                 </div>
                             </div>
                             @if ($skripsi->seminar->file_undangan_seminar)
-                                <a href="{{ route('dokumen.download', base64_encode($skripsi->seminar->file_undangan_seminar)) }}" class="btn btn-success btn-sm" style="font-weight: 600;">
-                                    📥 Unduh Undangan Seminar (PDF)
-                                </a>
+                                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                    <a href="{{ route('dokumen.view', base64_encode($skripsi->seminar->file_undangan_seminar)) }}" target="_blank" class="btn btn-secondary btn-sm" style="font-weight: 600;">
+                                        👁️ Lihat Surat Undangan
+                                    </a>
+                                    <a href="{{ route('dokumen.download', base64_encode($skripsi->seminar->file_undangan_seminar)) }}" class="btn btn-success btn-sm" style="font-weight: 600;">
+                                        📥 Unduh Undangan Seminar (PDF)
+                                    </a>
+                                </div>
                             @endif
                         </div>
                     @endif
@@ -257,9 +250,14 @@
                                 </div>
                             </div>
                             @if ($skripsi->sidang->file_undangan_sidang)
-                                <a href="{{ route('dokumen.download', base64_encode($skripsi->sidang->file_undangan_sidang)) }}" class="btn btn-primary btn-sm" style="font-weight: 600;">
-                                    📥 Unduh Berkas Undangan (PDF)
-                                </a>
+                                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                    <a href="{{ route('dokumen.view', base64_encode($skripsi->sidang->file_undangan_sidang)) }}" target="_blank" class="btn btn-secondary btn-sm" style="font-weight: 600;">
+                                        👁️ Lihat Surat Undangan
+                                    </a>
+                                    <a href="{{ route('dokumen.download', base64_encode($skripsi->sidang->file_undangan_sidang)) }}" class="btn btn-primary btn-sm" style="font-weight: 600;">
+                                        📥 Unduh Berkas Undangan (PDF)
+                                    </a>
+                                </div>
                             @endif
                         </div>
                     @endif
@@ -315,8 +313,11 @@
                                 </a>
                             @endif
                             @if ($seminar->file_undangan_seminar)
-                                <a href="{{ route('dokumen.download', base64_encode($seminar->file_undangan_seminar)) }}" class="btn btn-secondary btn-sm">
-                                    ✉️ Unduh Undangan Seminar (PDF)
+                                <a href="{{ route('dokumen.view', base64_encode($seminar->file_undangan_seminar)) }}" target="_blank" class="btn btn-secondary btn-sm">
+                                    👁️ Lihat Undangan
+                                </a>
+                                <a href="{{ route('dokumen.download', base64_encode($seminar->file_undangan_seminar)) }}" class="btn btn-success btn-sm">
+                                    📥 Unduh Undangan Seminar (PDF)
                                 </a>
                             @endif
                         </div>
@@ -373,8 +374,11 @@
                                 </a>
                             @endif
                             @if ($sidang->file_undangan_sidang)
-                                <a href="{{ route('dokumen.download', base64_encode($sidang->file_undangan_sidang)) }}" class="btn btn-secondary btn-sm">
-                                    ✉️ Undangan
+                                <a href="{{ route('dokumen.view', base64_encode($sidang->file_undangan_sidang)) }}" target="_blank" class="btn btn-secondary btn-sm">
+                                    👁️ Lihat Undangan
+                                </a>
+                                <a href="{{ route('dokumen.download', base64_encode($sidang->file_undangan_sidang)) }}" class="btn btn-primary btn-sm">
+                                    📥 Unduh Undangan (PDF)
                                 </a>
                             @endif
                         </div>

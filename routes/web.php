@@ -35,8 +35,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
-    // Download File & SK
+    // Download File & SK / Lihat Dokumen
     Route::get('/dokumen/download/{path}', [DokumenController::class, 'download'])->name('dokumen.download');
+    Route::get('/dokumen/view/{path}', [DokumenController::class, 'view'])->name('dokumen.view');
 
     // Notifikasi
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');

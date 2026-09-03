@@ -15,7 +15,17 @@ class ProgramStudi extends Model
     protected $fillable = [
         'nama',
         'kode',
+        'file_ttd_kaprodi',
     ];
+
+    public function getTtdKaprodiUrlAttribute(): ?string
+    {
+        if (! $this->file_ttd_kaprodi) {
+            return null;
+        }
+
+        return asset('storage/' . $this->file_ttd_kaprodi);
+    }
 
     public function users(): HasMany
     {

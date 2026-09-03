@@ -46,16 +46,25 @@ class ProgramStudiController extends Controller
         $validated = $request->validate([
             'nama' => 'required|string|max:255|unique:program_studi,nama',
             'kode' => 'nullable|string|max:10|unique:program_studi,kode',
+            'file_ttd_kaprodi' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:2048',
         ], [
             'nama.unique' => 'Nama program studi sudah terdaftar.',
             'kode.unique' => 'Kode program studi sudah terdaftar.',
+            'file_ttd_kaprodi.image' => 'Berkas tanda tangan harus berupa gambar (PNG, JPG, JPEG, WEBP).',
+            'file_ttd_kaprodi.max' => 'Ukuran berkas tanda tangan maksimal 2MB.',
         ]);
 
         $actor = $request->user();
 
+        $pathTtd = null;
+        if ($request->hasFile('file_ttd_kaprodi')) {
+            $pathTtd = $request->file('file_ttd_kaprodi')->store('ttd', 'public');
+        }
+
         $prodi = ProgramStudi::create([
             'nama' => $validated['nama'],
             'kode' => ! empty($validated['kode']) ? strtoupper(trim($validated['kode'])) : null,
+            'file_ttd_kaprodi' => $pathTtd,
         ]);
 
         AktivitasLog::catat(
@@ -73,15 +82,29 @@ class ProgramStudiController extends Controller
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255', Rule::unique('program_studi', 'nama')->ignore($prodi->id)],
             'kode' => ['nullable', 'string', 'max:10', Rule::unique('program_studi', 'kode')->ignore($prodi->id)],
+            'file_ttd_kaprodi' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:2048',
         ], [
             'nama.unique' => 'Nama program studi sudah terdaftar.',
             'kode.unique' => 'Kode program studi sudah terdaftar.',
+            'file_ttd_kaprodi.image' => 'Berkas tanda tangan harus berupa gambar (PNG, JPG, JPEG, WEBP).',
+            'file_ttd_kaprodi.max' => 'Ukuran berkas tanda tangan maksimal 2MB.',
         ]);
 
-        $prodi->update([
+        $dataUpdate = [
             'nama' => $validated['nama'],
             'kode' => ! empty($validated['kode']) ? strtoupper(trim($validated['kode'])) : null,
-        ]);
+        ];
+
+        if ($request->hasFile('file_ttd_kaprodi')) {
+            if ($prodi->file_ttd_kaprodi && \Illuminate\Support\Facades\Storage::disk('public')->exists($prodi->file_ttd_kaprodi)) {
+                if (! str_contains($prodi->file_ttd_kaprodi, 'ttd_agribisnis.png') && ! str_contains($prodi->file_ttd_kaprodi, 'ttd_agroteknologi.png')) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($prodi->file_ttd_kaprodi);
+                }
+            }
+            $dataUpdate['file_ttd_kaprodi'] = $request->file('file_ttd_kaprodi')->store('ttd', 'public');
+        }
+
+        $prodi->update($dataUpdate);
 
         $actor = $request->user();
         AktivitasLog::catat(

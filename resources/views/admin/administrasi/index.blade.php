@@ -785,17 +785,28 @@
                         <div class="form-group">
                             <label class="form-label" style="font-size: 0.75rem;">No. Undangan Seminar</label>
                             <input type="text" name="nomor_undangan_seminar" value="${data.nomor_undangan || ''}" class="form-control" placeholder="UND/01/FPST/2026">
+                            ${data.file_undangan_url ? `
+                                <div style="margin-top: 0.25rem;">
+                                    <a href="${data.file_undangan_url}" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">📥 Unduh Undangan (PDF)</a>
+                                </div>
+                            ` : ''}
                         </div>
                         <div class="form-group">
                             <label class="form-label" style="font-size: 0.75rem;">No. SK Penguji Seminar</label>
                             <input type="text" name="nomor_sk_seminar" value="${data.nomor_sk || ''}" class="form-control" placeholder="SK-SEM/01/2026">
+                            ${data.file_sk_url ? `
+                                <div style="margin-top: 0.25rem;">
+                                    <a href="${data.file_sk_url}" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">📥 Unduh SK Penguji (PDF)</a>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
                         <div class="form-group">
-                            <label class="form-label" style="font-size: 0.75rem;">Upload File Undangan (PDF)</label>
+                            <label class="form-label" style="font-size: 0.75rem;">Upload Undangan (Opsional)</label>
                             <input type="file" name="file_undangan_seminar" class="form-control" accept=".pdf">
+                            <div style="font-size: 0.7rem; color: #166534; margin-top: 0.2rem;">* Otomatis dibuat sistem jika nomor diisi & file dikosongkan.</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label" style="font-size: 0.75rem;">Upload File SK Penguji (PDF)</label>
@@ -889,17 +900,28 @@
                         <div class="form-group">
                             <label class="form-label" style="font-size: 0.75rem;">No. Undangan Sidang</label>
                             <input type="text" name="nomor_undangan_sidang" value="${data.nomor_undangan || ''}" class="form-control" placeholder="UND-SDG/01/2026">
+                            ${data.file_undangan_url ? `
+                                <div style="margin-top: 0.25rem;">
+                                    <a href="${data.file_undangan_url}" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">📥 Unduh Undangan (PDF)</a>
+                                </div>
+                            ` : ''}
                         </div>
                         <div class="form-group">
                             <label class="form-label" style="font-size: 0.75rem;">No. SK Dewan Penguji</label>
                             <input type="text" name="nomor_sk_sidang" value="${data.nomor_sk || ''}" class="form-control" placeholder="SK-SDG/01/2026">
+                            ${data.file_sk_url ? `
+                                <div style="margin-top: 0.25rem;">
+                                    <a href="${data.file_sk_url}" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 0.15rem 0.45rem;">📥 Unduh SK Penguji (PDF)</a>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
                         <div class="form-group">
-                            <label class="form-label" style="font-size: 0.75rem;">Upload File Undangan (PDF)</label>
+                            <label class="form-label" style="font-size: 0.75rem;">Upload Undangan (Opsional)</label>
                             <input type="file" name="file_undangan_sidang" class="form-control" accept=".pdf">
+                            <div style="font-size: 0.7rem; color: #166534; margin-top: 0.2rem;">* Otomatis dibuat sistem jika nomor diisi & file dikosongkan.</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label" style="font-size: 0.75rem;">Upload File SK Penguji (PDF)</label>

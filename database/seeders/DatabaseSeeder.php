@@ -15,21 +15,32 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
         DB::transaction(function () {
+            // Pastikan file tanda tangan awal ada di storage public
+            if (! Storage::disk('public')->exists('ttd/ttd_agribisnis.png') && file_exists(public_path('images/ttd/ttd_agribisnis.png'))) {
+                Storage::disk('public')->put('ttd/ttd_agribisnis.png', file_get_contents(public_path('images/ttd/ttd_agribisnis.png')));
+            }
+            if (! Storage::disk('public')->exists('ttd/ttd_agroteknologi.png') && file_exists(public_path('images/ttd/ttd_agroteknologi.png'))) {
+                Storage::disk('public')->put('ttd/ttd_agroteknologi.png', file_get_contents(public_path('images/ttd/ttd_agroteknologi.png')));
+            }
+
             // 1. Program Studi
             $agt = ProgramStudi::create([
                 'nama' => 'Agroteknologi',
                 'kode' => 'AGT',
+                'file_ttd_kaprodi' => 'ttd/ttd_agroteknologi.png',
             ]);
 
             $agb = ProgramStudi::create([
                 'nama' => 'Agribisnis',
                 'kode' => 'AGB',
+                'file_ttd_kaprodi' => 'ttd/ttd_agribisnis.png',
             ]);
 
             // 2. Admin Utama

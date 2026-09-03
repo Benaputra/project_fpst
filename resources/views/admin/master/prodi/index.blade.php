@@ -44,11 +44,12 @@
                     <th style="width: 50px; text-align: center;">No</th>
                     <th style="width: 120px;">Kode Prodi</th>
                     <th>Nama Program Studi</th>
-                    <th style="width: 130px; text-align: center;">Mahasiswa</th>
-                    <th style="width: 130px; text-align: center;">Dosen</th>
-                    <th style="width: 130px; text-align: center;">Admin Prodi</th>
-                    <th style="width: 130px; text-align: center;">Total Skripsi</th>
-                    <th style="width: 130px; text-align: center;">Aksi</th>
+                    <th style="width: 140px; text-align: center;">TTD & Cap Kaprodi</th>
+                    <th style="width: 110px; text-align: center;">Mahasiswa</th>
+                    <th style="width: 110px; text-align: center;">Dosen</th>
+                    <th style="width: 110px; text-align: center;">Admin Prodi</th>
+                    <th style="width: 110px; text-align: center;">Total Skripsi</th>
+                    <th style="width: 120px; text-align: center;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -69,6 +70,15 @@
                             <div style="font-size: 0.72rem; color: var(--text-muted);">
                                 Dibuat: {{ $prodi->created_at->format('d M Y') }}
                             </div>
+                        </td>
+                        <td style="text-align: center;">
+                            @if ($prodi->ttd_kaprodi_url)
+                                <a href="{{ $prodi->ttd_kaprodi_url }}" target="_blank" title="Klik untuk melihat berkas TTD">
+                                    <img src="{{ $prodi->ttd_kaprodi_url }}" style="height: 42px; max-width: 90px; object-fit: contain; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px; background: #fff;" alt="TTD & Cap">
+                                </a>
+                            @else
+                                <span style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">Belum diatur</span>
+                            @endif
                         </td>
                         <td style="text-align: center; font-weight: 600;">
                             {{ $prodi->mahasiswa_count }}
@@ -92,6 +102,7 @@
                                         'id' => $prodi->id,
                                         'nama' => $prodi->nama,
                                         'kode' => $prodi->kode,
+                                        'ttd_url' => $prodi->ttd_kaprodi_url,
                                     ]) }})">
                                     ✏️ Edit
                                 </button>
@@ -131,17 +142,23 @@
             <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">➕ Tambah Program Studi</h3>
             <button type="button" onclick="closeModal('modal-tambah-prodi')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
         </div>
-        <form method="POST" action="{{ route('admin.master.prodi.store') }}" style="padding: 1.25rem;">
+        <form method="POST" action="{{ route('admin.master.prodi.store') }}" enctype="multipart/form-data" style="padding: 1.25rem;">
             @csrf
             <div style="margin-bottom: 1rem;">
                 <label class="form-label">Nama Program Studi <span style="color: #dc2626;">*</span></label>
                 <input type="text" name="nama" required class="form-control" placeholder="Contoh: Teknik Elektro">
             </div>
 
-            <div style="margin-bottom: 1.25rem;">
+            <div style="margin-bottom: 1rem;">
                 <label class="form-label">Kode Singkatan Prodi</label>
                 <input type="text" name="kode" class="form-control" placeholder="Contoh: TE" style="text-transform: uppercase;">
                 <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">Maksimal 10 karakter. Digunakan untuk identifikasi CSV dan nomor surat.</div>
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+                <label class="form-label">Tanda Tangan & Cap Kaprodi (Opsional)</label>
+                <input type="file" name="file_ttd_kaprodi" class="form-control" accept="image/png,image/jpeg,image/jpg,image/webp">
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">Format PNG/JPG transparan (Maks. 2MB). Digunakan saat Admin Utama menerbitkan surat undangan.</div>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
@@ -161,7 +178,7 @@
             <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">✏️ Edit Program Studi</h3>
             <button type="button" onclick="closeModal('modal-edit-prodi')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
         </div>
-        <form id="form-edit-prodi" method="POST" action="" style="padding: 1.25rem;">
+        <form id="form-edit-prodi" method="POST" action="" enctype="multipart/form-data" style="padding: 1.25rem;">
             @csrf
             @method('PUT')
             <div style="margin-bottom: 1rem;">
@@ -169,9 +186,19 @@
                 <input type="text" id="edit-prodi-nama" name="nama" required class="form-control">
             </div>
 
-            <div style="margin-bottom: 1.25rem;">
+            <div style="margin-bottom: 1rem;">
                 <label class="form-label">Kode Singkatan Prodi</label>
                 <input type="text" id="edit-prodi-kode" name="kode" class="form-control" style="text-transform: uppercase;">
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+                <label class="form-label">Tanda Tangan & Cap Kaprodi</label>
+                <div id="edit-prodi-ttd-preview" style="display: none; margin-bottom: 0.5rem; padding: 0.5rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 0.5rem; text-align: center;">
+                    <div style="font-size: 0.72rem; color: #64748b; margin-bottom: 0.25rem;">Gambar TTD Saat Ini:</div>
+                    <img id="edit-prodi-ttd-img" src="" style="height: 55px; max-width: 160px; object-fit: contain; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px;" alt="TTD Saat Ini">
+                </div>
+                <input type="file" name="file_ttd_kaprodi" class="form-control" accept="image/png,image/jpeg,image/jpg,image/webp">
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">Kosongkan jika tidak ingin mengubah. Format PNG/JPG transparan (Maks. 2MB).</div>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
@@ -212,6 +239,14 @@
         document.getElementById('edit-prodi-nama').value = data.nama;
         document.getElementById('edit-prodi-kode').value = data.kode || '';
         
+        if (data.ttd_url) {
+            document.getElementById('edit-prodi-ttd-preview').style.display = 'block';
+            document.getElementById('edit-prodi-ttd-img').src = data.ttd_url;
+        } else {
+            document.getElementById('edit-prodi-ttd-preview').style.display = 'none';
+            document.getElementById('edit-prodi-ttd-img').src = '';
+        }
+
         const form = document.getElementById('form-edit-prodi');
         form.action = "{{ url('admin/master/prodi') }}/" + data.id;
 
