@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Enums\StatusPengajuan;
 use App\Http\Controllers\Controller;
 use App\Models\AktivitasLog;
+use App\Models\Notifikasi;
 use App\Models\SeminarSkripsi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -75,6 +76,15 @@ class SeminarSkripsiController extends Controller
             $user,
             'Pengajuan Seminar Skripsi',
             "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan pendaftaran seminar proposal/hasil untuk judul: '{$skripsi->judul}'"
+        );
+
+        // Notifikasi ke Pengelola (Kaprodi, Admin Prodi, Admin Utama)
+        Notifikasi::kirimKePengelola(
+            $user->program_studi_id,
+            'Pendaftaran Seminar Skripsi Baru',
+            "Mahasiswa {$user->name} ({$user->nomor_induk}) mendaftar seminar proposal/hasil untuk judul: '{$skripsi->judul}'.",
+            null,
+            $user->id
         );
 
         return redirect()->route('mahasiswa.seminar.index')

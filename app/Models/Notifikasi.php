@@ -58,4 +58,52 @@ class Notifikasi extends Model
             'dibaca' => false,
         ]);
     }
+
+    /**
+     * Kirim notifikasi ke role pengelola terkait (Admin Utama, Kaprodi, dan/atau Admin Prodi).
+     *
+     * @param int|null $programStudiId ID program studi mahasiswa/pengajuan
+     * @param string $judul
+     * @param string $pesan
+     * @param string|null $link
+     * @param int|null $excludeUserId ID user yang tidak perlu dikirimi notifikasi
+     * @param array<\App\Enums\UserRole> $roles Daftar role penerima
+     */
+    public static function kirimKePengelola(
+        ?int $programStudiId,
+        string $judul,
+        string $pesan,
+        ?string $link = null,
+        ?int $excludeUserId = null,
+        array $roles = [\App\Enums\UserRole::AdminUtama, \App\Enums\UserRole::Kaprodi, \App\Enums\UserRole::AdminProdi]
+    ): void {
+        $roleValues = array_map(fn($r) => $r instanceof \BackedEnum ? $r->value : (string) $r, $roles);
+        $query = User::query()->whereIn('role', $roleValues);
+
+        if ($excludeUserId) {
+            $query->where('id', '!=', $excludeUserId);
+        }
+
+        $users = $query->get();
+
+        foreach ($users as $user) {
+            if (
+                $user->isAdminUtama() ||
+                !$programStudiId ||
+                $user->program_studi_id === $programStudiId
+            ) {
+                $userLink = $link;
+                if (!$userLink) {
+                    if ($user->isKaprodi()) {
+                        $userLink = route('kaprodi.penetapan.index');
+                    } elseif ($user->isAdmin()) {
+                        $userLink = route('admin.administrasi.index');
+                    }
+                }
+
+                self::kirim($user->id, $judul, $pesan, $userLink);
+            }
+        }
+    }
 }
+

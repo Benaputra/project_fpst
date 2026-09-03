@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\StatusPengajuan;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\AktivitasLog;
 use App\Models\Notifikasi;
@@ -25,41 +26,135 @@ class AdministrasiSkripsiController extends Controller
         $jenisSuratFilter = $request->input('jenis_surat');
         $cariSurat = $request->input('q_surat');
 
+        // Tab 1: SK Bimbingan
         $querySkripsi = PengajuanSkripsi::with(['mahasiswa', 'programStudi', 'pembimbing1', 'pembimbing2']);
-        $querySeminar = SeminarSkripsi::with(['pengajuanSkripsi.mahasiswa', 'penguji']);
-        $querySidang = SidangSkripsi::with(['pengajuanSkripsi.mahasiswa', 'penguji1', 'penguji2']);
-        $querySurat = Surat::with(['pengajuanSkripsi.mahasiswa', 'programStudi', 'penerbit']);
-
         if ($prodiFilter) {
             $querySkripsi->where('program_studi_id', $prodiFilter);
-            $querySeminar->whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiFilter));
-            $querySidang->whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiFilter));
-            $querySurat->where('program_studi_id', $prodiFilter);
         }
-
         if ($statusFilter) {
             $querySkripsi->where('status', $statusFilter);
+        }
+        if ($searchSkripsi = $request->input('search_skripsi')) {
+            $querySkripsi->where(function ($q) use ($searchSkripsi) {
+                $q->where('judul', 'like', "%{$searchSkripsi}%")
+                    ->orWhere('nomor_sk_bimbingan', 'like', "%{$searchSkripsi}%")
+                    ->orWhereHas('mahasiswa', fn($m) => $m->where('name', 'like', "%{$searchSkripsi}%")->orWhere('nomor_induk', 'like', "%{$searchSkripsi}%"));
+            });
+        }
+        if ($statusSkripsi = $request->input('status_skripsi')) {
+            if ($statusSkripsi === 'menunggu') {
+                $querySkripsi->whereNull('nomor_sk_bimbingan');
+            } elseif ($statusSkripsi === 'selesai') {
+                $querySkripsi->whereNotNull('nomor_sk_bimbingan');
+            }
+        }
+        if ($request->input('sort_skripsi', 'fifo') === 'fifo') {
+            $querySkripsi->oldest();
+        } else {
+            $querySkripsi->latest();
+        }
+        $daftarSkripsi = $querySkripsi->paginate(10, ['*'], 'page_skripsi')->withQueryString();
+
+        // Tab 2: Jadwal & Dokumen Seminar
+        $querySeminar = SeminarSkripsi::with(['pengajuanSkripsi.mahasiswa', 'penguji']);
+        if ($prodiFilter) {
+            $querySeminar->whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiFilter));
+        }
+        if ($statusFilter) {
             $querySeminar->where('status', $statusFilter);
+        }
+        if ($searchSeminar = $request->input('search_seminar')) {
+            $querySeminar->where(function ($q) use ($searchSeminar) {
+                $q->where('nomor_undangan_seminar', 'like', "%{$searchSeminar}%")
+                    ->orWhere('nomor_sk_seminar', 'like', "%{$searchSeminar}%")
+                    ->orWhereHas('pengajuanSkripsi', fn($ps) => 
+                        $ps->where('judul', 'like', "%{$searchSeminar}%")
+                            ->orWhereHas('mahasiswa', fn($m) => $m->where('name', 'like', "%{$searchSeminar}%")->orWhere('nomor_induk', 'like', "%{$searchSeminar}%"))
+                    );
+            });
+        }
+        if ($statusSeminar = $request->input('status_seminar')) {
+            if ($statusSeminar === 'menunggu_jadwal') {
+                $querySeminar->whereNull('tgl_seminar');
+            } elseif ($statusSeminar === 'menunggu_nilai') {
+                $querySeminar->whereNotNull('tgl_seminar')->whereNull('nilai_seminar');
+            } elseif ($statusSeminar === 'selesai') {
+                $querySeminar->whereNotNull('nilai_seminar');
+            }
+        }
+        if ($request->input('sort_seminar', 'fifo') === 'fifo') {
+            $querySeminar->oldest();
+        } else {
+            $querySeminar->latest();
+        }
+        $daftarSeminar = $querySeminar->paginate(10, ['*'], 'page_seminar')->withQueryString();
+
+        // Tab 3: Jadwal & Dokumen Sidang
+        $querySidang = SidangSkripsi::with(['pengajuanSkripsi.mahasiswa', 'penguji1', 'penguji2']);
+        if ($prodiFilter) {
+            $querySidang->whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiFilter));
+        }
+        if ($statusFilter) {
             $querySidang->where('status', $statusFilter);
         }
+        if ($searchSidang = $request->input('search_sidang')) {
+            $querySidang->where(function ($q) use ($searchSidang) {
+                $q->where('nomor_undangan_sidang', 'like', "%{$searchSidang}%")
+                    ->orWhere('nomor_sk_sidang', 'like', "%{$searchSidang}%")
+                    ->orWhereHas('pengajuanSkripsi', fn($ps) => 
+                        $ps->where('judul', 'like', "%{$searchSidang}%")
+                            ->orWhereHas('mahasiswa', fn($m) => $m->where('name', 'like', "%{$searchSidang}%")->orWhere('nomor_induk', 'like', "%{$searchSidang}%"))
+                    );
+            });
+        }
+        if ($statusSidang = $request->input('status_sidang')) {
+            if ($statusSidang === 'menunggu_jadwal') {
+                $querySidang->whereNull('tgl_sidang');
+            } elseif ($statusSidang === 'menunggu_nilai') {
+                $querySidang->whereNotNull('tgl_sidang')->whereNull('nilai_sidang');
+            } elseif ($statusSidang === 'selesai') {
+                $querySidang->whereNotNull('nilai_sidang');
+            }
+        }
+        if ($request->input('sort_sidang', 'fifo') === 'fifo') {
+            $querySidang->oldest();
+        } else {
+            $querySidang->latest();
+        }
+        $daftarSidang = $querySidang->paginate(10, ['*'], 'page_sidang')->withQueryString();
 
+        // Tab 4: Arsip Surat & SK
+        $querySurat = Surat::with(['pengajuanSkripsi.mahasiswa', 'programStudi', 'penerbit']);
+        if ($prodiFilter) {
+            $querySurat->where('program_studi_id', $prodiFilter);
+        }
         if ($jenisSuratFilter) {
             $querySurat->where('jenis_surat', $jenisSuratFilter);
         }
-
         if ($cariSurat) {
             $querySurat->where(function ($q) use ($cariSurat) {
                 $q->where('nomor_surat', 'like', "%{$cariSurat}%")
                   ->orWhere('nama_surat', 'like', "%{$cariSurat}%");
             });
         }
-
-        $daftarSkripsi = $querySkripsi->latest()->paginate(10, ['*'], 'page_skripsi');
-        $daftarSeminar = $querySeminar->latest()->paginate(10, ['*'], 'page_seminar');
-        $daftarSidang = $querySidang->latest()->paginate(10, ['*'], 'page_sidang');
-        $daftarSurat = $querySurat->latest()->paginate(10, ['*'], 'page_surat');
+        $daftarSurat = $querySurat->latest()->paginate(10, ['*'], 'page_surat')->withQueryString();
 
         $daftarProdi = ProgramStudi::all();
+
+        // Hitung antrean pending
+        $qPendingSk = PengajuanSkripsi::whereNull('nomor_sk_bimbingan')->whereNotNull('pembimbing_1_id');
+        $qPendingSeminar = SeminarSkripsi::where(fn($q) => $q->whereNull('tgl_seminar')->orWhereNull('nilai_seminar'));
+        $qPendingSidang = SidangSkripsi::where(fn($q) => $q->whereNull('tgl_sidang')->orWhereNull('nilai_sidang'));
+
+        if ($prodiFilter) {
+            $qPendingSk->where('program_studi_id', $prodiFilter);
+            $qPendingSeminar->whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiFilter));
+            $qPendingSidang->whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiFilter));
+        }
+
+        $pendingSkCount = $qPendingSk->count();
+        $pendingSeminarCount = $qPendingSeminar->count();
+        $pendingSidangCount = $qPendingSidang->count();
 
         return view('admin.administrasi.index', compact(
             'daftarSkripsi',
@@ -71,6 +166,9 @@ class AdministrasiSkripsiController extends Controller
             'statusFilter',
             'jenisSuratFilter',
             'cariSurat',
+            'pendingSkCount',
+            'pendingSeminarCount',
+            'pendingSidangCount',
             'user'
         ));
     }
@@ -172,6 +270,16 @@ class AdministrasiSkripsiController extends Controller
                 route('dosen.bimbingan.index')
             );
         }
+
+        // Notifikasi ke Pengelola (Admin Utama & Kaprodi)
+        Notifikasi::kirimKePengelola(
+            $skripsi->program_studi_id,
+            $isUpdate ? 'Pembaruan SK Bimbingan Mahasiswa' : 'Penerbitan SK Bimbingan Mahasiswa',
+            "SK Bimbingan untuk mahasiswa {$mhs->name} ({$nim}) telah " . ($isUpdate ? "diperbarui" : "diterbitkan") . " (No: {$validated['nomor_sk_bimbingan']}).",
+            null,
+            $user->id,
+            [UserRole::AdminUtama, UserRole::Kaprodi]
+        );
 
         $msg = $isUpdate ? "SK Bimbingan berhasil diperbarui dengan nama baru ('{$namaSurat}')." : 'SK Bimbingan berhasil diterbitkan dan status diselesaikan.';
         return back()->with('success', $msg);
@@ -318,6 +426,16 @@ class AdministrasiSkripsiController extends Controller
             );
         }
 
+        // Notifikasi ke Pengelola (Admin Utama & Kaprodi)
+        Notifikasi::kirimKePengelola(
+            $seminar->pengajuanSkripsi->program_studi_id,
+            'Jadwal Seminar Skripsi Ditetapkan',
+            "Jadwal seminar untuk mahasiswa {$mhs->name} ({$nim}) telah ditetapkan pada {$validated['tgl_seminar']} ({$validated['jam_seminar']}) di {$validated['ruangan']}.",
+            null,
+            $user->id,
+            [UserRole::AdminUtama, UserRole::Kaprodi]
+        );
+
         return back()->with('success', 'Jadwal dan dokumen surat/SK Seminar berhasil diperbarui. Undangan telah dikirimkan ke tim seminar (mahasiswa, penguji, dan pembimbing).');
     }
 
@@ -344,6 +462,7 @@ class AdministrasiSkripsiController extends Controller
         ]);
 
         $mhs = $seminar->pengajuanSkripsi->mahasiswa;
+        $nim = $mhs->nomor_induk;
         $actorRole = $user->isAdminUtama() ? 'Admin Utama' : 'Admin';
 
         AktivitasLog::catat(
@@ -358,6 +477,16 @@ class AdministrasiSkripsiController extends Controller
             $isUpdateNilai ? 'Pembaruan Nilai Seminar' : 'Hasil & Nilai Seminar Telah Keluar',
             "Nilai seminar Anda: {$validated['nilai_seminar']}. Status dinyatakan LULUS seminar dan dapat melanjutkan pendaftaran Sidang Skripsi.",
             route('mahasiswa.sidang.index')
+        );
+
+        // Notifikasi ke Pengelola (Admin Utama & Kaprodi)
+        Notifikasi::kirimKePengelola(
+            $seminar->pengajuanSkripsi->program_studi_id,
+            'Hasil & Nilai Seminar Mahasiswa',
+            "Seminar mahasiswa {$mhs->name} ({$nim}) telah selesai dinilai dengan skor {$validated['nilai_seminar']}.",
+            null,
+            $user->id,
+            [UserRole::AdminUtama, UserRole::Kaprodi]
         );
 
         $msg = $isUpdateNilai ? 'Nilai seminar berhasil diperbarui oleh Admin Utama.' : 'Nilai seminar berhasil disimpan dan status dinyatakan Selesai/Lulus.';
@@ -514,6 +643,16 @@ class AdministrasiSkripsiController extends Controller
             );
         }
 
+        // Notifikasi ke Pengelola (Admin Utama & Kaprodi)
+        Notifikasi::kirimKePengelola(
+            $sidang->pengajuanSkripsi->program_studi_id,
+            'Jadwal Sidang Skripsi Ditetapkan',
+            "Jadwal sidang meja hijau untuk mahasiswa {$mhs->name} ({$nim}) telah ditetapkan pada {$validated['tgl_sidang']} ({$validated['jam_sidang']}) di {$validated['ruangan']}.",
+            null,
+            $user->id,
+            [UserRole::AdminUtama, UserRole::Kaprodi]
+        );
+
         return back()->with('success', 'Jadwal dan dokumen surat/SK Sidang berhasil diperbarui. Undangan telah dikirimkan ke mahasiswa, penguji, dan pembimbing.');
     }
 
@@ -540,6 +679,7 @@ class AdministrasiSkripsiController extends Controller
         ]);
 
         $mhs = $sidang->pengajuanSkripsi->mahasiswa;
+        $nim = $mhs->nomor_induk;
         $actorRole = $user->isAdminUtama() ? 'Admin Utama' : 'Admin';
 
         AktivitasLog::catat(
@@ -554,6 +694,16 @@ class AdministrasiSkripsiController extends Controller
             $isUpdateNilai ? 'Pembaruan Nilai Sidang Skripsi' : 'Selamat! Anda Dinyatakan LULUS Sidang Skripsi',
             "Nilai akhir sidang meja hijau Anda adalah: {$validated['nilai_sidang']}. Anda resmi dinyatakan LULUS Sidang Skripsi.",
             route('mahasiswa.sidang.index')
+        );
+
+        // Notifikasi ke Pengelola (Admin Utama & Kaprodi)
+        Notifikasi::kirimKePengelola(
+            $sidang->pengajuanSkripsi->program_studi_id,
+            'Hasil & Nilai Akhir Sidang Skripsi',
+            "Sidang meja hijau mahasiswa {$mhs->name} ({$nim}) telah selesai dinilai dengan hasil skor {$validated['nilai_sidang']}.",
+            null,
+            $user->id,
+            [UserRole::AdminUtama, UserRole::Kaprodi]
         );
 
         $msg = $isUpdateNilai ? 'Nilai sidang berhasil diperbarui oleh Admin Utama.' : 'Nilai sidang berhasil disimpan dan status dinyatakan Selesai / Lulus Sidang.';

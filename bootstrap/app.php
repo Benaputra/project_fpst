@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo('/dashboard');
+        $middleware->alias([
+            'admin_utama' => \App\Http\Middleware\EnsureUserIsAdminUtama::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

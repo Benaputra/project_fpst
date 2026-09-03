@@ -29,27 +29,93 @@ class PenetapanController extends Controller
         $prodiFilter = $request->input('prodi_id', $user->isAdminUtama() ? ($daftarProdi->first()?->id) : $user->program_studi_id);
         $prodiId = $prodiFilter;
 
-        $daftarJudul = PengajuanSkripsi::where('program_studi_id', $prodiId)
-            ->with(['mahasiswa', 'pembimbing1', 'pembimbing2'])
-            ->latest()
-            ->paginate(10, ['*'], 'page_judul');
+        // Filter & Search untuk Tab 1: Review Judul & Pembimbing
+        $qJudul = PengajuanSkripsi::where('program_studi_id', $prodiId)
+            ->with(['mahasiswa', 'pembimbing1', 'pembimbing2']);
+        if ($searchJudul = $request->input('search_judul')) {
+            $qJudul->where(function ($q) use ($searchJudul) {
+                $q->where('judul', 'like', "%{$searchJudul}%")
+                    ->orWhereHas('mahasiswa', fn($m) => $m->where('name', 'like', "%{$searchJudul}%")->orWhere('nomor_induk', 'like', "%{$searchJudul}%"));
+            });
+        }
+        if ($statusJudul = $request->input('status_judul')) {
+            if ($statusJudul === 'menunggu') {
+                $qJudul->where('status', StatusPengajuan::Diajukan);
+            } elseif ($statusJudul === 'selesai') {
+                $qJudul->where('status', '!=', StatusPengajuan::Diajukan);
+            }
+        }
+        if ($request->input('sort_judul', 'fifo') === 'fifo') {
+            $qJudul->oldest();
+        } else {
+            $qJudul->latest();
+        }
+        $daftarJudul = $qJudul->paginate(10, ['*'], 'page_judul')->withQueryString();
 
-        $daftarSeminar = SeminarSkripsi::whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiId))
-            ->with(['pengajuanSkripsi.mahasiswa', 'penguji'])
-            ->latest()
-            ->paginate(10, ['*'], 'page_seminar');
+        // Filter & Search untuk Tab 2: Penguji Seminar
+        $qSeminar = SeminarSkripsi::whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiId))
+            ->with(['pengajuanSkripsi.mahasiswa', 'penguji']);
+        if ($searchSeminar = $request->input('search_seminar')) {
+            $qSeminar->where(function ($q) use ($searchSeminar) {
+                $q->whereHas('pengajuanSkripsi', fn($ps) => 
+                    $ps->where('judul', 'like', "%{$searchSeminar}%")
+                        ->orWhereHas('mahasiswa', fn($m) => $m->where('name', 'like', "%{$searchSeminar}%")->orWhere('nomor_induk', 'like', "%{$searchSeminar}%"))
+                );
+            });
+        }
+        if ($statusSeminar = $request->input('status_seminar')) {
+            if ($statusSeminar === 'menunggu') {
+                $qSeminar->whereNull('penguji_seminar_id');
+            } elseif ($statusSeminar === 'selesai') {
+                $qSeminar->whereNotNull('penguji_seminar_id');
+            }
+        }
+        if ($request->input('sort_seminar', 'fifo') === 'fifo') {
+            $qSeminar->oldest();
+        } else {
+            $qSeminar->latest();
+        }
+        $daftarSeminar = $qSeminar->paginate(10, ['*'], 'page_seminar')->withQueryString();
 
-        $daftarSidang = SidangSkripsi::whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiId))
-            ->with(['pengajuanSkripsi.mahasiswa', 'penguji1', 'penguji2'])
-            ->latest()
-            ->paginate(10, ['*'], 'page_sidang');
+        // Filter & Search untuk Tab 3: Penguji Sidang
+        $qSidang = SidangSkripsi::whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiId))
+            ->with(['pengajuanSkripsi.mahasiswa', 'penguji1', 'penguji2']);
+        if ($searchSidang = $request->input('search_sidang')) {
+            $qSidang->where(function ($q) use ($searchSidang) {
+                $q->whereHas('pengajuanSkripsi', fn($ps) => 
+                    $ps->where('judul', 'like', "%{$searchSidang}%")
+                        ->orWhereHas('mahasiswa', fn($m) => $m->where('name', 'like', "%{$searchSidang}%")->orWhere('nomor_induk', 'like', "%{$searchSidang}%"))
+                );
+            });
+        }
+        if ($statusSidang = $request->input('status_sidang')) {
+            if ($statusSidang === 'menunggu') {
+                $qSidang->where(fn($q) => $q->whereNull('penguji_1_id')->orWhereNull('penguji_2_id'));
+            } elseif ($statusSidang === 'selesai') {
+                $qSidang->whereNotNull('penguji_1_id')->whereNotNull('penguji_2_id');
+            }
+        }
+        if ($request->input('sort_sidang', 'fifo') === 'fifo') {
+            $qSidang->oldest();
+        } else {
+            $qSidang->latest();
+        }
+        $daftarSidang = $qSidang->paginate(10, ['*'], 'page_sidang')->withQueryString();
 
         $daftarDosen = User::whereIn('role', [UserRole::Dosen, UserRole::Kaprodi])
             ->where('program_studi_id', $prodiId)
             ->orderBy('name')
             ->get();
 
-        return view('kaprodi.penetapan.index', compact('daftarJudul', 'daftarSeminar', 'daftarSidang', 'daftarDosen', 'daftarProdi', 'prodiFilter', 'user'));
+        $pendingJudulCount = PengajuanSkripsi::where('program_studi_id', $prodiId)->where('status', StatusPengajuan::Diajukan)->count();
+        $pendingSeminarCount = SeminarSkripsi::whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiId))->whereNull('penguji_seminar_id')->count();
+        $pendingSidangCount = SidangSkripsi::whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiId))->where(fn($q) => $q->whereNull('penguji_1_id')->orWhereNull('penguji_2_id'))->count();
+
+        return view('kaprodi.penetapan.index', compact(
+            'daftarJudul', 'daftarSeminar', 'daftarSidang', 
+            'daftarDosen', 'daftarProdi', 'prodiFilter', 'user',
+            'pendingJudulCount', 'pendingSeminarCount', 'pendingSidangCount'
+        ));
     }
 
     public function updateJudul(Request $request, PengajuanSkripsi $skripsi): RedirectResponse
@@ -203,6 +269,16 @@ class PenetapanController extends Controller
             route('dosen.bimbingan.index')
         );
 
+        // Notifikasi ke Admin (Prodi & Utama) untuk persiapan jadwal
+        Notifikasi::kirimKePengelola(
+            $seminar->pengajuanSkripsi->program_studi_id,
+            'Dosen Penguji Seminar Telah Ditetapkan',
+            "Dosen Penguji Seminar untuk mahasiswa {$mhs->name} ({$mhs->nomor_induk}) telah ditetapkan. Silakan atur jadwal dan terbitkan dokumen seminar.",
+            null,
+            $user->id,
+            [UserRole::AdminUtama, UserRole::AdminProdi]
+        );
+
         $msg = $isUpdatePenguji
             ? 'Dosen Penguji Seminar berhasil diperbarui.'
             : 'Dosen Penguji Seminar berhasil ditetapkan.';
@@ -269,6 +345,16 @@ class PenetapanController extends Controller
             'Penugasan Penguji 2 Sidang Skripsi',
             "Anda ditugaskan sebagai Penguji 2 Sidang Skripsi untuk mahasiswa {$mhs->name} ({$mhs->nomor_induk}).",
             route('dosen.bimbingan.index')
+        );
+
+        // Notifikasi ke Admin (Prodi & Utama) untuk persiapan jadwal
+        Notifikasi::kirimKePengelola(
+            $sidang->pengajuanSkripsi->program_studi_id,
+            'Dewan Penguji Sidang Telah Ditetapkan',
+            "Dewan Penguji Sidang Skripsi untuk mahasiswa {$mhs->name} ({$mhs->nomor_induk}) telah ditetapkan. Silakan atur jadwal dan terbitkan dokumen sidang.",
+            null,
+            $user->id,
+            [UserRole::AdminUtama, UserRole::AdminProdi]
         );
 
         $msg = $isUpdatePenguji

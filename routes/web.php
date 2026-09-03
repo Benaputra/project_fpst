@@ -2,6 +2,11 @@
 
 use App\Http\Controllers\Admin\AdministrasiSkripsiController;
 use App\Http\Controllers\Admin\LogAktivitasController;
+use App\Http\Controllers\Admin\Master\AdminProdiController;
+use App\Http\Controllers\Admin\Master\DosenController;
+use App\Http\Controllers\Admin\Master\MahasiswaController;
+use App\Http\Controllers\Admin\Master\ProgramStudiController;
+use App\Http\Controllers\Admin\Master\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DokumenController;
@@ -74,6 +79,26 @@ Route::middleware('auth')->group(function () {
 
         // Log Aktivitas Audit Trail (Khusus Admin Utama)
         Route::get('/log-aktivitas', [LogAktivitasController::class, 'index'])->name('log-aktivitas.index');
+
+        // Master Data (Khusus Admin Utama)
+        Route::middleware('admin_utama')->prefix('master')->name('master.')->group(function () {
+            // 1. Data Mahasiswa (Single & Batch CSV)
+            Route::get('/mahasiswa/template-csv', [MahasiswaController::class, 'downloadTemplate'])->name('mahasiswa.template-csv');
+            Route::post('/mahasiswa/import-csv', [MahasiswaController::class, 'importCsv'])->name('mahasiswa.import-csv');
+            Route::resource('mahasiswa', MahasiswaController::class)->only(['index', 'store', 'update', 'destroy']);
+
+            // 2. Data Dosen & Kaprodi
+            Route::resource('dosen', DosenController::class)->only(['index', 'store', 'update', 'destroy']);
+
+            // 3. User & Pergantian Role
+            Route::resource('user', UserController::class)->only(['index', 'store', 'update', 'destroy']);
+
+            // 4. Program Studi
+            Route::resource('prodi', ProgramStudiController::class)->only(['index', 'store', 'update', 'destroy']);
+
+            // 5. Admin Prodi
+            Route::resource('admin-prodi', AdminProdiController::class)->only(['index', 'store', 'update', 'destroy']);
+        });
     });
 
     // Route Dosen

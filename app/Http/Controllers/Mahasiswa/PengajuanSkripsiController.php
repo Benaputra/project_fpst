@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Enums\StatusPengajuan;
 use App\Http\Controllers\Controller;
 use App\Models\AktivitasLog;
+use App\Models\Notifikasi;
 use App\Models\PengajuanSkripsi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -74,6 +75,15 @@ class PengajuanSkripsiController extends Controller
             $user,
             'Pengajuan Judul Skripsi',
             "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan judul: '{$skripsi->judul}'"
+        );
+
+        // Notifikasi ke Pengelola (Kaprodi, Admin Prodi, Admin Utama)
+        Notifikasi::kirimKePengelola(
+            $user->program_studi_id,
+            'Pengajuan Judul Skripsi Baru',
+            "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan judul skripsi baru: '{$skripsi->judul}'.",
+            null,
+            $user->id
         );
 
         return redirect()->route('mahasiswa.skripsi.index')

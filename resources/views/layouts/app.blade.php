@@ -739,6 +739,23 @@
                             <a href="{{ route('admin.log-aktivitas.index') }}" class="nav-link {{ request()->routeIs('admin.log-aktivitas.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
                                 <span>📜</span> Log Aktivitas Sistem
                             </a>
+
+                            <div class="menu-label">Master Data (Admin Utama)</div>
+                            <a href="{{ route('admin.master.mahasiswa.index') }}" class="nav-link {{ request()->routeIs('admin.master.mahasiswa.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                                <span>🎓</span> Data Mahasiswa
+                            </a>
+                            <a href="{{ route('admin.master.dosen.index') }}" class="nav-link {{ request()->routeIs('admin.master.dosen.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                                <span>👨‍🏫</span> Data Dosen & Kaprodi
+                            </a>
+                            <a href="{{ route('admin.master.user.index') }}" class="nav-link {{ request()->routeIs('admin.master.user.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                                <span>👤</span> Manajemen User & Role
+                            </a>
+                            <a href="{{ route('admin.master.prodi.index') }}" class="nav-link {{ request()->routeIs('admin.master.prodi.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                                <span>🏛️</span> Program Studi
+                            </a>
+                            <a href="{{ route('admin.master.admin-prodi.index') }}" class="nav-link {{ request()->routeIs('admin.master.admin-prodi.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                                <span>🛡️</span> Admin Prodi
+                            </a>
                         @endif
                     @endif
 
@@ -858,6 +875,10 @@
                         <a href="{{ route('admin.log-aktivitas.index') }}" class="bottom-nav-item {{ request()->routeIs('admin.log-aktivitas.*') ? 'active' : '' }}">
                             <div class="bottom-nav-icon">📜</div>
                             <div>Log</div>
+                        </a>
+                        <a href="{{ route('admin.master.mahasiswa.index') }}" class="bottom-nav-item {{ request()->routeIs('admin.master.*') ? 'active' : '' }}">
+                            <div class="bottom-nav-icon">🗂️</div>
+                            <div>Master</div>
                         </a>
                     @endif
                 @elseif ($user->isDosen())

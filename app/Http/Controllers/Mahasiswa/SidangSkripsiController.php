@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Enums\StatusPengajuan;
 use App\Http\Controllers\Controller;
 use App\Models\AktivitasLog;
+use App\Models\Notifikasi;
 use App\Models\SidangSkripsi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -75,6 +76,15 @@ class SidangSkripsiController extends Controller
             $user,
             'Pengajuan Sidang Skripsi',
             "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan sidang meja hijau untuk judul: '{$skripsi->judul}'"
+        );
+
+        // Notifikasi ke Pengelola (Kaprodi, Admin Prodi, Admin Utama)
+        Notifikasi::kirimKePengelola(
+            $user->program_studi_id,
+            'Pendaftaran Sidang Skripsi Baru',
+            "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan pendaftaran sidang skripsi (meja hijau) untuk judul: '{$skripsi->judul}'.",
+            null,
+            $user->id
         );
 
         return redirect()->route('mahasiswa.sidang.index')
