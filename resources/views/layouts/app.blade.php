@@ -853,9 +853,100 @@
                 font-size: 0.72rem;
             }
         }
+
+        /* Page Transition & Loader (Opsi 2: Center Spinner + Soft Backdrop + Fade In) */
+        @keyframes pageFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .main-container,
+        .auth-container {
+            animation: pageFadeIn 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .page-loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(243, 246, 243, 0.75);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 200ms ease, visibility 200ms ease;
+        }
+
+        .page-loader-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .page-loader-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.85rem;
+            background: #ffffff;
+            padding: 1.35rem 2rem;
+            border-radius: 1.15rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 12px 30px -6px rgba(24, 36, 28, 0.12), 0 6px 12px -4px rgba(24, 36, 28, 0.06);
+            transform: scale(0.95);
+            transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .page-loader-overlay.active .page-loader-card {
+            transform: scale(1);
+        }
+
+        .page-loader-spinner {
+            width: 2.25rem;
+            height: 2.25rem;
+            border: 3px solid var(--primary-light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: pageLoaderSpin 0.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes pageLoaderSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .page-loader-text {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.03em;
+            font-family: inherit;
+        }
     </style>
 </head>
 <body>
+    <!-- Page Loader Overlay (Opsi 2: Center Spinner + Soft Backdrop) -->
+    <div id="page-loader" class="page-loader-overlay" aria-hidden="true">
+        <div class="page-loader-card">
+            <div class="page-loader-spinner"></div>
+            <div class="page-loader-text">Memuat Halaman...</div>
+        </div>
+    </div>
+
     @auth
         @php
             $user = auth()->user();
@@ -1076,7 +1167,7 @@
             </nav>
         </div>
     @else
-        <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; background: var(--canvas);">
+        <div class="auth-container" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; background: var(--canvas);">
             @yield('content')
         </div>
     @endauth
@@ -1105,6 +1196,104 @@
             const target = container.querySelector('#' + tabId);
             if (target) target.classList.add('active');
         }
+
+        // Page Transition & Loader (Opsi 2: Center Spinner + Soft Backdrop)
+        const pageLoader = document.getElementById('page-loader');
+        let loaderTimeout = null;
+
+        function showPageLoader() {
+            if (!pageLoader) return;
+            pageLoader.classList.add('active');
+            pageLoader.setAttribute('aria-hidden', 'false');
+            clearTimeout(loaderTimeout);
+            // Fallback pengaman jika navigasi tertahan / batal
+            loaderTimeout = setTimeout(hidePageLoader, 8000);
+        }
+
+        function hidePageLoader() {
+            if (!pageLoader) return;
+            pageLoader.classList.remove('active');
+            pageLoader.setAttribute('aria-hidden', 'true');
+            clearTimeout(loaderTimeout);
+        }
+
+        // Deteksi klik link navigasi
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+            if (!href) return;
+
+            // Abaikan link khusus (tab internal, anchor hash, javascript, target baru, download)
+            if (
+                href.startsWith('#') ||
+                href.startsWith('javascript:') ||
+                href.startsWith('mailto:') ||
+                href.startsWith('tel:') ||
+                link.getAttribute('target') === '_blank' ||
+                link.hasAttribute('download') ||
+                link.classList.contains('no-loader') ||
+                link.dataset.noLoader === 'true' ||
+                e.ctrlKey || e.metaKey || e.shiftKey || e.altKey
+            ) {
+                return;
+            }
+
+            // Abaikan tautan unduh berkas atau template
+            if (href.includes('/dokumen/download/') || href.includes('/template-csv')) {
+                return;
+            }
+
+            try {
+                const url = new URL(link.href, window.location.origin);
+                // Pastikan domain sama
+                if (url.origin !== window.location.origin) return;
+
+                // Jika mengarah ke halaman yang sama persis (hanya beda hash)
+                if (url.pathname === window.location.pathname && url.search === window.location.search && url.hash !== '') {
+                    return;
+                }
+
+                showPageLoader();
+            } catch (err) {
+                // Abaikan jika URL tidak valid
+            }
+        });
+
+        // Deteksi pengiriman formulir (submit form)
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (!form) return;
+
+            if (
+                form.getAttribute('target') === '_blank' ||
+                form.classList.contains('no-loader') ||
+                form.dataset.noLoader === 'true' ||
+                e.defaultPrevented
+            ) {
+                return;
+            }
+
+            // Abaikan jika validasi form HTML5 gagal
+            if (form.checkValidity && !form.checkValidity()) {
+                return;
+            }
+
+            showPageLoader();
+        });
+
+        // Sembunyikan loader saat halaman selesai dimuat atau dipulihkan dari cache browser (bfcache)
+        window.addEventListener('pageshow', function() {
+            hidePageLoader();
+        });
+
+        // Tombol Escape untuk membatalkan loader jika diperlukan
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hidePageLoader();
+            }
+        });
     </script>
 </body>
 </html>
