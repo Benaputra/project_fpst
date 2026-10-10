@@ -14,6 +14,10 @@ class DokumenController extends Controller
         // Decode path safely
         $decodedPath = base64_decode($path);
 
+        if (str_contains($decodedPath, '..') || str_starts_with($decodedPath, '/') || str_starts_with($decodedPath, '\\')) {
+            abort(403, 'Akses file tidak diizinkan.');
+        }
+
         if (!Storage::exists($decodedPath)) {
             abort(404, 'File dokumen tidak ditemukan.');
         }
@@ -25,6 +29,10 @@ class DokumenController extends Controller
     {
         // Decode path safely
         $decodedPath = base64_decode($path);
+
+        if (str_contains($decodedPath, '..') || str_starts_with($decodedPath, '/') || str_starts_with($decodedPath, '\\')) {
+            abort(403, 'Akses file tidak diizinkan.');
+        }
 
         if (!Storage::exists($decodedPath)) {
             abort(404, 'File dokumen tidak ditemukan.');

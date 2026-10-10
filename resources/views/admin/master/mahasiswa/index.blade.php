@@ -312,7 +312,7 @@
                 <div style="font-weight: 700; margin-bottom: 0.35rem;">Petunjuk Format File CSV:</div>
                 <ul style="margin: 0; padding-left: 1.25rem; line-height: 1.5;">
                     <li>Gunakan format baris header: <code>nama,nim,email,kode_prodi,no_hp,password</code></li>
-                    <li>Kolom <code>kode_prodi</code> dapat diisi kode (misal: <strong>TI</strong> atau <strong>SI</strong>) atau nama lengkap prodi.</li>
+                    <li>Kolom <code>kode_prodi</code> dapat diisi kode (misal: <strong>AGT</strong> atau <strong>AGB</strong>) atau nama lengkap prodi.</li>
                     <li>Jika kolom <code>password</code> dikosongkan, sistem akan otomatis mengeset ke <code>password</code>.</li>
                     <li>Pemisah (delimiter) otomatis mendeteksi koma (<code>,</code>) atau titik koma (<code>;</code>).</li>
                 </ul>

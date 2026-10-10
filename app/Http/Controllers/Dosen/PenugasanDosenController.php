@@ -21,9 +21,9 @@ class PenugasanDosenController extends Controller
     {
         $user = $request->user();
 
-        // 1. Otorisasi: Hanya dosen yang bersangkutan yang dapat merespon
-        if ($penugasan->dosen_id !== $user->id) {
-            abort(403, 'Anda tidak berwenang merespon penugasan ini.');
+        // 1. Otorisasi: Menggunakan Policy PenugasanDosen
+        if ($user->cannot('respond', $penugasan)) {
+            abort(403, 'Anda tidak berwenang merespon penugasan milik dosen lain.');
         }
 
         // 2. Mandat Admin Utama: Dosen tidak dapat menolak

@@ -47,7 +47,7 @@ class PengajuanSkripsiWorkflowTest extends TestCase
         ]);
 
         $this->kaprodi = User::create([
-            'name' => 'Dr. Ratna Wijaya',
+            'name' => 'Dr. Ir. Ratna Wijaya, M.P.',
             'email' => 'kaprodi@example.test',
             'nomor_induk' => '1000000001',
             'password' => 'password',
@@ -56,9 +56,9 @@ class PengajuanSkripsiWorkflowTest extends TestCase
         ]);
 
         $this->admin = User::create([
-            'name' => 'Admin Prodi TI',
-            'email' => 'admin@example.test',
-            'nomor_induk' => 'ADM001',
+            'name' => 'Admin Prodi Agroteknologi',
+            'email' => 'admin.agt@example.test',
+            'nomor_induk' => 'ADM-AGT-01',
             'password' => 'password',
             'role' => UserRole::AdminProdi,
             'program_studi_id' => $this->prodi->id,
@@ -73,7 +73,7 @@ class PengajuanSkripsiWorkflowTest extends TestCase
         ]);
 
         $this->dosen1 = User::create([
-            'name' => 'Dewi Lestari, M.Kom.',
+            'name' => 'Dr. Dewi Lestari, S.P., M.P.',
             'email' => 'dewi@example.test',
             'nomor_induk' => '1000000003',
             'password' => 'password',
@@ -82,7 +82,7 @@ class PengajuanSkripsiWorkflowTest extends TestCase
         ]);
 
         $this->dosen2 = User::create([
-            'name' => 'Ahmad Fauzi, M.Kom.',
+            'name' => 'Ahmad Fauzi, S.P., M.Sc.',
             'email' => 'ahmad@example.test',
             'nomor_induk' => '1000000004',
             'password' => 'password',
@@ -91,7 +91,7 @@ class PengajuanSkripsiWorkflowTest extends TestCase
         ]);
 
         $this->dosen3 = User::create([
-            'name' => 'Fajar Nugroho, M.Cs.',
+            'name' => 'Fajar Nugroho, S.P., M.P.',
             'email' => 'fajar@example.test',
             'nomor_induk' => '1000000006',
             'password' => 'password',
@@ -100,8 +100,8 @@ class PengajuanSkripsiWorkflowTest extends TestCase
         ]);
 
         $this->dosen4 = User::create([
-            'name' => 'Siti Aminah, M.Kom.',
-            'email' => 'siti@example.test',
+            'name' => 'Nur Aisyah, S.P., M.Si.',
+            'email' => 'nur@example.test',
             'nomor_induk' => '1000000007',
             'password' => 'password',
             'role' => UserRole::Dosen,
@@ -117,8 +117,8 @@ class PengajuanSkripsiWorkflowTest extends TestCase
 
         // 1. Mahasiswa ajukan judul + 3 berkas
         $response = $this->actingAs($this->mahasiswa)->post(route('mahasiswa.skripsi.store'), [
-            'judul' => 'Pengembangan Sistem Rekomendasi E-Commerce Berbasis Deep Learning',
-            'abstrak' => 'Penelitian ini membangun arsitektur collaborative filtering neural network.',
+            'judul' => 'Pengaruh Konsentrasi Pupuk Organik Cair Limbah Kulit Pisang terhadap Pertumbuhan Bibit Kelapa Sawit',
+            'abstrak' => 'Penelitian ini membangun analisa efektivitas pupuk organik cair limbah kulit pisang.',
             'file_proposal' => UploadedFile::fake()->create('proposal.pdf', 500, 'application/pdf'),
             'file_transkrip' => UploadedFile::fake()->create('transkrip.pdf', 500, 'application/pdf'),
             'file_bukti_bayar' => UploadedFile::fake()->create('bukti_bayar.pdf', 500, 'application/pdf'),
@@ -158,7 +158,7 @@ class PengajuanSkripsiWorkflowTest extends TestCase
 
         // 2b. Admin mencoba terbitkan SK sebelum dosen menyetujui -> Diblokir!
         $responseBlocked = $this->actingAs($this->admin)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
-            'nomor_sk_bimbingan' => 'SK/099/FPST/TI/2026',
+            'nomor_sk_bimbingan' => 'SK/099/FPST/AGT/2026',
             'tgl_sk_bimbingan' => '2026-09-01',
         ]);
         $responseBlocked->assertSessionHas('error');
@@ -172,7 +172,7 @@ class PengajuanSkripsiWorkflowTest extends TestCase
 
         // 3. Admin menerbitkan SK Bimbingan setelah konfirmasi lengkap
         $response = $this->actingAs($this->admin)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
-            'nomor_sk_bimbingan' => 'SK/099/FPST/TI/2026',
+            'nomor_sk_bimbingan' => 'SK/099/FPST/AGT/2026',
             'tgl_sk_bimbingan' => '2026-09-01',
             'file_sk_bimbingan' => UploadedFile::fake()->create('sk_bimbingan.pdf', 500, 'application/pdf'),
         ]);

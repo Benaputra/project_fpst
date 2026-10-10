@@ -20,11 +20,11 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ProgramStudi $prodiTI;
-    private ProgramStudi $prodiSI;
-    private User $mahasiswaTI;
-    private User $kaprodiTI;
-    private User $adminTI;
+    private ProgramStudi $prodiAgt;
+    private ProgramStudi $prodiAgb;
+    private User $mahasiswaAgt;
+    private User $kaprodiAgt;
+    private User $adminAgt;
     private User $adminUtama;
     private User $dosen1;
     private User $dosen2;
@@ -37,8 +37,8 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         parent::setUp();
         Storage::fake('local');
 
-        $this->prodiTI = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
-        $this->prodiSI = ProgramStudi::create(['nama' => 'Agribisnis', 'kode' => 'AGB']);
+        $this->prodiAgt = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
+        $this->prodiAgb = ProgramStudi::create(['nama' => 'Agribisnis', 'kode' => 'AGB']);
 
         $this->adminUtama = User::create([
             'name' => 'Admin Utama FPST',
@@ -48,76 +48,76 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
             'role' => UserRole::AdminUtama,
         ]);
 
-        $this->kaprodiTI = User::create([
-            'name' => 'Dr. Ratna Wijaya',
-            'email' => 'kaprodi.ti@example.test',
+        $this->kaprodiAgt = User::create([
+            'name' => 'Dr. Ir. Ratna Wijaya, M.P.',
+            'email' => 'kaprodi.agt@example.test',
             'nomor_induk' => '1000000001',
             'password' => 'password',
             'role' => UserRole::Kaprodi,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
-        $this->adminTI = User::create([
-            'name' => 'Admin Prodi TI',
-            'email' => 'admin.ti@example.test',
-            'nomor_induk' => 'ADM-TI',
+        $this->adminAgt = User::create([
+            'name' => 'Admin Prodi Agroteknologi',
+            'email' => 'admin.agt@example.test',
+            'nomor_induk' => 'ADM-AGT-01',
             'password' => 'password',
             'role' => UserRole::AdminProdi,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->dosen1 = User::create([
-            'name' => 'Dewi Lestari, M.Kom.',
+            'name' => 'Dr. Dewi Lestari, S.P., M.P.',
             'email' => 'dewi@example.test',
             'nomor_induk' => '1000000003',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->dosen2 = User::create([
-            'name' => 'Ahmad Fauzi, M.Kom.',
+            'name' => 'Ahmad Fauzi, S.P., M.Sc.',
             'email' => 'ahmad@example.test',
             'nomor_induk' => '1000000004',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->dosen3 = User::create([
-            'name' => 'Fajar Nugroho, M.Cs.',
+            'name' => 'Fajar Nugroho, S.P., M.P.',
             'email' => 'fajar@example.test',
             'nomor_induk' => '1000000006',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->dosen4 = User::create([
-            'name' => 'Siti Aminah, M.Kom.',
-            'email' => 'siti@example.test',
+            'name' => 'Nur Aisyah, S.P., M.Si.',
+            'email' => 'nur@example.test',
             'nomor_induk' => '1000000007',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->dosen5 = User::create([
-            'name' => 'Hendra Setiawan, M.T.',
-            'email' => 'hendra@example.test',
+            'name' => 'Maya Putri, S.P., M.Si.',
+            'email' => 'maya@example.test',
             'nomor_induk' => '1000000008',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
-        $this->mahasiswaTI = User::create([
+        $this->mahasiswaAgt = User::create([
             'name' => 'Budi Santoso',
             'email' => 'budi@example.test',
             'nomor_induk' => '221000000010',
             'password' => 'password',
             'role' => UserRole::Mahasiswa,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
     }
 
@@ -128,9 +128,9 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
     public function test_admin_utama_can_access_penetapan_and_assign_penguji_seminar_and_sidang(): void
     {
         $skripsi = PengajuanSkripsi::create([
-            'mahasiswa_id' => $this->mahasiswaTI->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Deteksi Anomali Jaringan Komputer',
+            'mahasiswa_id' => $this->mahasiswaAgt->id,
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Pengaruh Konsentrasi Pupuk Organik Terhadap Pertumbuhan Padi',
             'pembimbing_1_id' => $this->dosen1->id,
             'nomor_sk_bimbingan' => 'SK/01/2026',
             'status' => StatusPengajuan::Selesai,
@@ -147,7 +147,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         ]);
 
         // 1. Admin utama dapat membuka halaman penetapan
-        $response = $this->actingAs($this->adminUtama)->get(route('kaprodi.penetapan.index', ['prodi_id' => $this->prodiTI->id]));
+        $response = $this->actingAs($this->adminUtama)->get(route('kaprodi.penetapan.index', ['prodi_id' => $this->prodiAgt->id]));
         $response->assertStatus(200);
         $response->assertSee('Akses Penuh Admin Utama');
 
@@ -176,15 +176,15 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
     public function test_sk_update_gives_new_name_version_and_records_in_surat_table(): void
     {
         $skripsi = PengajuanSkripsi::create([
-            'mahasiswa_id' => $this->mahasiswaTI->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Rekomendasi Buku',
+            'mahasiswa_id' => $this->mahasiswaAgt->id,
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Analisis Karakteristik Tanah dan Produktivitas Kelapa Sawit',
             'pembimbing_1_id' => $this->dosen1->id,
             'status' => StatusPengajuan::Diproses,
         ]);
 
         // Penerbitan SK Bimbingan pertama (Versi 1)
-        $this->actingAs($this->adminTI)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
+        $this->actingAs($this->adminAgt)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
             'nomor_sk_bimbingan' => 'SK/001/FPST/2026',
             'tgl_sk_bimbingan' => '2026-09-01',
             'file_sk_bimbingan' => UploadedFile::fake()->create('sk_v1.pdf', 300, 'application/pdf'),
@@ -193,14 +193,14 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         $this->assertDatabaseHas('surat', [
             'nomor_surat' => 'SK/001/FPST/2026',
             'jenis_surat' => 'sk_bimbingan',
-            'nama_surat' => "SK Pembimbing Skripsi - {$this->mahasiswaTI->name}",
+            'nama_surat' => "SK Pembimbing Skripsi - {$this->mahasiswaAgt->name}",
             'versi' => 1,
             'status' => 'aktif',
         ]);
 
         // Update SK Bimbingan (Versi 2) -> Harus menghasilkan Nama baru dan versi baru!
         $skripsi->refresh();
-        $this->actingAs($this->adminTI)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
+        $this->actingAs($this->adminAgt)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
             'nomor_sk_bimbingan' => 'SK/001-REV/FPST/2026',
             'tgl_sk_bimbingan' => '2026-09-05',
             'file_sk_bimbingan' => UploadedFile::fake()->create('sk_v2.pdf', 300, 'application/pdf'),
@@ -217,13 +217,13 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         $this->assertDatabaseHas('surat', [
             'nomor_surat' => 'SK/001-REV/FPST/2026',
             'jenis_surat' => 'sk_bimbingan',
-            'nama_surat' => "SK Pembimbing Skripsi (Pembaruan ke-2) - {$this->mahasiswaTI->name}",
+            'nama_surat' => "SK Pembimbing Skripsi (Pembaruan ke-2) - {$this->mahasiswaAgt->name}",
             'versi' => 2,
             'status' => 'aktif',
         ]);
 
         // Cek halaman arsip surat di administrasi index (Tab 4)
-        $response = $this->actingAs($this->adminTI)->get(route('admin.administrasi.index'));
+        $response = $this->actingAs($this->adminAgt)->get(route('admin.administrasi.index'));
         $response->assertStatus(200);
         $response->assertSee('SK Pembimbing Skripsi (Pembaruan ke-2)');
     }
@@ -234,9 +234,9 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
     public function test_seminar_team_receives_seminar_invitation_and_notification(): void
     {
         $skripsi = PengajuanSkripsi::create([
-            'mahasiswa_id' => $this->mahasiswaTI->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Analisis Sentimen Menggunakan Transformer',
+            'mahasiswa_id' => $this->mahasiswaAgt->id,
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Efektivitas Pengendalian Hama Terpadu Pada Tanaman Padi',
             'pembimbing_1_id' => $this->dosen1->id,
             'pembimbing_2_id' => $this->dosen2->id,
             'nomor_sk_bimbingan' => 'SK/010/FPST/2026',
@@ -250,7 +250,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         ]);
 
         // Admin menetapkan jadwal dan surat undangan seminar
-        $response = $this->actingAs($this->adminTI)->post(route('admin.seminar.jadwal-sk', $seminar->id), [
+        $response = $this->actingAs($this->adminAgt)->post(route('admin.seminar.jadwal-sk', $seminar->id), [
             'tgl_seminar' => '2026-09-15',
             'jam_seminar' => '09:00 - 10:30',
             'ruangan' => 'Ruang Seminar 101',
@@ -303,9 +303,9 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
     public function test_pembimbing_1_and_2_receive_defense_invitation_and_notification(): void
     {
         $skripsi = PengajuanSkripsi::create([
-            'mahasiswa_id' => $this->mahasiswaTI->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Penerapan AI pada Analisis Citra Satelit',
+            'mahasiswa_id' => $this->mahasiswaAgt->id,
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Pemetaan Kesuburan Lahan Pertanian Berbasis Sensor Citra',
             'pembimbing_1_id' => $this->dosen1->id,
             'pembimbing_2_id' => $this->dosen2->id,
             'status' => StatusPengajuan::Selesai,
@@ -314,12 +314,12 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         $sidang = SidangSkripsi::create([
             'pengajuan_skripsi_id' => $skripsi->id,
             'penguji_1_id' => $this->dosen3->id,
-            'penguji_2_id' => $this->kaprodiTI->id,
+            'penguji_2_id' => $this->kaprodiAgt->id,
             'status' => StatusPengajuan::Diproses,
         ]);
 
         // Admin menetapkan jadwal dan surat undangan sidang
-        $response = $this->actingAs($this->adminTI)->post(route('admin.sidang.jadwal-sk', $sidang->id), [
+        $response = $this->actingAs($this->adminAgt)->post(route('admin.sidang.jadwal-sk', $sidang->id), [
             'tgl_sidang' => '2026-09-20',
             'jam_sidang' => '10:00 - 12:00',
             'ruangan' => 'Ruang Sidang Skripsi',
@@ -365,14 +365,14 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         // A. Penguncian Dosen Pembimbing
         // -------------------------------------------------------------
         $skripsi = PengajuanSkripsi::create([
-            'mahasiswa_id' => $this->mahasiswaTI->id,
-            'program_studi_id' => $this->prodiTI->id,
+            'mahasiswa_id' => $this->mahasiswaAgt->id,
+            'program_studi_id' => $this->prodiAgt->id,
             'judul' => 'Sistem IoT Pertanian Cerdas',
             'status' => StatusPengajuan::Diajukan,
         ]);
 
         // Kaprodi menetapkan pembimbing pertama kali -> Berhasil
-        $this->actingAs($this->kaprodiTI)->post(route('kaprodi.skripsi.review', $skripsi->id), [
+        $this->actingAs($this->kaprodiAgt)->post(route('kaprodi.skripsi.review', $skripsi->id), [
             'action' => 'terima',
             'pembimbing_1_id' => $this->dosen1->id,
             'pembimbing_2_id' => $this->dosen2->id,
@@ -381,7 +381,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         $this->assertEquals($this->dosen1->id, $skripsi->pembimbing_1_id);
 
         // Kaprodi mencoba mengubah pembimbing yang sudah ditentukan -> Ditolak!
-        $response = $this->actingAs($this->kaprodiTI)->post(route('kaprodi.skripsi.review', $skripsi->id), [
+        $response = $this->actingAs($this->kaprodiAgt)->post(route('kaprodi.skripsi.review', $skripsi->id), [
             'action' => 'terima',
             'pembimbing_1_id' => $this->dosen3->id,
         ]);
@@ -407,14 +407,14 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         ]);
 
         // Kaprodi menetapkan penguji seminar pertama kali -> Berhasil
-        $this->actingAs($this->kaprodiTI)->post(route('kaprodi.seminar.penguji', $seminar->id), [
+        $this->actingAs($this->kaprodiAgt)->post(route('kaprodi.seminar.penguji', $seminar->id), [
             'penguji_seminar_id' => $this->dosen4->id,
         ]);
         $seminar->refresh();
         $this->assertEquals($this->dosen4->id, $seminar->penguji_seminar_id);
 
         // Kaprodi mencoba mengubah penguji seminar -> Ditolak!
-        $response = $this->actingAs($this->kaprodiTI)->post(route('kaprodi.seminar.penguji', $seminar->id), [
+        $response = $this->actingAs($this->kaprodiAgt)->post(route('kaprodi.seminar.penguji', $seminar->id), [
             'penguji_seminar_id' => $this->dosen5->id,
         ]);
         $response->assertSessionHas('error');
@@ -438,7 +438,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         ]);
 
         // Kaprodi menetapkan 2 penguji sidang pertama kali -> Berhasil
-        $this->actingAs($this->kaprodiTI)->post(route('kaprodi.sidang.penguji', $sidang->id), [
+        $this->actingAs($this->kaprodiAgt)->post(route('kaprodi.sidang.penguji', $sidang->id), [
             'penguji_1_id' => $this->dosen1->id,
             'penguji_2_id' => $this->dosen4->id,
         ]);
@@ -446,7 +446,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         $this->assertEquals($this->dosen1->id, $sidang->penguji_1_id);
 
         // Kaprodi mencoba mengubah penguji sidang -> Ditolak!
-        $response = $this->actingAs($this->kaprodiTI)->post(route('kaprodi.sidang.penguji', $sidang->id), [
+        $response = $this->actingAs($this->kaprodiAgt)->post(route('kaprodi.sidang.penguji', $sidang->id), [
             'penguji_1_id' => $this->dosen4->id,
             'penguji_2_id' => $this->dosen5->id,
         ]);
@@ -468,7 +468,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         // D. Penguncian Nilai Seminar
         // -------------------------------------------------------------
         // Admin Prodi input nilai pertama kali -> Berhasil
-        $this->actingAs($this->adminTI)->post(route('admin.seminar.selesai', $seminar->id), [
+        $this->actingAs($this->adminAgt)->post(route('admin.seminar.selesai', $seminar->id), [
             'nilai_seminar' => 80.00,
             'catatan' => 'Lulus',
         ]);
@@ -476,7 +476,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         $this->assertEquals(80.00, (float) $seminar->nilai_seminar);
 
         // Admin Prodi mencoba mengubah nilai -> Ditolak!
-        $response = $this->actingAs($this->adminTI)->post(route('admin.seminar.selesai', $seminar->id), [
+        $response = $this->actingAs($this->adminAgt)->post(route('admin.seminar.selesai', $seminar->id), [
             'nilai_seminar' => 90.00,
         ]);
         $response->assertSessionHas('error');
@@ -495,7 +495,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         // E. Penguncian Nilai Sidang
         // -------------------------------------------------------------
         // Admin Prodi input nilai sidang pertama kali -> Berhasil
-        $this->actingAs($this->adminTI)->post(route('admin.sidang.selesai', $sidang->id), [
+        $this->actingAs($this->adminAgt)->post(route('admin.sidang.selesai', $sidang->id), [
             'nilai_sidang' => 82.50,
             'catatan' => 'Lulus',
         ]);
@@ -503,7 +503,7 @@ class AdminUtamaAndSuratWorkflowTest extends TestCase
         $this->assertEquals(82.50, (float) $sidang->nilai_sidang);
 
         // Admin Prodi mencoba mengubah nilai sidang -> Ditolak!
-        $response = $this->actingAs($this->adminTI)->post(route('admin.sidang.selesai', $sidang->id), [
+        $response = $this->actingAs($this->adminAgt)->post(route('admin.sidang.selesai', $sidang->id), [
             'nilai_sidang' => 92.00,
         ]);
         $response->assertSessionHas('error');

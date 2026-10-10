@@ -17,32 +17,32 @@ class AdminAdministrasiFIFOTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ProgramStudi $prodiTI;
-    private User $adminTI;
+    private ProgramStudi $prodiAgt;
+    private User $adminAgt;
     private User $dosen1;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->prodiTI = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
+        $this->prodiAgt = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
 
-        $this->adminTI = User::create([
-            'name' => 'Admin Prodi TI',
-            'email' => 'admin.ti@example.test',
-            'nomor_induk' => 'ADM-TI',
+        $this->adminAgt = User::create([
+            'name' => 'Admin Prodi Agroteknologi',
+            'email' => 'admin.agt@example.test',
+            'nomor_induk' => 'ADM-AGT-01',
             'password' => 'password',
             'role' => UserRole::AdminProdi,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->dosen1 = User::create([
-            'name' => 'Dr. Hendra Wijaya',
+            'name' => 'Dr. Hendra Wijaya, S.P., M.Si.',
             'email' => 'hendra@example.test',
             'nomor_induk' => '1000000010',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
     }
 
@@ -54,7 +54,7 @@ class AdminAdministrasiFIFOTest extends TestCase
             'nomor_induk' => '221000000011',
             'password' => 'password',
             'role' => UserRole::Mahasiswa,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $mhs2 = User::create([
@@ -63,14 +63,14 @@ class AdminAdministrasiFIFOTest extends TestCase
             'nomor_induk' => '221000000012',
             'password' => 'password',
             'role' => UserRole::Mahasiswa,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $sk1 = PengajuanSkripsi::create([
             'mahasiswa_id' => $mhs1->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Deteksi Anomali IoT',
-            'abstrak' => 'Abstrak IoT',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Sistem Sensor Deteksi Hama Tanaman Padi FPST',
+            'abstrak' => 'Abstrak deteksi hama padi',
             'status' => StatusPengajuan::Diproses,
             'pembimbing_1_id' => $this->dosen1->id,
             'created_at' => now()->subDays(4),
@@ -78,23 +78,23 @@ class AdminAdministrasiFIFOTest extends TestCase
 
         $sk2 = PengajuanSkripsi::create([
             'mahasiswa_id' => $mhs2->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Rekomendasi E-Commerce',
-            'abstrak' => 'Abstrak E-Commerce',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Analisis Rantai Pasok dan Efisiensi Pemasaran Jagung',
+            'abstrak' => 'Abstrak rantai pasok jagung',
             'status' => StatusPengajuan::Diproses,
             'pembimbing_1_id' => $this->dosen1->id,
             'created_at' => now()->subDay(),
         ]);
 
-        $response = $this->actingAs($this->adminTI)->get(route('admin.administrasi.index', ['sort_skripsi' => 'fifo']));
+        $response = $this->actingAs($this->adminAgt)->get(route('admin.administrasi.index', ['sort_skripsi' => 'fifo']));
         $response->assertStatus(200);
         $response->assertSeeInOrder(['Andi Pratama', 'Bambang Tri']);
 
         // Search test
-        $responseSearch = $this->actingAs($this->adminTI)->get(route('admin.administrasi.index', ['search_skripsi' => 'Anomali']));
+        $responseSearch = $this->actingAs($this->adminAgt)->get(route('admin.administrasi.index', ['search_skripsi' => 'Sensor']));
         $responseSearch->assertStatus(200);
-        $responseSearch->assertSee('Sistem Deteksi Anomali IoT');
-        $responseSearch->assertDontSee('Sistem Rekomendasi E-Commerce');
+        $responseSearch->assertSee('Sistem Sensor Deteksi Hama Tanaman Padi FPST');
+        $responseSearch->assertDontSee('Analisis Rantai Pasok dan Efisiensi Pemasaran Jagung');
     }
 
     public function test_admin_administrasi_seminar_and_sidang_tabs(): void
@@ -105,14 +105,14 @@ class AdminAdministrasiFIFOTest extends TestCase
             'nomor_induk' => '221000000013',
             'password' => 'password',
             'role' => UserRole::Mahasiswa,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $sk = PengajuanSkripsi::create([
             'mahasiswa_id' => $mhs->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Pengenalan Pola Citra Medis',
-            'abstrak' => 'Abstrak citra medis',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Klasifikasi Morfologi Citra Benih Padi FPST',
+            'abstrak' => 'Abstrak citra benih padi',
             'status' => StatusPengajuan::Diproses,
             'pembimbing_1_id' => $this->dosen1->id,
         ]);
@@ -129,14 +129,14 @@ class AdminAdministrasiFIFOTest extends TestCase
             'created_at' => now()->subDay(),
         ]);
 
-        $responseSeminar = $this->actingAs($this->adminTI)->get(route('admin.administrasi.index', ['tab' => 'seminar']));
+        $responseSeminar = $this->actingAs($this->adminAgt)->get(route('admin.administrasi.index', ['tab' => 'seminar']));
         $responseSeminar->assertStatus(200);
-        $responseSeminar->assertSee('Pengenalan Pola Citra Medis');
+        $responseSeminar->assertSee('Klasifikasi Morfologi Citra Benih Padi FPST');
         $responseSeminar->assertSee('Citra Lestari');
 
-        $responseSidang = $this->actingAs($this->adminTI)->get(route('admin.administrasi.index', ['tab' => 'sidang']));
+        $responseSidang = $this->actingAs($this->adminAgt)->get(route('admin.administrasi.index', ['tab' => 'sidang']));
         $responseSidang->assertStatus(200);
-        $responseSidang->assertSee('Pengenalan Pola Citra Medis');
+        $responseSidang->assertSee('Klasifikasi Morfologi Citra Benih Padi FPST');
     }
 }
 

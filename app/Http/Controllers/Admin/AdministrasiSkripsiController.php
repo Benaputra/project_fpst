@@ -174,9 +174,13 @@ class AdministrasiSkripsiController extends Controller
         ));
     }
 
-    public function updateSkBimbingan(Request $request, PengajuanSkripsi $skripsi): RedirectResponse
+    public function updateSkBimbingan(Request $request, PengajuanSkripsi $skripsi, SuratUndanganService $suratService): RedirectResponse
     {
         $user = $request->user();
+
+        if ($user->cannot('issueSk', $skripsi)) {
+            abort(403, 'Akses khusus Admin Program Studi terkait dan Admin Utama.');
+        }
 
         // Cek konfirmasi pembimbing (Admin Utama berhak bypass/override)
         if (!$user->isAdminUtama() && !$skripsi->isPembimbingConfirmed()) {
@@ -222,6 +226,16 @@ class AdministrasiSkripsiController extends Controller
                 ? "SK_Bimbingan_{$nim}_Rev{$versi}_" . time() . ".{$ext}"
                 : "SK_Bimbingan_{$nim}_" . time() . ".{$ext}";
             $filePath = $request->file('file_sk_bimbingan')->storeAs('skripsi/sk_bimbingan', $fileName);
+            $data['file_sk_bimbingan'] = $filePath;
+        } elseif (!empty($validated['nomor_sk_bimbingan'])) {
+            // Otomatis buat SK Bimbingan PDF jika nomor SK diisi dan file tidak diunggah manual
+            $skripsi->fill($data);
+            $filePath = $suratService->generateSkBimbingan(
+                $skripsi,
+                $validated['nomor_sk_bimbingan'],
+                tanggalSk: $validated['tgl_sk_bimbingan'],
+                withSignature: $user->isAdminUtama() || $request->boolean('with_signature')
+            );
             $data['file_sk_bimbingan'] = $filePath;
         }
 
@@ -295,6 +309,10 @@ class AdministrasiSkripsiController extends Controller
     {
         $user = $request->user();
 
+        if ($user->cannot('schedule', $seminar)) {
+            abort(403, 'Akses khusus Admin Program Studi terkait dan Admin Utama.');
+        }
+
         // Cek konfirmasi penguji seminar (Admin Utama berhak bypass/override)
         if (!$user->isAdminUtama() && !$seminar->isPengujiConfirmed()) {
             return back()->with('error', 'Jadwal dan dokumen seminar belum dapat diterbitkan karena penugasan dosen penguji seminar masih menunggu konfirmasi kesediaan atau belum disetujui.');
@@ -342,6 +360,16 @@ class AdministrasiSkripsiController extends Controller
         if ($request->hasFile('file_sk_seminar')) {
             $ext = $request->file('file_sk_seminar')->getClientOriginalExtension() ?: 'pdf';
             $fileSk = $request->file('file_sk_seminar')->storeAs('seminar/sk', "SK_Seminar_{$nim}_" . time() . ".{$ext}");
+            $data['file_sk_seminar'] = $fileSk;
+        } elseif (!empty($validated['nomor_sk_seminar'])) {
+            // Otomatis buat SK Penguji Seminar jika nomor SK diisi dan file tidak diunggah manual
+            $seminar->fill($data);
+            $fileSk = $suratService->generateSkSeminar(
+                $seminar,
+                $validated['nomor_sk_seminar'],
+                tanggalSk: $validated['tgl_seminar'],
+                withSignature: $user->isAdminUtama() || $request->boolean('with_signature')
+            );
             $data['file_sk_seminar'] = $fileSk;
         }
 
@@ -468,6 +496,10 @@ class AdministrasiSkripsiController extends Controller
             return back()->with('error', 'Nilai seminar telah ditentukan dan terkunci. Hanya Admin Utama yang berwenang mengubah nilai.');
         }
 
+        if ($user->cannot('finalizeScore', $seminar) && !$user->isAdminUtama()) {
+            abort(403, 'Akses khusus Admin Program Studi terkait dan Admin Utama.');
+        }
+
         $validated = $request->validate([
             'nilai_seminar' => ['required', 'numeric', 'min:0', 'max:100'],
             'catatan' => ['nullable', 'string', 'max:1000'],
@@ -517,6 +549,10 @@ class AdministrasiSkripsiController extends Controller
     {
         $user = $request->user();
 
+        if ($user->cannot('schedule', $sidang)) {
+            abort(403, 'Akses khusus Admin Program Studi terkait dan Admin Utama.');
+        }
+
         // Cek konfirmasi dewan penguji sidang (Admin Utama berhak bypass/override)
         if (!$user->isAdminUtama() && !$sidang->isDewanPengujiConfirmed()) {
             return back()->with('error', 'Jadwal dan dokumen sidang belum dapat diterbitkan karena penugasan dewan penguji sidang masih menunggu konfirmasi kesediaan atau belum disetujui.');
@@ -564,6 +600,16 @@ class AdministrasiSkripsiController extends Controller
         if ($request->hasFile('file_sk_sidang')) {
             $ext = $request->file('file_sk_sidang')->getClientOriginalExtension() ?: 'pdf';
             $fileSk = $request->file('file_sk_sidang')->storeAs('sidang/sk', "SK_Sidang_{$nim}_" . time() . ".{$ext}");
+            $data['file_sk_sidang'] = $fileSk;
+        } elseif (!empty($validated['nomor_sk_sidang'])) {
+            // Otomatis buat SK Dewan Penguji Sidang jika nomor SK diisi dan file tidak diunggah manual
+            $sidang->fill($data);
+            $fileSk = $suratService->generateSkSidang(
+                $sidang,
+                $validated['nomor_sk_sidang'],
+                tanggalSk: $validated['tgl_sidang'],
+                withSignature: $user->isAdminUtama() || $request->boolean('with_signature')
+            );
             $data['file_sk_sidang'] = $fileSk;
         }
 
@@ -697,6 +743,10 @@ class AdministrasiSkripsiController extends Controller
         // Aturan 5: Selain admin utama, role lain tidak boleh merubah nilai jika sudah ditentukan
         if ($sidang->nilai_sidang !== null && !$user->isAdminUtama()) {
             return back()->with('error', 'Nilai sidang telah ditentukan dan terkunci. Hanya Admin Utama yang berwenang mengubah nilai.');
+        }
+
+        if ($user->cannot('finalizeScore', $sidang) && !$user->isAdminUtama()) {
+            abort(403, 'Akses khusus Admin Program Studi terkait dan Admin Utama.');
         }
 
         $validated = $request->validate([

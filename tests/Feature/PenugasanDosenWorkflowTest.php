@@ -42,7 +42,7 @@ class PenugasanDosenWorkflowTest extends TestCase
         $this->kaprodi = User::factory()->create([
             'role' => UserRole::Kaprodi,
             'program_studi_id' => $this->prodi->id,
-            'name' => 'Kaprodi TI',
+            'name' => 'Dr. Ir. Ratna Wijaya, M.P.',
             'email' => 'kaprodi@fpst.ac.id',
             'nomor_induk' => 'KAPRODI001',
         ]);
@@ -58,32 +58,32 @@ class PenugasanDosenWorkflowTest extends TestCase
         $this->adminProdi = User::factory()->create([
             'role' => UserRole::AdminProdi,
             'program_studi_id' => $this->prodi->id,
-            'name' => 'Admin Prodi TI',
-            'email' => 'admin.ti@fpst.ac.id',
-            'nomor_induk' => 'ADMINTI01',
+            'name' => 'Admin Prodi Agroteknologi',
+            'email' => 'admin.agt@fpst.ac.id',
+            'nomor_induk' => 'ADM-AGT-01',
         ]);
 
         $this->dosen1 = User::factory()->create([
             'role' => UserRole::Dosen,
             'program_studi_id' => $this->prodi->id,
-            'name' => 'Dr. Budi Santoso, M.Kom',
-            'email' => 'budi@fpst.ac.id',
+            'name' => 'Dr. Dewi Lestari, S.P., M.P.',
+            'email' => 'dewi@fpst.ac.id',
             'nomor_induk' => 'DOSEN001',
         ]);
 
         $this->dosen2 = User::factory()->create([
             'role' => UserRole::Dosen,
             'program_studi_id' => $this->prodi->id,
-            'name' => 'Siti Aminah, M.T',
-            'email' => 'siti@fpst.ac.id',
+            'name' => 'Ahmad Fauzi, S.P., M.Sc.',
+            'email' => 'ahmad@fpst.ac.id',
             'nomor_induk' => 'DOSEN002',
         ]);
 
         $this->dosen3 = User::factory()->create([
             'role' => UserRole::Dosen,
             'program_studi_id' => $this->prodi->id,
-            'name' => 'Rudi Hermawan, Ph.D',
-            'email' => 'rudi@fpst.ac.id',
+            'name' => 'Fajar Nugroho, S.P., M.P.',
+            'email' => 'fajar@fpst.ac.id',
             'nomor_induk' => 'DOSEN003',
         ]);
 
@@ -91,7 +91,7 @@ class PenugasanDosenWorkflowTest extends TestCase
             'role' => UserRole::Mahasiswa,
             'program_studi_id' => $this->prodi->id,
             'name' => 'Ahmad Dani',
-            'email' => 'ahmad@fpst.ac.id',
+            'email' => 'mahasiswa@fpst.ac.id',
             'nomor_induk' => 'NIM2026001',
         ]);
     }
@@ -101,7 +101,7 @@ class PenugasanDosenWorkflowTest extends TestCase
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
             'program_studi_id' => $this->prodi->id,
-            'judul' => 'Perancangan Sistem Rekomendasi Kampus Merdeka',
+            'judul' => 'Optimalisasi Pola Tanam Tanaman Padi Berkelanjutan FPST',
             'abstrak' => 'Abstrak penelitian...',
             'status' => StatusPengajuan::Diajukan,
         ]);
@@ -161,7 +161,7 @@ class PenugasanDosenWorkflowTest extends TestCase
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
             'program_studi_id' => $this->prodi->id,
-            'judul' => 'Implementasi Deep Learning Pada Deteksi Anomali Jaringan',
+            'judul' => 'Identifikasi Serangan Hama Tanaman Padi FPST',
             'abstrak' => 'Abstrak...',
             'status' => StatusPengajuan::Diajukan,
         ]);
@@ -186,14 +186,14 @@ class PenugasanDosenWorkflowTest extends TestCase
         // Dosen 1 menolak dengan alasan lengkap dan merekomendasikan Dosen 2
         $resTolak = $this->actingAs($this->dosen1)->post(route('dosen.penugasan.respon', $penugasan->id), [
             'aksi' => 'tolak',
-            'alasan_penolakan' => 'Kuota bimbingan saya sudah penuh semester ini dan topik jaringan lebih tepat dibimbing Dosen Siti.',
+            'alasan_penolakan' => 'Kuota bimbingan saya sudah penuh semester ini dan topik hama lebih tepat dibimbing Dosen Ahmad.',
             'rekomendasi_dosen_id' => $this->dosen2->id,
         ]);
         $resTolak->assertSessionHas('success');
 
         $penugasan->refresh();
         $this->assertEquals(StatusPenugasanDosen::Ditolak, $penugasan->status);
-        $this->assertEquals('Kuota bimbingan saya sudah penuh semester ini dan topik jaringan lebih tepat dibimbing Dosen Siti.', $penugasan->alasan_penolakan);
+        $this->assertEquals('Kuota bimbingan saya sudah penuh semester ini dan topik hama lebih tepat dibimbing Dosen Ahmad.', $penugasan->alasan_penolakan);
         $this->assertEquals($this->dosen2->id, $penugasan->rekomendasi_dosen_id);
 
         // Foreign Key di pengajuan_skripsi di-null-kan agar Kaprodi bisa assign dosen lain
@@ -234,7 +234,7 @@ class PenugasanDosenWorkflowTest extends TestCase
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
             'program_studi_id' => $this->prodi->id,
-            'judul' => 'Audit Keamanan Siber Menggunakan Metode NIST',
+            'judul' => 'Analisis Kelayakan Finansial Usaha Tani Padi Organik FPST',
             'abstrak' => 'Abstrak...',
             'status' => StatusPengajuan::Diajukan,
         ]);
@@ -278,7 +278,7 @@ class PenugasanDosenWorkflowTest extends TestCase
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
             'program_studi_id' => $this->prodi->id,
-            'judul' => 'Analisis Sentimen Menggunakan IndoBERT',
+            'judul' => 'Karakteristik Fisiologi Kedelai Unggul FPST',
             'pembimbing_1_id' => $this->dosen1->id,
             'status' => StatusPengajuan::Selesai,
         ]);
@@ -407,7 +407,7 @@ class PenugasanDosenWorkflowTest extends TestCase
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
             'program_studi_id' => $this->prodi->id,
-            'judul' => 'Perancangan Blockchain pada Supply Chain',
+            'judul' => 'Analisis Rantai Pasok Pemasaran Pupuk Organik FPST',
             'status' => StatusPengajuan::Diajukan,
         ]);
 
@@ -422,14 +422,14 @@ class PenugasanDosenWorkflowTest extends TestCase
 
         // 1. Admin Prodi mencoba menerbitkan SK Bimbingan -> DIBLOKIR!
         $resAdminProdi = $this->actingAs($this->adminProdi)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
-            'nomor_sk_bimbingan' => 'SK/TI/001/2026',
+            'nomor_sk_bimbingan' => 'SK/AGT/001/2026',
             'tgl_sk_bimbingan' => '2026-09-04',
         ]);
         $resAdminProdi->assertSessionHas('error');
 
         // 2. Admin Utama (punya hak bypass/override) menerbitkan SK -> DIIZINKAN!
         $resAdminUtama = $this->actingAs($this->adminUtama)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
-            'nomor_sk_bimbingan' => 'SK/OVERRIDE/TI/001/2026',
+            'nomor_sk_bimbingan' => 'SK/OVERRIDE/AGT/001/2026',
             'tgl_sk_bimbingan' => '2026-09-04',
         ]);
         $resAdminUtama->assertSessionHas('success');

@@ -68,7 +68,7 @@ class AturanEksklusiDosenPembimbingPengujiTest extends TestCase
         ]);
 
         $this->dosen1 = User::create([
-            'name' => 'Dosen 1, M.Kom.',
+            'name' => 'Dosen 1, M.P.',
             'email' => 'dosen1@example.test',
             'nomor_induk' => '1000000003',
             'password' => 'password',
@@ -77,7 +77,7 @@ class AturanEksklusiDosenPembimbingPengujiTest extends TestCase
         ]);
 
         $this->dosen2 = User::create([
-            'name' => 'Dosen 2, M.Kom.',
+            'name' => 'Dosen 2, M.Si.',
             'email' => 'dosen2@example.test',
             'nomor_induk' => '1000000004',
             'password' => 'password',
@@ -86,7 +86,7 @@ class AturanEksklusiDosenPembimbingPengujiTest extends TestCase
         ]);
 
         $this->dosen3 = User::create([
-            'name' => 'Dosen 3, M.Cs.',
+            'name' => 'Dosen 3, M.Agr.',
             'email' => 'dosen3@example.test',
             'nomor_induk' => '1000000005',
             'password' => 'password',
@@ -95,7 +95,7 @@ class AturanEksklusiDosenPembimbingPengujiTest extends TestCase
         ]);
 
         $this->dosen4 = User::create([
-            'name' => 'Dosen 4, M.T.',
+            'name' => 'Dosen 4, S.P., M.P.',
             'email' => 'dosen4@example.test',
             'nomor_induk' => '1000000006',
             'password' => 'password',

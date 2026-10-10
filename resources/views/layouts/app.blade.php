@@ -1166,6 +1166,8 @@
                 </a>
             </nav>
         </div>
+
+        @include('partials.modal-preview-dokumen')
     @else
         <div class="auth-container" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; background: var(--canvas);">
             @yield('content')

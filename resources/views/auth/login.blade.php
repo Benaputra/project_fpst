@@ -3,7 +3,7 @@
 @section('title', 'Masuk - Portal Skripsi')
 
 @section('content')
-<div style="max-width: 440px; width: 100%; margin: 0 auto;">
+<div style="max-width: 480px; width: 100%; margin: 0 auto;">
     <div style="text-align: center; margin-bottom: 1.75rem;">
         <div style="display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.85rem;">
             <img src="{{ asset('images/logo.png') }}" alt="Logo Fakultas Pertanian, Sains dan Teknologi - UPB" style="width: 5.25rem; height: 5.25rem; max-width: 100%; object-fit: contain; filter: drop-shadow(0 8px 20px rgba(0,0,0,0.15)); transition: transform 0.2s ease;">
@@ -44,16 +44,62 @@
         </form>
 
         <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px dashed var(--border);">
-            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.75rem; text-align: center;">
-                Akun Uji Coba Cepat (Password: password)
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.85rem; text-align: center; letter-spacing: 0.05em;">
+                Akun Uji Coba Cepat (Password: <code>password</code>)
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; font-size: 0.78rem;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('mahasiswa1@example.test')">Mahasiswa 1 (Baru)</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('mahasiswa2@example.test')">Mahasiswa 2 (SK)</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('kaprodi.ti@example.test')">Kaprodi TI</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('admin.ti@example.test')">Admin Prodi TI</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('dosen1@example.test')">Dosen (Penguji)</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('admin.utama@example.test')">Admin Utama</button>
+
+            <!-- Kategori 1: Mahasiswa (3 Tahapan Alur) -->
+            <div style="margin-bottom: 0.75rem;">
+                <div style="font-size: 0.68rem; font-weight: 700; color: #446850; text-transform: uppercase; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.3rem;">
+                    <span>👨‍🎓</span> Mahasiswa (3 Tahapan Alur):
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem;">
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.4rem; justify-content: center; text-align: center; line-height: 1.2;" onclick="setLogin('mahasiswa1@example.test')">
+                        Mahasiswa 1<br><span style="font-size: 0.65rem; color: var(--text-muted);">(Baru)</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.4rem; justify-content: center; text-align: center; line-height: 1.2;" onclick="setLogin('mahasiswa2@example.test')">
+                        Mahasiswa 2<br><span style="font-size: 0.65rem; color: var(--text-muted);">(SK Terbit)</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.4rem; justify-content: center; text-align: center; line-height: 1.2;" onclick="setLogin('mahasiswa3@example.test')">
+                        Mahasiswa 3<br><span style="font-size: 0.65rem; color: var(--text-muted);">(Lulus Seminar)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Kategori 2: Kaprodi & Admin Prodi FPST -->
+            <div style="margin-bottom: 0.75rem;">
+                <div style="font-size: 0.68rem; font-weight: 700; color: #446850; text-transform: uppercase; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.3rem;">
+                    <span>🏛️</span> Program Studi (AGT & AGB):
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem;">
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.5rem; justify-content: flex-start; text-align: left; line-height: 1.2;" onclick="setLogin('kaprodi.agt@example.test')">
+                        ⚖️ Kaprodi Agroteknologi
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.5rem; justify-content: flex-start; text-align: left; line-height: 1.2;" onclick="setLogin('kaprodi.agb@example.test')">
+                        ⚖️ Kaprodi Agribisnis
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.5rem; justify-content: flex-start; text-align: left; line-height: 1.2;" onclick="setLogin('admin.agt@example.test')">
+                        📂 Admin Prodi AGT
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.5rem; justify-content: flex-start; text-align: left; line-height: 1.2;" onclick="setLogin('admin.agb@example.test')">
+                        📂 Admin Prodi AGB
+                    </button>
+                </div>
+            </div>
+
+            <!-- Kategori 3: Dosen & Admin Utama -->
+            <div>
+                <div style="font-size: 0.68rem; font-weight: 700; color: #446850; text-transform: uppercase; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.3rem;">
+                    <span>👨‍🏫</span> Dosen & Super Admin:
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem;">
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.5rem; justify-content: flex-start; text-align: left; line-height: 1.2;" onclick="setLogin('dosen1@example.test')">
+                        🎓 Dosen Pembimbing/Penguji
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.35rem 0.5rem; justify-content: flex-start; text-align: left; line-height: 1.2;" onclick="setLogin('admin.utama@example.test')">
+                        👑 Admin Utama FPST
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -61,8 +107,11 @@
 
 <script>
 function setLogin(email) {
-    document.getElementById('email').value = email;
-    document.getElementById('password').value = 'password';
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    emailEl.value = email;
+    passEl.value = 'password';
+    emailEl.focus();
 }
 </script>
 @endsection

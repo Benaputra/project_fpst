@@ -113,6 +113,21 @@ class PengajuanSkripsi extends Model
     }
 
     // Helper status
+    public function isDiajukan(): bool
+    {
+        return $this->status === StatusPengajuan::Diajukan;
+    }
+
+    public function isDiproses(): bool
+    {
+        return $this->status === StatusPengajuan::Diproses;
+    }
+
+    public function isDitolak(): bool
+    {
+        return $this->status === StatusPengajuan::Ditolak;
+    }
+
     public function isSelesai(): bool
     {
         return $this->status === StatusPengajuan::Selesai;
@@ -121,5 +136,36 @@ class PengajuanSkripsi extends Model
     public function canAjukanSeminar(): bool
     {
         return $this->status === StatusPengajuan::Selesai && !empty($this->nomor_sk_bimbingan);
+    }
+
+    public function isPembimbing(User|int|null $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        $userId = $user instanceof User ? $user->id : (int) $user;
+        return (int) $this->pembimbing_1_id === $userId || (int) $this->pembimbing_2_id === $userId;
+    }
+
+    // Scopes
+    public function scopeForProdi($query, int $prodiId)
+    {
+        return $query->where('program_studi_id', $prodiId);
+    }
+
+    public function scopeDiajukan($query)
+    {
+        return $query->where('status', StatusPengajuan::Diajukan);
+    }
+
+    public function scopeDiproses($query)
+    {
+        return $query->where('status', StatusPengajuan::Diproses);
+    }
+
+    public function scopeSelesai($query)
+    {
+        return $query->where('status', StatusPengajuan::Selesai);
     }
 }

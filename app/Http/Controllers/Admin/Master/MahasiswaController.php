@@ -204,8 +204,8 @@ class MahasiswaController extends Controller
         return response()->stream(function () {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, ['nama', 'nim', 'email', 'kode_prodi', 'no_hp', 'password']);
-            fputcsv($handle, ['Budi Santoso', '221000000088', 'budi.santoso@example.test', 'TI', '081234567890', 'password']);
-            fputcsv($handle, ['Siti Aminah', '222000000088', 'siti.aminah@example.test', 'SI', '081234567891', 'password']);
+            fputcsv($handle, ['Budi Santoso', '221000000088', 'budi.santoso@example.test', 'AGT', '081234567890', 'password']);
+            fputcsv($handle, ['Siti Aminah', '222000000088', 'siti.aminah@example.test', 'AGB', '081234567891', 'password']);
             fclose($handle);
         }, 200, $headers);
     }

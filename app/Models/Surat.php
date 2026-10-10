@@ -93,4 +93,24 @@ class Surat extends Model
             default => 'badge--warning',
         };
     }
+
+    public function isAktif(): bool
+    {
+        return $this->status === 'aktif';
+    }
+
+    public function isDiperbarui(): bool
+    {
+        return $this->status === 'diperbarui';
+    }
+
+    public function scopeAktif($query)
+    {
+        return $query->where('status', 'aktif');
+    }
+
+    public function scopeForProdi($query, int $prodiId)
+    {
+        return $query->where('program_studi_id', $prodiId);
+    }
 }

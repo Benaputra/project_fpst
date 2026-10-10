@@ -324,4 +324,196 @@ class SuratUndanganOtomatisTest extends TestCase
         $this->assertStringStartsWith('ttd/', $this->prodiAgb->file_ttd_kaprodi);
         Storage::disk('public')->assertExists($this->prodiAgb->file_ttd_kaprodi);
     }
+
+    public function test_sk_bimbingan_terbuat_otomatis_saat_nomor_diinput_tanpa_upload_file(): void
+    {
+        $nomorSk = 'SK-BIMB/001/FPST/AGB/2026';
+
+        $response = $this->actingAs($this->adminAgb)->post(route('admin.skripsi.sk-bimbingan', $this->skripsi->id), [
+            'nomor_sk_bimbingan' => $nomorSk,
+            'tgl_sk_bimbingan' => '2026-07-01',
+            // file_sk_bimbingan dikosongkan agar dibuat otomatis
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $this->skripsi->refresh();
+
+        // Pastikan file SK bimbingan terisi otomatis
+        $this->assertNotNull($this->skripsi->file_sk_bimbingan);
+        Storage::disk('local')->assertExists($this->skripsi->file_sk_bimbingan);
+
+        // Pastikan isi file adalah PDF yang valid
+        $content = Storage::disk('local')->get($this->skripsi->file_sk_bimbingan);
+        $this->assertStringStartsWith('%PDF-', $content);
+
+        // Pastikan tercatat di tabel surat arsip
+        $this->assertDatabaseHas('surat', [
+            'nomor_surat' => $nomorSk,
+            'jenis_surat' => 'sk_bimbingan',
+            'pengajuan_skripsi_id' => $this->skripsi->id,
+            'file_surat' => $this->skripsi->file_sk_bimbingan,
+            'status' => 'aktif',
+        ]);
+    }
+
+    public function test_sk_penguji_seminar_terbuat_otomatis_saat_nomor_sk_diinput_tanpa_upload_file(): void
+    {
+        $seminar = SeminarSkripsi::create([
+            'pengajuan_skripsi_id' => $this->skripsi->id,
+            'penguji_seminar_id' => $this->penguji1->id,
+            'status' => StatusPengajuan::Diproses,
+        ]);
+
+        $nomorSk = 'SK-SEM/001/FPST/AGB/2026';
+
+        $response = $this->actingAs($this->adminAgb)->post(route('admin.seminar.jadwal-sk', $seminar->id), [
+            'tgl_seminar' => '2026-07-15',
+            'jam_seminar' => '09:00 - 10:30 WIB',
+            'ruangan' => 'Ruang Audiovisual FPST',
+            'nomor_sk_seminar' => $nomorSk,
+            // file_sk_seminar dikosongkan agar dibuat otomatis
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $seminar->refresh();
+
+        // Pastikan file SK seminar diisi otomatis oleh sistem
+        $this->assertNotNull($seminar->file_sk_seminar);
+        Storage::disk('local')->assertExists($seminar->file_sk_seminar);
+
+        // Pastikan isi file adalah PDF yang valid
+        $content = Storage::disk('local')->get($seminar->file_sk_seminar);
+        $this->assertStringStartsWith('%PDF-', $content);
+
+        // Pastikan tercatat di tabel surat arsip
+        $this->assertDatabaseHas('surat', [
+            'nomor_surat' => $nomorSk,
+            'jenis_surat' => 'sk_seminar',
+            'seminar_skripsi_id' => $seminar->id,
+            'file_surat' => $seminar->file_sk_seminar,
+            'status' => 'aktif',
+        ]);
+    }
+
+    public function test_sk_dewan_penguji_sidang_terbuat_otomatis_saat_nomor_sk_diinput_tanpa_upload_file(): void
+    {
+        $sidang = SidangSkripsi::create([
+            'pengajuan_skripsi_id' => $this->skripsi->id,
+            'penguji_1_id' => $this->penguji1->id,
+            'penguji_2_id' => $this->penguji2->id,
+            'status' => StatusPengajuan::Diproses,
+        ]);
+
+        $nomorSk = 'SK-SDG/001/FPST/AGB/2026';
+
+        $response = $this->actingAs($this->adminAgb)->post(route('admin.sidang.jadwal-sk', $sidang->id), [
+            'tgl_sidang' => '2026-08-25',
+            'jam_sidang' => '13:00 - 15:00 WIB',
+            'ruangan' => 'Ruang Sidang FPST',
+            'nomor_sk_sidang' => $nomorSk,
+            // file_sk_sidang dikosongkan agar dibuat otomatis
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $sidang->refresh();
+
+        // Pastikan file SK sidang diisi otomatis oleh sistem
+        $this->assertNotNull($sidang->file_sk_sidang);
+        Storage::disk('local')->assertExists($sidang->file_sk_sidang);
+
+        // Pastikan isi file adalah PDF yang valid
+        $content = Storage::disk('local')->get($sidang->file_sk_sidang);
+        $this->assertStringStartsWith('%PDF-', $content);
+
+        // Pastikan tercatat di tabel surat arsip
+        $this->assertDatabaseHas('surat', [
+            'nomor_surat' => $nomorSk,
+            'jenis_surat' => 'sk_sidang',
+            'sidang_skripsi_id' => $sidang->id,
+            'file_surat' => $sidang->file_sk_sidang,
+            'status' => 'aktif',
+        ]);
+    }
+
+    public function test_undangan_dan_sk_keduanya_terbuat_otomatis_saat_keduanya_diisi_tanpa_file(): void
+    {
+        $sidang = SidangSkripsi::create([
+            'pengajuan_skripsi_id' => $this->skripsi->id,
+            'penguji_1_id' => $this->penguji1->id,
+            'penguji_2_id' => $this->penguji2->id,
+            'status' => StatusPengajuan::Diproses,
+        ]);
+
+        $nomorUndangan = 'UND-SDG/002/FPST/2026';
+        $nomorSk = 'SK-SDG/002/FPST/2026';
+
+        $response = $this->actingAs($this->adminUtama)->post(route('admin.sidang.jadwal-sk', $sidang->id), [
+            'tgl_sidang' => '2026-08-30',
+            'jam_sidang' => '10:00 - 12:00 WIB',
+            'ruangan' => 'Ruang Sidang Utama',
+            'nomor_undangan_sidang' => $nomorUndangan,
+            'nomor_sk_sidang' => $nomorSk,
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $sidang->refresh();
+
+        // Keduanya harus terbuat
+        $this->assertNotNull($sidang->file_undangan_sidang);
+        $this->assertNotNull($sidang->file_sk_sidang);
+
+        Storage::disk('local')->assertExists($sidang->file_undangan_sidang);
+        Storage::disk('local')->assertExists($sidang->file_sk_sidang);
+
+        $this->assertDatabaseHas('surat', [
+            'nomor_surat' => $nomorUndangan,
+            'jenis_surat' => 'undangan_sidang',
+        ]);
+
+        $this->assertDatabaseHas('surat', [
+            'nomor_surat' => $nomorSk,
+            'jenis_surat' => 'sk_sidang',
+        ]);
+    }
+
+    public function test_dokumen_sk_memuat_kop_resmi_fpst_upb_nama_fakultas_dan_istilah_sidang_skripsi(): void
+    {
+        $sidang = SidangSkripsi::create([
+            'pengajuan_skripsi_id' => $this->skripsi->id,
+            'penguji_1_id' => $this->penguji1->id,
+            'penguji_2_id' => $this->penguji2->id,
+            'status' => StatusPengajuan::Diproses,
+        ]);
+
+        $viewHtml = view('pdf.sk-sidang', [
+            'nomorSurat' => 'SK-TEST/01/2026',
+            'tanggalSurat' => '25 Agustus 2026',
+            'mahasiswa' => $this->mahasiswa,
+            'programStudi' => $this->prodiAgb,
+            'skripsi' => $this->skripsi,
+            'hariTanggal' => 'Selasa / 25 Agustus 2026',
+            'jam' => '10.00 WIB',
+            'ruangan' => 'Ruang Sidang',
+            'pembimbing1' => $this->pembimbing1,
+            'pembimbing2' => $this->pembimbing2,
+            'penguji1' => $this->penguji1,
+            'penguji2' => $this->penguji2,
+            'kaprodi' => $this->kaprodiAgb,
+            'penandatanganJabatan' => 'A.n. Dekan<br>Ketua Program Studi Agribisnis',
+            'penandatanganNama' => $this->kaprodiAgb->name,
+            'penandatanganNidn' => $this->kaprodiAgb->nomor_induk,
+            'logoBase64' => '',
+            'ttdBase64' => '',
+        ])->render();
+
+        $this->assertStringContainsString('FAKULTAS PERTANIAN, SAINS DAN TEKNOLOGI', $viewHtml);
+        $this->assertStringContainsString('UNIVERSITAS PANCA BHAKTI', $viewHtml);
+        $this->assertStringContainsString('AGRIBISNIS', $viewHtml);
+        $this->assertStringContainsString('Sidang Skripsi', $viewHtml);
+        $this->assertStringNotContainsString('meja hijau', strtolower($viewHtml));
+    }
 }

@@ -87,8 +87,69 @@ class SeminarSkripsi extends Model
         return true;
     }
 
+    public function isDiajukan(): bool
+    {
+        return $this->status === StatusPengajuan::Diajukan;
+    }
+
+    public function isDiproses(): bool
+    {
+        return $this->status === StatusPengajuan::Diproses;
+    }
+
+    public function isDitolak(): bool
+    {
+        return $this->status === StatusPengajuan::Ditolak;
+    }
+
     public function isSelesai(): bool
     {
         return $this->status === StatusPengajuan::Selesai;
+    }
+
+    public function canAjukanSidang(): bool
+    {
+        return $this->isSelesai() && $this->nilai_seminar !== null;
+    }
+
+    public function isPenguji(User|int|null $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        $userId = $user instanceof User ? $user->id : (int) $user;
+        return (int) $this->penguji_seminar_id === $userId;
+    }
+
+    public function getMahasiswaAttribute(): ?User
+    {
+        return $this->pengajuanSkripsi?->mahasiswa;
+    }
+
+    public function getProgramStudiIdAttribute(): ?int
+    {
+        return $this->pengajuanSkripsi?->program_studi_id;
+    }
+
+    // Scopes
+    public function scopeForProdi($query, int $prodiId)
+    {
+        return $query->whereHas('pengajuanSkripsi', fn ($q) => $q->where('program_studi_id', $prodiId));
+    }
+
+    public function scopeDiajukan($query)
+    {
+        return $query->where('status', StatusPengajuan::Diajukan);
+    }
+
+    public function scopeDiproses($query)
+    {
+        return $query->where('status', StatusPengajuan::Diproses);
+    }
+
+    public function scopeSelesai($query)
+    {
+        return $query->where('status', StatusPengajuan::Selesai);
     }
 }

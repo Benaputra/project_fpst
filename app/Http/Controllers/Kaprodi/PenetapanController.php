@@ -124,8 +124,8 @@ class PenetapanController extends Controller
     public function updateJudul(Request $request, PengajuanSkripsi $skripsi): RedirectResponse
     {
         $user = $request->user();
-        if (!$user->isKaprodi() && !$user->isAdminUtama()) {
-            abort(403, 'Akses khusus Kaprodi dan Admin Utama.');
+        if ($user->cannot('update', $skripsi)) {
+            abort(403, 'Akses khusus Kaprodi se-program studi dan Admin Utama.');
         }
 
         // Ambil penugasan terakhir untuk P1 dan P2
@@ -259,8 +259,8 @@ class PenetapanController extends Controller
     public function assignPengujiSeminar(Request $request, SeminarSkripsi $seminar): RedirectResponse
     {
         $user = $request->user();
-        if (!$user->isKaprodi() && !$user->isAdminUtama()) {
-            abort(403, 'Akses khusus Kaprodi dan Admin Utama.');
+        if ($user->cannot('assignPenguji', $seminar)) {
+            abort(403, 'Akses khusus Kaprodi se-program studi dan Admin Utama.');
         }
 
         $latestPenguji = $seminar->latestPenugasanPenguji();
@@ -351,8 +351,8 @@ class PenetapanController extends Controller
     public function assignPengujiSidang(Request $request, SidangSkripsi $sidang): RedirectResponse
     {
         $user = $request->user();
-        if (!$user->isKaprodi() && !$user->isAdminUtama()) {
-            abort(403, 'Akses khusus Kaprodi dan Admin Utama.');
+        if ($user->cannot('assignPenguji', $sidang)) {
+            abort(403, 'Akses khusus Kaprodi se-program studi dan Admin Utama.');
         }
 
         $latestPenguji1 = $sidang->latestPenugasanPenguji1();

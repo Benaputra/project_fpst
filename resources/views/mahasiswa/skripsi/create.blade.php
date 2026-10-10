@@ -22,7 +22,7 @@
 
             <div class="form-group">
                 <label for="judul" class="form-label">Rencana Judul Skripsi <span style="color: #dc2626;">*</span></label>
-                <textarea id="judul" name="judul" class="form-control" rows="3" placeholder="Contoh: Rancang Bangun Sistem Informasi Pengelolaan Persediaan Menggunakan Algoritma XYZ..." required>{{ old('judul') }}</textarea>
+                <textarea id="judul" name="judul" class="form-control" rows="3" placeholder="Contoh: Pengaruh Konsentrasi Pupuk Organik Cair terhadap Pertumbuhan Bibit Kelapa Sawit..." required>{{ old('judul') }}</textarea>
                 <div class="form-help">Gunakan Bahasa Indonesia baku dengan huruf kapital di setiap awal kata utama.</div>
                 @error('judul')
                     <div class="form-error">{{ $message }}</div>

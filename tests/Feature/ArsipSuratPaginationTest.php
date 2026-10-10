@@ -15,7 +15,7 @@ class ArsipSuratPaginationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ProgramStudi $prodiTI;
+    private ProgramStudi $prodiAgt;
     private User $adminUtama;
     private User $mahasiswa;
 
@@ -23,7 +23,7 @@ class ArsipSuratPaginationTest extends TestCase
     {
         parent::setUp();
 
-        $this->prodiTI = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
+        $this->prodiAgt = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
 
         $this->adminUtama = User::create([
             'name' => 'Admin Utama FPST',
@@ -39,7 +39,7 @@ class ArsipSuratPaginationTest extends TestCase
             'nomor_induk' => '221000000010',
             'password' => 'password',
             'role' => UserRole::Mahasiswa,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
     }
 
@@ -47,8 +47,8 @@ class ArsipSuratPaginationTest extends TestCase
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Deteksi Anomali Jaringan Komputer',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Pengaruh Dosis Pupuk Kompos Terhadap Produktivitas Kedelai',
             'nomor_sk_bimbingan' => 'SK/01/2026',
             'status' => StatusPengajuan::Selesai,
         ]);
@@ -56,11 +56,11 @@ class ArsipSuratPaginationTest extends TestCase
         // Buat 15 data surat agar terjadi paginasi (10 per halaman)
         for ($i = 1; $i <= 15; $i++) {
             Surat::create([
-                'nomor_surat' => "SK/00{$i}/FPST/TI/2026",
+                'nomor_surat' => "SK/00{$i}/FPST/AGT/2026",
                 'jenis_surat' => 'sk_bimbingan',
                 'nama_surat' => "SK Pembimbing Skripsi #{$i}",
                 'pengajuan_skripsi_id' => $skripsi->id,
-                'program_studi_id' => $this->prodiTI->id,
+                'program_studi_id' => $this->prodiAgt->id,
                 'tgl_surat' => now(),
                 'versi' => 1,
                 'status' => 'aktif',

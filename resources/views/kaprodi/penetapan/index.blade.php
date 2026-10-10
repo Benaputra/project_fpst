@@ -182,22 +182,37 @@
                                     </div>
                                 @endif
 
-                                <!-- Berkas Links -->
-                                <div style="display: flex; gap: 0.35rem; margin-top: 0.35rem; flex-wrap: wrap;">
+                                <!-- Berkas Links & Interactive Preview -->
+                                <div style="display: flex; gap: 0.35rem; margin-top: 0.45rem; flex-wrap: wrap; align-items: center;">
                                     @if ($skripsi->file_proposal)
-                                        <a href="{{ route('dokumen.download', base64_encode($skripsi->file_proposal)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            📄 Draf Proposal
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($skripsi->file_proposal)) }}', '{{ route('dokumen.download', base64_encode($skripsi->file_proposal)) }}', 'Draf Proposal - {{ addslashes($skripsi->mahasiswa->name) }}')" title="Pratinjau Draf Proposal">
+                                                👁️ Draf Proposal
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($skripsi->file_proposal)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                     @if ($skripsi->file_transkrip)
-                                        <a href="{{ route('dokumen.download', base64_encode($skripsi->file_transkrip)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            📊 Transkrip
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($skripsi->file_transkrip)) }}', '{{ route('dokumen.download', base64_encode($skripsi->file_transkrip)) }}', 'Transkrip Nilai - {{ addslashes($skripsi->mahasiswa->name) }}')" title="Pratinjau Transkrip Nilai">
+                                                👁️ Transkrip
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($skripsi->file_transkrip)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                     @if ($skripsi->file_bukti_bayar)
-                                        <a href="{{ route('dokumen.download', base64_encode($skripsi->file_bukti_bayar)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            💳 Bukti Bayar
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($skripsi->file_bukti_bayar)) }}', '{{ route('dokumen.download', base64_encode($skripsi->file_bukti_bayar)) }}', 'Bukti Bayar - {{ addslashes($skripsi->mahasiswa->name) }}')" title="Pratinjau Bukti Pembayaran">
+                                                👁️ Bukti Bayar
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($skripsi->file_bukti_bayar)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                 </div>
                             </td>
@@ -222,9 +237,12 @@
                                     'is_admin' => $user->isAdminUtama(),
                                     'p1_is_confirmed' => $p1Confirmed,
                                     'p2_is_confirmed' => $p2Confirmed,
-                                    'file_proposal' => $skripsi->file_proposal ? route('dokumen.download', base64_encode($skripsi->file_proposal)) : null,
-                                    'file_transkrip' => $skripsi->file_transkrip ? route('dokumen.download', base64_encode($skripsi->file_transkrip)) : null,
-                                    'file_bukti_bayar' => $skripsi->file_bukti_bayar ? route('dokumen.download', base64_encode($skripsi->file_bukti_bayar)) : null,
+                                    'file_proposal_view' => $skripsi->file_proposal ? route('dokumen.view', base64_encode($skripsi->file_proposal)) : null,
+                                    'file_proposal_dl' => $skripsi->file_proposal ? route('dokumen.download', base64_encode($skripsi->file_proposal)) : null,
+                                    'file_transkrip_view' => $skripsi->file_transkrip ? route('dokumen.view', base64_encode($skripsi->file_transkrip)) : null,
+                                    'file_transkrip_dl' => $skripsi->file_transkrip ? route('dokumen.download', base64_encode($skripsi->file_transkrip)) : null,
+                                    'file_bukti_bayar_view' => $skripsi->file_bukti_bayar ? route('dokumen.view', base64_encode($skripsi->file_bukti_bayar)) : null,
+                                    'file_bukti_bayar_dl' => $skripsi->file_bukti_bayar ? route('dokumen.download', base64_encode($skripsi->file_bukti_bayar)) : null,
                                     'form_action' => route('kaprodi.skripsi.review', $skripsi->id),
                                     'riwayat_penugasan' => $skripsi->penugasanDosen->map(fn($p) => [
                                         'dosen' => $p->dosen ? $p->dosen->name : '-',
@@ -381,27 +399,47 @@
                                     </div>
                                 @endif
 
-                                <!-- Berkas Links -->
-                                <div style="display: flex; gap: 0.35rem; margin-top: 0.35rem; flex-wrap: wrap;">
+                                <!-- Berkas Links & Interactive Preview -->
+                                <div style="display: flex; gap: 0.35rem; margin-top: 0.45rem; flex-wrap: wrap; align-items: center;">
                                     @if ($seminar->file_naskah_seminar)
-                                        <a href="{{ route('dokumen.download', base64_encode($seminar->file_naskah_seminar)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            📄 Naskah
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($seminar->file_naskah_seminar)) }}', '{{ route('dokumen.download', base64_encode($seminar->file_naskah_seminar)) }}', 'Naskah Proposal Seminar - {{ addslashes($sk->mahasiswa->name) }}')" title="Pratinjau Naskah Proposal">
+                                                👁️ Naskah
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($seminar->file_naskah_seminar)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                     @if ($seminar->file_acc_pembimbing)
-                                        <a href="{{ route('dokumen.download', base64_encode($seminar->file_acc_pembimbing)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            ✍️ ACC
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($seminar->file_acc_pembimbing)) }}', '{{ route('dokumen.download', base64_encode($seminar->file_acc_pembimbing)) }}', 'ACC Pembimbing Seminar - {{ addslashes($sk->mahasiswa->name) }}')" title="Pratinjau Lembar ACC Pembimbing">
+                                                👁️ ACC
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($seminar->file_acc_pembimbing)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                     @if ($seminar->file_bukti_bayar_seminar)
-                                        <a href="{{ route('dokumen.download', base64_encode($seminar->file_bukti_bayar_seminar)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            💳 Bayar
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($seminar->file_bukti_bayar_seminar)) }}', '{{ route('dokumen.download', base64_encode($seminar->file_bukti_bayar_seminar)) }}', 'Bukti Bayar Seminar - {{ addslashes($sk->mahasiswa->name) }}')" title="Pratinjau Bukti Bayar Seminar">
+                                                👁️ Bayar
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($seminar->file_bukti_bayar_seminar)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                     @if ($seminar->file_toefl)
-                                        <a href="{{ route('dokumen.download', base64_encode($seminar->file_toefl)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            📜 TOEFL
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($seminar->file_toefl)) }}', '{{ route('dokumen.download', base64_encode($seminar->file_toefl)) }}', 'Sertifikat TOEFL - {{ addslashes($sk->mahasiswa->name) }}')" title="Pratinjau Sertifikat TOEFL">
+                                                👁️ TOEFL
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($seminar->file_toefl)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                 </div>
                             </td>
@@ -430,10 +468,14 @@
                                     'is_locked' => $isLockedSem,
                                     'is_admin' => $user->isAdminUtama(),
                                     'penguji_is_confirmed' => $pengujiSemConfirmed,
-                                    'file_naskah' => $seminar->file_naskah_seminar ? route('dokumen.download', base64_encode($seminar->file_naskah_seminar)) : null,
-                                    'file_acc' => $seminar->file_acc_pembimbing ? route('dokumen.download', base64_encode($seminar->file_acc_pembimbing)) : null,
-                                    'file_bayar' => $seminar->file_bukti_bayar_seminar ? route('dokumen.download', base64_encode($seminar->file_bukti_bayar_seminar)) : null,
-                                    'file_toefl' => $seminar->file_toefl ? route('dokumen.download', base64_encode($seminar->file_toefl)) : null,
+                                    'file_naskah_view' => $seminar->file_naskah_seminar ? route('dokumen.view', base64_encode($seminar->file_naskah_seminar)) : null,
+                                    'file_naskah_dl' => $seminar->file_naskah_seminar ? route('dokumen.download', base64_encode($seminar->file_naskah_seminar)) : null,
+                                    'file_acc_view' => $seminar->file_acc_pembimbing ? route('dokumen.view', base64_encode($seminar->file_acc_pembimbing)) : null,
+                                    'file_acc_dl' => $seminar->file_acc_pembimbing ? route('dokumen.download', base64_encode($seminar->file_acc_pembimbing)) : null,
+                                    'file_bayar_view' => $seminar->file_bukti_bayar_seminar ? route('dokumen.view', base64_encode($seminar->file_bukti_bayar_seminar)) : null,
+                                    'file_bayar_dl' => $seminar->file_bukti_bayar_seminar ? route('dokumen.download', base64_encode($seminar->file_bukti_bayar_seminar)) : null,
+                                    'file_toefl_view' => $seminar->file_toefl ? route('dokumen.view', base64_encode($seminar->file_toefl)) : null,
+                                    'file_toefl_dl' => $seminar->file_toefl ? route('dokumen.download', base64_encode($seminar->file_toefl)) : null,
                                     'form_action' => route('kaprodi.seminar.penguji', $seminar->id),
                                     'riwayat_penugasan' => $seminar->penugasanDosen->map(fn($p) => [
                                         'dosen' => $p->dosen ? $p->dosen->name : '-',
@@ -601,27 +643,47 @@
                                     </div>
                                 @endif
 
-                                <!-- Berkas Links -->
-                                <div style="display: flex; gap: 0.35rem; margin-top: 0.35rem; flex-wrap: wrap;">
+                                <!-- Berkas Links & Interactive Preview -->
+                                <div style="display: flex; gap: 0.35rem; margin-top: 0.45rem; flex-wrap: wrap; align-items: center;">
                                     @if ($sidang->file_naskah_sidang)
-                                        <a href="{{ route('dokumen.download', base64_encode($sidang->file_naskah_sidang)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            📘 Naskah Final
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($sidang->file_naskah_sidang)) }}', '{{ route('dokumen.download', base64_encode($sidang->file_naskah_sidang)) }}', 'Naskah Skripsi Final - {{ addslashes($sk->mahasiswa->name) }}')" title="Pratinjau Naskah Skripsi Final">
+                                                👁️ Naskah Final
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($sidang->file_naskah_sidang)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                     @if ($sidang->file_acc_sidang)
-                                        <a href="{{ route('dokumen.download', base64_encode($sidang->file_acc_sidang)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            ✍️ ACC Sidang
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($sidang->file_acc_sidang)) }}', '{{ route('dokumen.download', base64_encode($sidang->file_acc_sidang)) }}', 'ACC Pembimbing Sidang - {{ addslashes($sk->mahasiswa->name) }}')" title="Pratinjau Lembar ACC Sidang">
+                                                👁️ ACC Sidang
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($sidang->file_acc_sidang)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                     @if ($sidang->file_bebas_revisi_seminar)
-                                        <a href="{{ route('dokumen.download', base64_encode($sidang->file_bebas_revisi_seminar)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            📄 Bebas Revisi
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($sidang->file_bebas_revisi_seminar)) }}', '{{ route('dokumen.download', base64_encode($sidang->file_bebas_revisi_seminar)) }}', 'Bebas Revisi Seminar - {{ addslashes($sk->mahasiswa->name) }}')" title="Pratinjau Bebas Revisi Seminar">
+                                                👁️ Bebas Revisi
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($sidang->file_bebas_revisi_seminar)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                     @if ($sidang->file_bukti_bayar_sidang)
-                                        <a href="{{ route('dokumen.download', base64_encode($sidang->file_bukti_bayar_sidang)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px;">
-                                            💳 Bukti Bayar
-                                        </a>
+                                        <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; min-height: 24px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('{{ route('dokumen.view', base64_encode($sidang->file_bukti_bayar_sidang)) }}', '{{ route('dokumen.download', base64_encode($sidang->file_bukti_bayar_sidang)) }}', 'Bukti Bayar Sidang - {{ addslashes($sk->mahasiswa->name) }}')" title="Pratinjau Bukti Pembayaran Sidang">
+                                                👁️ Bukti Bayar
+                                            </button>
+                                            <a href="{{ route('dokumen.download', base64_encode($sidang->file_bukti_bayar_sidang)) }}" class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 0.15rem 0.35rem; min-height: 24px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                                                📥
+                                            </a>
+                                        </div>
                                     @endif
                                 </div>
                             </td>
@@ -654,10 +716,14 @@
                                     'is_admin' => $user->isAdminUtama(),
                                     'penguji1_is_confirmed' => $p1SidangConfirmed,
                                     'penguji2_is_confirmed' => $p2SidangConfirmed,
-                                    'file_naskah' => $sidang->file_naskah_sidang ? route('dokumen.download', base64_encode($sidang->file_naskah_sidang)) : null,
-                                    'file_acc' => $sidang->file_acc_sidang ? route('dokumen.download', base64_encode($sidang->file_acc_sidang)) : null,
-                                    'file_bebas' => $sidang->file_bebas_revisi_seminar ? route('dokumen.download', base64_encode($sidang->file_bebas_revisi_seminar)) : null,
-                                    'file_bayar' => $sidang->file_bukti_bayar_sidang ? route('dokumen.download', base64_encode($sidang->file_bukti_bayar_sidang)) : null,
+                                    'file_naskah_view' => $sidang->file_naskah_sidang ? route('dokumen.view', base64_encode($sidang->file_naskah_sidang)) : null,
+                                    'file_naskah_dl' => $sidang->file_naskah_sidang ? route('dokumen.download', base64_encode($sidang->file_naskah_sidang)) : null,
+                                    'file_acc_view' => $sidang->file_acc_sidang ? route('dokumen.view', base64_encode($sidang->file_acc_sidang)) : null,
+                                    'file_acc_dl' => $sidang->file_acc_sidang ? route('dokumen.download', base64_encode($sidang->file_acc_sidang)) : null,
+                                    'file_bebas_view' => $sidang->file_bebas_revisi_seminar ? route('dokumen.view', base64_encode($sidang->file_bebas_revisi_seminar)) : null,
+                                    'file_bebas_dl' => $sidang->file_bebas_revisi_seminar ? route('dokumen.download', base64_encode($sidang->file_bebas_revisi_seminar)) : null,
+                                    'file_bayar_view' => $sidang->file_bukti_bayar_sidang ? route('dokumen.view', base64_encode($sidang->file_bukti_bayar_sidang)) : null,
+                                    'file_bayar_dl' => $sidang->file_bukti_bayar_sidang ? route('dokumen.download', base64_encode($sidang->file_bukti_bayar_sidang)) : null,
                                     'form_action' => route('kaprodi.sidang.penguji', $sidang->id),
                                     'riwayat_penugasan' => $sidang->penugasanDosen->map(fn($p) => [
                                         'dosen' => $p->dosen ? $p->dosen->name : '-',
@@ -778,6 +844,21 @@
         return html;
     }
 
+    function buildDocButton(viewUrl, dlUrl, label, title) {
+        if (!viewUrl) return '';
+        const safeTitle = (title || label).replace(/'/g, "\\'");
+        return `
+            <div style="display: inline-flex; border-radius: 0.35rem; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.25rem 0.55rem; min-height: 28px; border: none; border-radius: 0; background: #ffffff;" onclick="openPreviewModal('${viewUrl}', '${dlUrl || viewUrl}', '${safeTitle}')" title="Pratinjau ${label}">
+                    👁️ ${label}
+                </button>
+                <a href="${dlUrl || viewUrl}" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 0.25rem 0.45rem; min-height: 28px; border: none; border-left: 1px solid var(--border); border-radius: 0; background: #f1f5f9;" title="Unduh File PDF">
+                    📥
+                </a>
+            </div>
+        `;
+    }
+
     function openDrawerJudul(data) {
         const panel = document.getElementById('drawer-panel');
         const backdrop = document.getElementById('drawer-backdrop');
@@ -790,9 +871,9 @@
         document.getElementById('drawer-tgl').innerText = data.tgl_pengajuan;
 
         let berkasHtml = '';
-        if (data.file_proposal) berkasHtml += `<a href="${data.file_proposal}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">📄 Draf Proposal</a> `;
-        if (data.file_transkrip) berkasHtml += `<a href="${data.file_transkrip}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">📊 Transkrip Nilai</a> `;
-        if (data.file_bukti_bayar) berkasHtml += `<a href="${data.file_bukti_bayar}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">💳 Bukti Bayar</a> `;
+        berkasHtml += buildDocButton(data.file_proposal_view, data.file_proposal_dl, 'Draf Proposal', 'Draf Proposal Skripsi - ' + data.mhs_name);
+        berkasHtml += buildDocButton(data.file_transkrip_view, data.file_transkrip_dl, 'Transkrip Nilai', 'Transkrip Nilai - ' + data.mhs_name);
+        berkasHtml += buildDocButton(data.file_bukti_bayar_view, data.file_bukti_bayar_dl, 'Bukti Bayar', 'Bukti Bayar - ' + data.mhs_name);
 
         let content = `
             <!-- Mahasiswa & Judul Info -->
@@ -934,10 +1015,10 @@
         document.getElementById('drawer-tgl').innerText = data.tgl_pengajuan;
 
         let berkasHtml = '';
-        if (data.file_naskah) berkasHtml += `<a href="${data.file_naskah}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">📄 Naskah Proposal</a> `;
-        if (data.file_acc) berkasHtml += `<a href="${data.file_acc}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">✍️ ACC Pembimbing</a> `;
-        if (data.file_bayar) berkasHtml += `<a href="${data.file_bayar}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">💳 Bukti Bayar</a> `;
-        if (data.file_toefl) berkasHtml += `<a href="${data.file_toefl}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">📜 TOEFL</a> `;
+        berkasHtml += buildDocButton(data.file_naskah_view, data.file_naskah_dl, 'Naskah Proposal', 'Naskah Proposal Seminar - ' + data.mhs_name);
+        berkasHtml += buildDocButton(data.file_acc_view, data.file_acc_dl, 'ACC Pembimbing', 'ACC Pembimbing Seminar - ' + data.mhs_name);
+        berkasHtml += buildDocButton(data.file_bayar_view, data.file_bayar_dl, 'Bukti Bayar', 'Bukti Bayar Seminar - ' + data.mhs_name);
+        berkasHtml += buildDocButton(data.file_toefl_view, data.file_toefl_dl, 'Sertifikat TOEFL', 'Sertifikat TOEFL - ' + data.mhs_name);
 
         let content = `
             <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">
@@ -1028,10 +1109,10 @@
         document.getElementById('drawer-tgl').innerText = data.tgl_pengajuan;
 
         let berkasHtml = '';
-        if (data.file_naskah) berkasHtml += `<a href="${data.file_naskah}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">📘 Naskah Final</a> `;
-        if (data.file_acc) berkasHtml += `<a href="${data.file_acc}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">✍️ ACC Sidang</a> `;
-        if (data.file_bebas) berkasHtml += `<a href="${data.file_bebas}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">📄 Bebas Revisi</a> `;
-        if (data.file_bayar) berkasHtml += `<a href="${data.file_bayar}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">💳 Bukti Bayar</a> `;
+        berkasHtml += buildDocButton(data.file_naskah_view, data.file_naskah_dl, 'Naskah Final', 'Naskah Skripsi Final - ' + data.mhs_name);
+        berkasHtml += buildDocButton(data.file_acc_view, data.file_acc_dl, 'ACC Sidang', 'ACC Sidang - ' + data.mhs_name);
+        berkasHtml += buildDocButton(data.file_bebas_view, data.file_bebas_dl, 'Bebas Revisi', 'Bebas Revisi Seminar - ' + data.mhs_name);
+        berkasHtml += buildDocButton(data.file_bayar_view, data.file_bayar_dl, 'Bukti Bayar', 'Bukti Bayar Sidang - ' + data.mhs_name);
 
         let content = `
             <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">

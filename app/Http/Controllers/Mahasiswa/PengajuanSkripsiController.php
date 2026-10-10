@@ -26,6 +26,10 @@ class PengajuanSkripsiController extends Controller
     public function create(Request $request): View|RedirectResponse
     {
         $user = $request->user();
+        if ($user->cannot('create', PengajuanSkripsi::class)) {
+            abort(403, 'Hanya mahasiswa resmi yang dapat mengajukan judul skripsi.');
+        }
+
         $existing = $user->pengajuanSkripsi()->first();
 
         if ($existing && $existing->status !== StatusPengajuan::Ditolak) {
@@ -39,6 +43,9 @@ class PengajuanSkripsiController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
+        if ($user->cannot('create', PengajuanSkripsi::class)) {
+            abort(403, 'Hanya mahasiswa resmi yang dapat mengajukan judul skripsi.');
+        }
 
         $validated = $request->validate([
             'judul' => ['required', 'string', 'min:10', 'max:500'],

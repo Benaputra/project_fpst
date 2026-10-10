@@ -21,15 +21,15 @@ class MasterDataAdminUtamaTest extends TestCase
     private User $adminProdi;
     private User $dosen;
     private User $mahasiswa;
-    private ProgramStudi $prodiTi;
-    private ProgramStudi $prodiSi;
+    private ProgramStudi $prodiAgt;
+    private ProgramStudi $prodiAgb;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->prodiTi = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
-        $this->prodiSi = ProgramStudi::create(['nama' => 'Agribisnis', 'kode' => 'AGB']);
+        $this->prodiAgt = ProgramStudi::create(['nama' => 'Agroteknologi', 'kode' => 'AGT']);
+        $this->prodiAgb = ProgramStudi::create(['nama' => 'Agribisnis', 'kode' => 'AGB']);
 
         $this->adminUtama = User::create([
             'name' => 'Admin Utama FPST',
@@ -40,21 +40,21 @@ class MasterDataAdminUtamaTest extends TestCase
         ]);
 
         $this->adminProdi = User::create([
-            'name' => 'Admin Prodi TI',
-            'email' => 'admin.ti@test.com',
-            'nomor_induk' => 'ADM-TI',
+            'name' => 'Admin Prodi Agroteknologi',
+            'email' => 'admin.agt@test.com',
+            'nomor_induk' => 'ADM-AGT-01',
             'password' => Hash::make('password'),
             'role' => UserRole::AdminProdi,
-            'program_studi_id' => $this->prodiTi->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->dosen = User::create([
-            'name' => 'Dr. Dosen Penguji',
+            'name' => 'Dr. Dosen Penguji, S.P., M.P.',
             'email' => 'dosen@test.com',
             'nomor_induk' => '1000000010',
             'password' => Hash::make('password'),
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTi->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->mahasiswa = User::create([
@@ -63,7 +63,7 @@ class MasterDataAdminUtamaTest extends TestCase
             'nomor_induk' => '221000000099',
             'password' => Hash::make('password'),
             'role' => UserRole::Mahasiswa,
-            'program_studi_id' => $this->prodiTi->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
     }
 
@@ -104,7 +104,7 @@ class MasterDataAdminUtamaTest extends TestCase
             'name' => 'Ahmad Fajar',
             'nomor_induk' => '221000000055',
             'email' => 'ahmad.fajar@test.com',
-            'program_studi_id' => $this->prodiTi->id,
+            'program_studi_id' => $this->prodiAgt->id,
             'no_hp' => '081234567890',
             'password' => 'secret123',
         ]);
@@ -125,7 +125,7 @@ class MasterDataAdminUtamaTest extends TestCase
             'name' => 'Ahmad Fajar Pratama',
             'nomor_induk' => '221000000055',
             'email' => 'ahmad.pratama@test.com',
-            'program_studi_id' => $this->prodiSi->id,
+            'program_studi_id' => $this->prodiAgb->id,
             'no_hp' => '089999999999',
         ])->assertRedirect(route('admin.master.mahasiswa.index'));
 
@@ -133,7 +133,7 @@ class MasterDataAdminUtamaTest extends TestCase
             'id' => $created->id,
             'name' => 'Ahmad Fajar Pratama',
             'email' => 'ahmad.pratama@test.com',
-            'program_studi_id' => $this->prodiSi->id,
+            'program_studi_id' => $this->prodiAgb->id,
         ]);
     }
 
@@ -141,8 +141,8 @@ class MasterDataAdminUtamaTest extends TestCase
     {
         PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTi->id,
-            'judul' => 'Sistem Informasi Skripsi Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Efektivitas Pupuk Kandang Kambing Terhadap Tanaman Jagung Manis',
             'status' => StatusPengajuan::Diajukan,
         ]);
 
@@ -157,7 +157,7 @@ class MasterDataAdminUtamaTest extends TestCase
             'nomor_induk' => '221000000077',
             'password' => Hash::make('password'),
             'role' => UserRole::Mahasiswa,
-            'program_studi_id' => $this->prodiTi->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->actingAs($this->adminUtama)->delete(route('admin.master.mahasiswa.destroy', $mhsBaru->id))
@@ -211,10 +211,10 @@ class MasterDataAdminUtamaTest extends TestCase
     {
         // Buat Dosen baru sebagai Kaprodi
         $res = $this->actingAs($this->adminUtama)->post(route('admin.master.dosen.store'), [
-            'name' => 'Dr. Ratna Dewi, M.Kom.',
+            'name' => 'Dr. Ratna Dewi, S.P., M.P.',
             'nomor_induk' => '1000000088',
             'email' => 'ratna.dewi@test.com',
-            'program_studi_id' => $this->prodiTi->id,
+            'program_studi_id' => $this->prodiAgt->id,
             'role' => 'kaprodi',
             'no_hp' => '081234567888',
         ]);
@@ -229,17 +229,17 @@ class MasterDataAdminUtamaTest extends TestCase
 
         // Update jadi Dosen biasa
         $this->actingAs($this->adminUtama)->put(route('admin.master.dosen.update', $dosenBaru->id), [
-            'name' => 'Dr. Ratna Dewi, M.Kom.',
+            'name' => 'Dr. Ratna Dewi, S.P., M.P.',
             'nomor_induk' => '1000000088',
             'email' => 'ratna.dewi@test.com',
-            'program_studi_id' => $this->prodiSi->id,
+            'program_studi_id' => $this->prodiAgb->id,
             'role' => 'dosen',
         ])->assertRedirect(route('admin.master.dosen.index'));
 
         $this->assertDatabaseHas('users', [
             'id' => $dosenBaru->id,
             'role' => 'dosen',
-            'program_studi_id' => $this->prodiSi->id,
+            'program_studi_id' => $this->prodiAgb->id,
         ]);
     }
 
@@ -250,7 +250,7 @@ class MasterDataAdminUtamaTest extends TestCase
             'email' => 'staff@test.com',
             'password' => Hash::make('password'),
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTi->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         // Promosikan ke Admin Utama
@@ -310,42 +310,42 @@ class MasterDataAdminUtamaTest extends TestCase
         $this->assertDatabaseMissing('program_studi', ['id' => $prodiTe->id]);
 
         // Hapus Prodi yang masih ada user harus gagal
-        $res = $this->actingAs($this->adminUtama)->delete(route('admin.master.prodi.destroy', $this->prodiTi->id));
+        $res = $this->actingAs($this->adminUtama)->delete(route('admin.master.prodi.destroy', $this->prodiAgt->id));
         $res->assertSessionHas('error');
-        $this->assertDatabaseHas('program_studi', ['id' => $this->prodiTi->id]);
+        $this->assertDatabaseHas('program_studi', ['id' => $this->prodiAgt->id]);
     }
 
     public function test_admin_utama_can_manage_admin_prodi(): void
     {
         // Tambah Admin Prodi
         $res = $this->actingAs($this->adminUtama)->post(route('admin.master.admin-prodi.store'), [
-            'name' => 'Staf Tata Usaha SI',
-            'email' => 'admin.si.baru@test.com',
-            'nomor_induk' => 'ADM-SI-02',
-            'program_studi_id' => $this->prodiSi->id,
+            'name' => 'Staf Administrasi Agribisnis',
+            'email' => 'admin.agb.baru@test.com',
+            'nomor_induk' => 'ADM-AGB-02',
+            'program_studi_id' => $this->prodiAgb->id,
             'no_hp' => '081234567800',
         ]);
 
         $res->assertRedirect(route('admin.master.admin-prodi.index'));
         $this->assertDatabaseHas('users', [
-            'email' => 'admin.si.baru@test.com',
+            'email' => 'admin.agb.baru@test.com',
             'role' => 'admin_prodi',
-            'program_studi_id' => $this->prodiSi->id,
+            'program_studi_id' => $this->prodiAgb->id,
         ]);
 
-        $newAdmin = User::where('email', 'admin.si.baru@test.com')->first();
+        $newAdmin = User::where('email', 'admin.agb.baru@test.com')->first();
 
         // Update Admin Prodi
         $this->actingAs($this->adminUtama)->put(route('admin.master.admin-prodi.update', $newAdmin->id), [
-            'name' => 'Staf Tata Usaha SI Update',
-            'email' => 'admin.si.baru@test.com',
-            'program_studi_id' => $this->prodiTi->id,
+            'name' => 'Staf Administrasi Agribisnis Update',
+            'email' => 'admin.agb.baru@test.com',
+            'program_studi_id' => $this->prodiAgt->id,
         ])->assertRedirect(route('admin.master.admin-prodi.index'));
 
         $this->assertDatabaseHas('users', [
             'id' => $newAdmin->id,
-            'name' => 'Staf Tata Usaha SI Update',
-            'program_studi_id' => $this->prodiTi->id,
+            'name' => 'Staf Administrasi Agribisnis Update',
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         // Hapus Admin Prodi

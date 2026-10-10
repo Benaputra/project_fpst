@@ -74,6 +74,12 @@ class User extends Authenticatable
         return $this->isAdminProdi() || $this->isAdminUtama();
     }
 
+    public function isSameProdi(int|ProgramStudi|null $prodi): bool
+    {
+        $prodiId = $prodi instanceof ProgramStudi ? $prodi->id : $prodi;
+        return $this->program_studi_id !== null && (int) $this->program_studi_id === (int) $prodiId;
+    }
+
     // Relasi Mahasiswa ke Pengajuan Skripsi
     public function pengajuanSkripsi(): HasOne
     {

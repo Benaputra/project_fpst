@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\UserRole;
+use App\Models\PengajuanSkripsi;
 use App\Models\ProgramStudi;
 use App\Models\SeminarSkripsi;
 use App\Models\SidangSkripsi;
@@ -25,14 +26,15 @@ class SuratUndanganService
      */
     public function generateUndanganSeminar(SeminarSkripsi $seminar, string $nomorUndangan, bool $withSignature = false): string
     {
+        $seminar->loadMissing(['pengajuanSkripsi.mahasiswa', 'pengajuanSkripsi.programStudi', 'pengajuanSkripsi.pembimbing1', 'pengajuanSkripsi.pembimbing2', 'penguji']);
         $skripsi = $seminar->pengajuanSkripsi;
         $mahasiswa = $skripsi->mahasiswa;
         $prodi = $skripsi->programStudi;
-        $nim = $mahasiswa->nomor_induk;
+        $nim = $mahasiswa ? $mahasiswa->nomor_induk : 'NIM';
 
         // Ambil data Kaprodi dinamis sesuai program studi
         $kaprodi = User::where('role', UserRole::Kaprodi)
-            ->where('program_studi_id', $prodi->id)
+            ->where('program_studi_id', $prodi?->id)
             ->first();
 
         // Susun tim seminar dinamis
@@ -102,14 +104,15 @@ class SuratUndanganService
      */
     public function generateUndanganSidang(SidangSkripsi $sidang, string $nomorUndangan, bool $withSignature = false): string
     {
+        $sidang->loadMissing(['pengajuanSkripsi.mahasiswa', 'pengajuanSkripsi.programStudi', 'pengajuanSkripsi.pembimbing1', 'pengajuanSkripsi.pembimbing2', 'penguji1', 'penguji2']);
         $skripsi = $sidang->pengajuanSkripsi;
         $mahasiswa = $skripsi->mahasiswa;
         $prodi = $skripsi->programStudi;
-        $nim = $mahasiswa->nomor_induk;
+        $nim = $mahasiswa ? $mahasiswa->nomor_induk : 'NIM';
 
         // Ambil data Kaprodi dinamis sesuai program studi
         $kaprodi = User::where('role', UserRole::Kaprodi)
-            ->where('program_studi_id', $prodi->id)
+            ->where('program_studi_id', $prodi?->id)
             ->first();
 
         // Susun tim penguji sidang dinamis
@@ -176,6 +179,267 @@ class SuratUndanganService
     }
 
     /**
+     * Generate PDF Surat Keputusan (SK) Penetapan Pembimbing Skripsi.
+     *
+     * @param PengajuanSkripsi $skripsi
+     * @param string $nomorSk
+     * @param CarbonInterface|string|null $tanggalSk
+     * @param bool $withSignature
+     * @param string|null $signerRole
+     * @return string Relative storage path
+     */
+    public function generateSkBimbingan(
+        PengajuanSkripsi $skripsi,
+        string $nomorSk,
+        CarbonInterface|string|null $tanggalSk = null,
+        bool $withSignature = false,
+        ?string $signerRole = 'kaprodi'
+    ): string {
+        $skripsi->loadMissing(['mahasiswa', 'programStudi', 'pembimbing1', 'pembimbing2']);
+        $mahasiswa = $skripsi->mahasiswa;
+        $prodi = $skripsi->programStudi;
+        $nim = $mahasiswa ? $mahasiswa->nomor_induk : 'NIM';
+
+        // Ambil data Kaprodi dinamis sesuai program studi
+        $kaprodi = User::where('role', UserRole::Kaprodi)
+            ->where('program_studi_id', $prodi?->id)
+            ->first();
+
+        $tanggalTerbit = $tanggalSk ? $this->formatTanggalIndonesia($tanggalSk) : $this->formatTanggalIndonesia(now());
+
+        $penandatanganJabatan = ($signerRole === 'dekan')
+            ? 'Dekan Fakultas Pertanian, Sains dan Teknologi'
+            : "A.n. Dekan<br>Ketua Program Studi " . ($prodi?->nama ?? '');
+
+        $penandatanganNama = ($signerRole === 'dekan')
+            ? 'Dekan FPST Universitas Panca Bhakti'
+            : ($kaprodi ? $kaprodi->name : 'Ketua Program Studi');
+
+        $penandatanganNidn = ($signerRole === 'dekan')
+            ? '-'
+            : ($kaprodi ? $kaprodi->nomor_induk : '-');
+
+        $ttdBase64 = ($signerRole === 'dekan')
+            ? ($this->getTtdDekanBase64($withSignature) ?: $this->getTtdBase64($prodi, $withSignature))
+            : $this->getTtdBase64($prodi, $withSignature);
+
+        $data = [
+            'nomorSurat' => $nomorSk,
+            'tanggalSurat' => $tanggalTerbit,
+            'tanggalTerbit' => $tanggalSk ? (is_string($tanggalSk) ? Carbon::parse($tanggalSk) : $tanggalSk) : now(),
+            'mahasiswa' => $mahasiswa,
+            'programStudi' => $prodi,
+            'skripsi' => $skripsi,
+            'pembimbing1' => $skripsi->pembimbing1,
+            'pembimbing2' => $skripsi->pembimbing2,
+            'kaprodi' => $kaprodi,
+            'penandatanganJabatan' => $penandatanganJabatan,
+            'penandatanganNama' => $penandatanganNama,
+            'penandatanganNidn' => $penandatanganNidn,
+            'logoBase64' => $this->getLogoBase64(),
+            'ttdBase64' => $ttdBase64,
+        ];
+
+        $html = view('pdf.sk-bimbingan', $data)->render();
+
+        $dompdf = $this->createDompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $fileName = "SK_Bimbingan_{$nim}_" . time() . '.pdf';
+        $relativePath = "skripsi/sk_bimbingan/{$fileName}";
+
+        Storage::disk('local')->put($relativePath, $dompdf->output());
+
+        return $relativePath;
+    }
+
+    /**
+     * Generate PDF Surat Keputusan (SK) Penguji Seminar Skripsi.
+     *
+     * @param SeminarSkripsi $seminar
+     * @param string $nomorSk
+     * @param CarbonInterface|string|null $tanggalSk
+     * @param bool $withSignature
+     * @param string|null $signerRole
+     * @return string Relative storage path
+     */
+    public function generateSkSeminar(
+        SeminarSkripsi $seminar,
+        string $nomorSk,
+        CarbonInterface|string|null $tanggalSk = null,
+        bool $withSignature = false,
+        ?string $signerRole = 'kaprodi'
+    ): string {
+        $seminar->loadMissing([
+            'pengajuanSkripsi.mahasiswa',
+            'pengajuanSkripsi.programStudi',
+            'pengajuanSkripsi.pembimbing1',
+            'pengajuanSkripsi.pembimbing2',
+            'penguji',
+        ]);
+        $skripsi = $seminar->pengajuanSkripsi;
+        $mahasiswa = $skripsi->mahasiswa;
+        $prodi = $skripsi->programStudi;
+        $nim = $mahasiswa ? $mahasiswa->nomor_induk : 'NIM';
+
+        // Ambil data Kaprodi dinamis sesuai program studi
+        $kaprodi = User::where('role', UserRole::Kaprodi)
+            ->where('program_studi_id', $prodi?->id)
+            ->first();
+
+        $tanggalTerbit = $tanggalSk ? $this->formatTanggalIndonesia($tanggalSk) : $this->formatTanggalIndonesia(now());
+        $hariTanggal = $seminar->tgl_seminar
+            ? $this->formatHariTanggalIndonesia($seminar->tgl_seminar)
+            : '-';
+
+        $penandatanganJabatan = ($signerRole === 'dekan')
+            ? 'Dekan Fakultas Pertanian, Sains dan Teknologi'
+            : "A.n. Dekan<br>Ketua Program Studi " . ($prodi?->nama ?? '');
+
+        $penandatanganNama = ($signerRole === 'dekan')
+            ? 'Dekan FPST Universitas Panca Bhakti'
+            : ($kaprodi ? $kaprodi->name : 'Ketua Program Studi');
+
+        $penandatanganNidn = ($signerRole === 'dekan')
+            ? '-'
+            : ($kaprodi ? $kaprodi->nomor_induk : '-');
+
+        $ttdBase64 = ($signerRole === 'dekan')
+            ? ($this->getTtdDekanBase64($withSignature) ?: $this->getTtdBase64($prodi, $withSignature))
+            : $this->getTtdBase64($prodi, $withSignature);
+
+        $data = [
+            'nomorSurat' => $nomorSk,
+            'tanggalSurat' => $tanggalTerbit,
+            'tanggalTerbit' => $tanggalSk ? (is_string($tanggalSk) ? Carbon::parse($tanggalSk) : $tanggalSk) : now(),
+            'mahasiswa' => $mahasiswa,
+            'programStudi' => $prodi,
+            'skripsi' => $skripsi,
+            'hariTanggal' => $hariTanggal,
+            'jam' => $seminar->jam_seminar ?? '09.00 WIB – Selesai',
+            'ruangan' => $seminar->ruangan ?? 'Ruang Audiovisual Fakultas Pertanian, Sains dan Teknologi',
+            'pembimbing1' => $skripsi->pembimbing1,
+            'pembimbing2' => $skripsi->pembimbing2,
+            'penguji' => $seminar->penguji,
+            'kaprodi' => $kaprodi,
+            'penandatanganJabatan' => $penandatanganJabatan,
+            'penandatanganNama' => $penandatanganNama,
+            'penandatanganNidn' => $penandatanganNidn,
+            'logoBase64' => $this->getLogoBase64(),
+            'ttdBase64' => $ttdBase64,
+        ];
+
+        $html = view('pdf.sk-seminar', $data)->render();
+
+        $dompdf = $this->createDompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $fileName = "SK_Seminar_{$nim}_" . time() . '.pdf';
+        $relativePath = "seminar/sk/{$fileName}";
+
+        Storage::disk('local')->put($relativePath, $dompdf->output());
+
+        return $relativePath;
+    }
+
+    /**
+     * Generate PDF Surat Keputusan (SK) Dewan Penguji Sidang Skripsi.
+     *
+     * @param SidangSkripsi $sidang
+     * @param string $nomorSk
+     * @param CarbonInterface|string|null $tanggalSk
+     * @param bool $withSignature
+     * @param string|null $signerRole
+     * @return string Relative storage path
+     */
+    public function generateSkSidang(
+        SidangSkripsi $sidang,
+        string $nomorSk,
+        CarbonInterface|string|null $tanggalSk = null,
+        bool $withSignature = false,
+        ?string $signerRole = 'kaprodi'
+    ): string {
+        $sidang->loadMissing([
+            'pengajuanSkripsi.mahasiswa',
+            'pengajuanSkripsi.programStudi',
+            'pengajuanSkripsi.pembimbing1',
+            'pengajuanSkripsi.pembimbing2',
+            'penguji1',
+            'penguji2',
+        ]);
+        $skripsi = $sidang->pengajuanSkripsi;
+        $mahasiswa = $skripsi->mahasiswa;
+        $prodi = $skripsi->programStudi;
+        $nim = $mahasiswa ? $mahasiswa->nomor_induk : 'NIM';
+
+        // Ambil data Kaprodi dinamis sesuai program studi
+        $kaprodi = User::where('role', UserRole::Kaprodi)
+            ->where('program_studi_id', $prodi?->id)
+            ->first();
+
+        $tanggalTerbit = $tanggalSk ? $this->formatTanggalIndonesia($tanggalSk) : $this->formatTanggalIndonesia(now());
+        $hariTanggal = $sidang->tgl_sidang
+            ? $this->formatHariTanggalIndonesia($sidang->tgl_sidang)
+            : '-';
+
+        $penandatanganJabatan = ($signerRole === 'dekan')
+            ? 'Dekan Fakultas Pertanian, Sains dan Teknologi'
+            : "A.n. Dekan<br>Ketua Program Studi " . ($prodi?->nama ?? '');
+
+        $penandatanganNama = ($signerRole === 'dekan')
+            ? 'Dekan FPST Universitas Panca Bhakti'
+            : ($kaprodi ? $kaprodi->name : 'Ketua Program Studi');
+
+        $penandatanganNidn = ($signerRole === 'dekan')
+            ? '-'
+            : ($kaprodi ? $kaprodi->nomor_induk : '-');
+
+        $ttdBase64 = ($signerRole === 'dekan')
+            ? ($this->getTtdDekanBase64($withSignature) ?: $this->getTtdBase64($prodi, $withSignature))
+            : $this->getTtdBase64($prodi, $withSignature);
+
+        $data = [
+            'nomorSurat' => $nomorSk,
+            'tanggalSurat' => $tanggalTerbit,
+            'tanggalTerbit' => $tanggalSk ? (is_string($tanggalSk) ? Carbon::parse($tanggalSk) : $tanggalSk) : now(),
+            'mahasiswa' => $mahasiswa,
+            'programStudi' => $prodi,
+            'skripsi' => $skripsi,
+            'hariTanggal' => $hariTanggal,
+            'jam' => $sidang->jam_sidang ?? '11.00 WIB – Selesai',
+            'ruangan' => $sidang->ruangan ?? 'Ruang Audiovisual Fakultas Pertanian, Sains dan Teknologi',
+            'pembimbing1' => $skripsi->pembimbing1,
+            'pembimbing2' => $skripsi->pembimbing2,
+            'penguji1' => $sidang->penguji1,
+            'penguji2' => $sidang->penguji2,
+            'kaprodi' => $kaprodi,
+            'penandatanganJabatan' => $penandatanganJabatan,
+            'penandatanganNama' => $penandatanganNama,
+            'penandatanganNidn' => $penandatanganNidn,
+            'logoBase64' => $this->getLogoBase64(),
+            'ttdBase64' => $ttdBase64,
+        ];
+
+        $html = view('pdf.sk-sidang', $data)->render();
+
+        $dompdf = $this->createDompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $fileName = "SK_Sidang_{$nim}_" . time() . '.pdf';
+        $relativePath = "sidang/sk/{$fileName}";
+
+        Storage::disk('local')->put($relativePath, $dompdf->output());
+
+        return $relativePath;
+    }
+
+    /**
      * Inisialisasi Dompdf dengan konfigurasi standar.
      */
     protected function createDompdf(): Dompdf
@@ -229,6 +493,37 @@ class SuratUndanganService
             $mime = mime_content_type($imgFallback) ?: 'image/png';
 
             return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($imgFallback));
+        }
+
+        return '';
+    }
+
+    /**
+     * Dapatkan tanda tangan digital Dekan sebagai base64 string jika tersedia.
+     */
+    protected function getTtdDekanBase64(bool $withSignature): string
+    {
+        if (! $withSignature) {
+            return '';
+        }
+
+        $candidates = [
+            public_path('images/ttd/ttd_dekan.png'),
+            public_path('images/ttd_dekan.png'),
+            public_path('storage/ttd/ttd_dekan.png'),
+        ];
+
+        foreach ($candidates as $path) {
+            if (file_exists($path)) {
+                $mime = mime_content_type($path) ?: 'image/png';
+                return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($path));
+            }
+        }
+
+        if (Storage::disk('public')->exists('ttd/ttd_dekan.png')) {
+            $content = Storage::disk('public')->get('ttd/ttd_dekan.png');
+            $mime = Storage::disk('public')->mimeType('ttd/ttd_dekan.png') ?: 'image/png';
+            return 'data:' . $mime . ';base64,' . base64_encode($content);
         }
 
         return '';

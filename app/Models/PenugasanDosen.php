@@ -71,6 +71,11 @@ class PenugasanDosen extends Model
         return $query->where('status', StatusPenugasanDosen::Ditolak);
     }
 
+    public function scopeDibatalkan($query)
+    {
+        return $query->where('status', StatusPenugasanDosen::Dibatalkan);
+    }
+
     public function isMenunggu(): bool
     {
         return $this->status === StatusPenugasanDosen::Menunggu;
@@ -84,6 +89,11 @@ class PenugasanDosen extends Model
     public function isDitolak(): bool
     {
         return $this->status === StatusPenugasanDosen::Ditolak;
+    }
+
+    public function isDibatalkan(): bool
+    {
+        return $this->status === StatusPenugasanDosen::Dibatalkan;
     }
 
     public function labelPeran(): string

@@ -24,6 +24,10 @@ class SeminarSkripsiController extends Controller
     public function create(Request $request): View|RedirectResponse
     {
         $user = $request->user();
+        if ($user->cannot('create', SeminarSkripsi::class)) {
+            abort(403, 'Hanya mahasiswa resmi yang dapat mendaftar seminar skripsi.');
+        }
+
         $skripsi = $user->pengajuanSkripsi()->with('seminar')->first();
 
         if (!$skripsi || !$skripsi->canAjukanSeminar()) {
@@ -42,6 +46,10 @@ class SeminarSkripsiController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
+        if ($user->cannot('create', SeminarSkripsi::class)) {
+            abort(403, 'Hanya mahasiswa resmi yang dapat mendaftar seminar skripsi.');
+        }
+
         $skripsi = $user->pengajuanSkripsi()->firstOrFail();
 
         if (!$skripsi->canAjukanSeminar()) {

@@ -153,7 +153,7 @@
             @csrf
             <div style="margin-bottom: 0.85rem;">
                 <label class="form-label">Nama Lengkap Admin <span style="color: #dc2626;">*</span></label>
-                <input type="text" name="name" required class="form-control" placeholder="Contoh: Admin Akademik TI">
+                <input type="text" name="name" required class="form-control" placeholder="Contoh: Admin Akademik Agroteknologi">
             </div>
 
             <div style="margin-bottom: 0.85rem;">

@@ -18,13 +18,13 @@ class NotifikasiRoleTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ProgramStudi $prodiTI;
-    private ProgramStudi $prodiSI;
+    private ProgramStudi $prodiAgt;
+    private ProgramStudi $prodiAgb;
     private User $mahasiswa;
-    private User $kaprodiTI;
-    private User $kaprodiSI;
-    private User $adminProdiTI;
-    private User $adminProdiSI;
+    private User $kaprodiAgt;
+    private User $kaprodiAgb;
+    private User $adminProdiAgt;
+    private User $adminProdiAgb;
     private User $adminUtama;
     private User $pembimbing1;
     private User $pembimbing2;
@@ -37,12 +37,12 @@ class NotifikasiRoleTest extends TestCase
         parent::setUp();
         Storage::fake('local');
 
-        $this->prodiTI = ProgramStudi::create([
+        $this->prodiAgt = ProgramStudi::create([
             'nama' => 'Agroteknologi',
             'kode' => 'AGT',
         ]);
 
-        $this->prodiSI = ProgramStudi::create([
+        $this->prodiAgb = ProgramStudi::create([
             'nama' => 'Agribisnis',
             'kode' => 'AGB',
         ]);
@@ -53,43 +53,43 @@ class NotifikasiRoleTest extends TestCase
             'nomor_induk' => '221000000010',
             'password' => 'password',
             'role' => UserRole::Mahasiswa,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
-        $this->kaprodiTI = User::create([
-            'name' => 'Dr. Ratna Wijaya (Kaprodi TI)',
-            'email' => 'kaprodi.ti@example.test',
+        $this->kaprodiAgt = User::create([
+            'name' => 'Dr. Ir. Ratna Wijaya, M.P. (Kaprodi AGT)',
+            'email' => 'kaprodi.agt@example.test',
             'nomor_induk' => '1000000001',
             'password' => 'password',
             'role' => UserRole::Kaprodi,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
-        $this->kaprodiSI = User::create([
-            'name' => 'Dr. Surya (Kaprodi SI)',
-            'email' => 'kaprodi.si@example.test',
+        $this->kaprodiAgb = User::create([
+            'name' => 'Dr. Bima Pratama, S.P., M.Si. (Kaprodi AGB)',
+            'email' => 'kaprodi.agb@example.test',
             'nomor_induk' => '1000000002',
             'password' => 'password',
             'role' => UserRole::Kaprodi,
-            'program_studi_id' => $this->prodiSI->id,
+            'program_studi_id' => $this->prodiAgb->id,
         ]);
 
-        $this->adminProdiTI = User::create([
-            'name' => 'Siti Admin Prodi TI',
-            'email' => 'admin.prodi.ti@example.test',
-            'nomor_induk' => 'ADM001',
+        $this->adminProdiAgt = User::create([
+            'name' => 'Siti Admin Prodi Agroteknologi',
+            'email' => 'admin.prodi.agt@example.test',
+            'nomor_induk' => 'ADM-AGT-01',
             'password' => 'password',
             'role' => UserRole::AdminProdi,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
-        $this->adminProdiSI = User::create([
-            'name' => 'Joko Admin Prodi SI',
-            'email' => 'admin.prodi.si@example.test',
-            'nomor_induk' => 'ADM002',
+        $this->adminProdiAgb = User::create([
+            'name' => 'Joko Admin Prodi Agribisnis',
+            'email' => 'admin.prodi.agb@example.test',
+            'nomor_induk' => 'ADM-AGB-01',
             'password' => 'password',
             'role' => UserRole::AdminProdi,
-            'program_studi_id' => $this->prodiSI->id,
+            'program_studi_id' => $this->prodiAgb->id,
         ]);
 
         $this->adminUtama = User::create([
@@ -101,61 +101,61 @@ class NotifikasiRoleTest extends TestCase
         ]);
 
         $this->pembimbing1 = User::create([
-            'name' => 'Dewi Lestari, M.Kom. (Dosen 1)',
+            'name' => 'Dr. Dewi Lestari, S.P., M.P. (Dosen 1)',
             'email' => 'dewi@example.test',
             'nomor_induk' => '1000000003',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->pembimbing2 = User::create([
-            'name' => 'Ahmad Fauzi, M.Kom. (Dosen 2)',
+            'name' => 'Ahmad Fauzi, S.P., M.Sc. (Dosen 2)',
             'email' => 'ahmad@example.test',
             'nomor_induk' => '1000000004',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->pengujiSeminar = User::create([
-            'name' => 'Fajar Nugroho, M.Cs. (Penguji Seminar)',
+            'name' => 'Fajar Nugroho, S.P., M.P. (Penguji Seminar)',
             'email' => 'fajar@example.test',
             'nomor_induk' => '1000000006',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->pengujiSidang1 = User::create([
-            'name' => 'Dr. Hendra (Penguji Sidang 1)',
+            'name' => 'Dr. Hendra Wijaya, S.P., M.Si. (Penguji Sidang 1)',
             'email' => 'hendra@example.test',
             'nomor_induk' => '1000000007',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
 
         $this->pengujiSidang2 = User::create([
-            'name' => 'Dr. Maya (Penguji Sidang 2)',
+            'name' => 'Dr. Maya Putri, S.P., M.Si. (Penguji Sidang 2)',
             'email' => 'maya@example.test',
             'nomor_induk' => '1000000008',
             'password' => 'password',
             'role' => UserRole::Dosen,
-            'program_studi_id' => $this->prodiTI->id,
+            'program_studi_id' => $this->prodiAgt->id,
         ]);
     }
 
     /**
      * Test notifikasi saat Mahasiswa mengajukan judul skripsi baru.
-     * Admin Utama, Kaprodi TI, dan Admin Prodi TI menerima notif.
-     * Kaprodi & Admin Prodi prodi lain (SI) TIDAK menerima notif.
+     * Admin Utama, Kaprodi AGT, dan Admin Prodi AGT menerima notif.
+     * Kaprodi & Admin Prodi prodi lain (AGB) TIDAK menerima notif.
      */
     public function test_notifikasi_saat_mahasiswa_mengajukan_skripsi(): void
     {
         $this->actingAs($this->mahasiswa)->post(route('mahasiswa.skripsi.store'), [
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
-            'abstrak' => 'Penelitian ini mengembangkan SIAKAD.',
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
+            'abstrak' => 'Penelitian ini mengembangkan aplikasi mikoriza pada padi gogo.',
             'file_proposal' => UploadedFile::fake()->create('proposal.pdf', 500, 'application/pdf'),
             'file_transkrip' => UploadedFile::fake()->create('transkrip.pdf', 500, 'application/pdf'),
             'file_bukti_bayar' => UploadedFile::fake()->create('bukti_bayar.pdf', 500, 'application/pdf'),
@@ -163,12 +163,12 @@ class NotifikasiRoleTest extends TestCase
 
         // Verifikasi penerima notifikasi pengajuan baru:
         $this->assertEquals(1, $this->adminUtama->notifikasi()->where('judul', 'Pengajuan Judul Skripsi Baru')->count(), 'Admin Utama harus menerima notif');
-        $this->assertEquals(1, $this->kaprodiTI->notifikasi()->where('judul', 'Pengajuan Judul Skripsi Baru')->count(), 'Kaprodi TI harus menerima notif');
-        $this->assertEquals(1, $this->adminProdiTI->notifikasi()->where('judul', 'Pengajuan Judul Skripsi Baru')->count(), 'Admin Prodi TI harus menerima notif');
+        $this->assertEquals(1, $this->kaprodiAgt->notifikasi()->where('judul', 'Pengajuan Judul Skripsi Baru')->count(), 'Kaprodi AGT harus menerima notif');
+        $this->assertEquals(1, $this->adminProdiAgt->notifikasi()->where('judul', 'Pengajuan Judul Skripsi Baru')->count(), 'Admin Prodi AGT harus menerima notif');
 
         // Prodi lain tidak menerima notif
-        $this->assertEquals(0, $this->kaprodiSI->notifikasi()->count(), 'Kaprodi SI tidak boleh menerima notif TI');
-        $this->assertEquals(0, $this->adminProdiSI->notifikasi()->count(), 'Admin Prodi SI tidak boleh menerima notif TI');
+        $this->assertEquals(0, $this->kaprodiAgb->notifikasi()->count(), 'Kaprodi AGB tidak boleh menerima notif AGT');
+        $this->assertEquals(0, $this->adminProdiAgb->notifikasi()->count(), 'Admin Prodi AGB tidak boleh menerima notif AGT');
     }
 
     /**
@@ -180,15 +180,15 @@ class NotifikasiRoleTest extends TestCase
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
             'status' => StatusPengajuan::Diajukan,
             'file_proposal' => 'skripsi/proposal/dummy.pdf',
             'file_transkrip' => 'skripsi/transkrip/dummy.pdf',
             'file_bukti_bayar' => 'skripsi/bukti_bayar/dummy.pdf',
         ]);
 
-        $this->actingAs($this->kaprodiTI)->post(route('kaprodi.skripsi.review', $skripsi->id), [
+        $this->actingAs($this->kaprodiAgt)->post(route('kaprodi.skripsi.review', $skripsi->id), [
             'action' => 'terima',
             'pembimbing_1_id' => $this->pembimbing1->id,
             'pembimbing_2_id' => $this->pembimbing2->id,
@@ -202,20 +202,20 @@ class NotifikasiRoleTest extends TestCase
 
         // Role yang TIDAK MENERIMA notifikasi (sesuai arahan user):
         $this->assertEquals(0, $this->adminUtama->notifikasi()->count(), 'Admin Utama tidak menerima penetapan pembimbing');
-        $this->assertEquals(0, $this->kaprodiTI->notifikasi()->count(), 'Kaprodi tidak menerima penetapan pembimbing');
-        $this->assertEquals(0, $this->adminProdiTI->notifikasi()->count(), 'Admin Prodi tidak menerima penetapan pembimbing');
+        $this->assertEquals(0, $this->kaprodiAgt->notifikasi()->count(), 'Kaprodi tidak menerima penetapan pembimbing');
+        $this->assertEquals(0, $this->adminProdiAgt->notifikasi()->count(), 'Admin Prodi tidak menerima penetapan pembimbing');
     }
 
     /**
      * Test distribusi notifikasi saat Admin menerbitkan SK Bimbingan.
-     * Hasil: Mahasiswa, Pembimbing 1 & 2, serta Kaprodi TI dan Admin Utama menerima notif.
+     * Hasil: Mahasiswa, Pembimbing 1 & 2, serta Kaprodi AGT dan Admin Utama menerima notif.
      */
     public function test_notifikasi_distribusi_saat_admin_menerbitkan_sk_bimbingan(): void
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
             'pembimbing_1_id' => $this->pembimbing1->id,
             'pembimbing_2_id' => $this->pembimbing2->id,
             'status' => StatusPengajuan::Diproses,
@@ -224,7 +224,7 @@ class NotifikasiRoleTest extends TestCase
             'file_bukti_bayar' => 'skripsi/bukti_bayar/dummy.pdf',
         ]);
 
-        $this->actingAs($this->adminProdiTI)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
+        $this->actingAs($this->adminProdiAgt)->post(route('admin.skripsi.sk-bimbingan', $skripsi->id), [
             'nomor_sk_bimbingan' => 'SK/001/FPST/2026',
             'tgl_sk_bimbingan' => '2026-09-01',
             'file_sk_bimbingan' => UploadedFile::fake()->create('sk.pdf', 500, 'application/pdf'),
@@ -235,21 +235,21 @@ class NotifikasiRoleTest extends TestCase
         $this->assertEquals(1, $this->pembimbing1->notifikasi()->where('judul', 'SK Bimbingan Mahasiswa Diterbitkan')->count());
         $this->assertEquals(1, $this->pembimbing2->notifikasi()->where('judul', 'SK Bimbingan Mahasiswa Diterbitkan')->count());
 
-        // Kaprodi TI & Admin Utama menerima notif penerbitan SK
-        $this->assertEquals(1, $this->kaprodiTI->notifikasi()->where('judul', 'Penerbitan SK Bimbingan Mahasiswa')->count());
+        // Kaprodi AGT & Admin Utama menerima notif penerbitan SK
+        $this->assertEquals(1, $this->kaprodiAgt->notifikasi()->where('judul', 'Penerbitan SK Bimbingan Mahasiswa')->count());
         $this->assertEquals(1, $this->adminUtama->notifikasi()->where('judul', 'Penerbitan SK Bimbingan Mahasiswa')->count());
     }
 
     /**
      * Test notifikasi saat Mahasiswa mendaftar/mengajukan seminar.
-     * Hasil: Admin Utama, Kaprodi TI, dan Admin Prodi TI menerima notifikasi pendaftaran seminar.
+     * Hasil: Admin Utama, Kaprodi AGT, dan Admin Prodi AGT menerima notifikasi pendaftaran seminar.
      */
     public function test_notifikasi_saat_mahasiswa_mengajukan_seminar(): void
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
             'pembimbing_1_id' => $this->pembimbing1->id,
             'pembimbing_2_id' => $this->pembimbing2->id,
             'nomor_sk_bimbingan' => 'SK/001/FPST/2026',
@@ -269,20 +269,20 @@ class NotifikasiRoleTest extends TestCase
 
         // Verifikasi notifikasi pengajuan seminar ke pengelola
         $this->assertEquals(1, $this->adminUtama->notifikasi()->where('judul', 'Pendaftaran Seminar Skripsi Baru')->count());
-        $this->assertEquals(1, $this->kaprodiTI->notifikasi()->where('judul', 'Pendaftaran Seminar Skripsi Baru')->count());
-        $this->assertEquals(1, $this->adminProdiTI->notifikasi()->where('judul', 'Pendaftaran Seminar Skripsi Baru')->count());
+        $this->assertEquals(1, $this->kaprodiAgt->notifikasi()->where('judul', 'Pendaftaran Seminar Skripsi Baru')->count());
+        $this->assertEquals(1, $this->adminProdiAgt->notifikasi()->where('judul', 'Pendaftaran Seminar Skripsi Baru')->count());
     }
 
     /**
      * Test distribusi notifikasi saat Kaprodi menetapkan Dosen Penguji Seminar.
-     * Hasil: Mahasiswa, Dosen Penguji, Admin Prodi TI, dan Admin Utama menerima notif.
+     * Hasil: Mahasiswa, Dosen Penguji, Admin Prodi AGT, dan Admin Utama menerima notif.
      */
     public function test_notifikasi_distribusi_saat_kaprodi_menetapkan_penguji_seminar(): void
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
             'pembimbing_1_id' => $this->pembimbing1->id,
             'pembimbing_2_id' => $this->pembimbing2->id,
             'status' => StatusPengajuan::Selesai,
@@ -300,27 +300,27 @@ class NotifikasiRoleTest extends TestCase
             'file_toefl' => 'seminar/toefl/dummy.pdf',
         ]);
 
-        $this->actingAs($this->kaprodiTI)->post(route('kaprodi.seminar.penguji', $seminar->id), [
+        $this->actingAs($this->kaprodiAgt)->post(route('kaprodi.seminar.penguji', $seminar->id), [
             'penguji_seminar_id' => $this->pengujiSeminar->id,
         ]);
 
         // Role yang menerima notifikasi:
         $this->assertEquals(1, $this->mahasiswa->notifikasi()->where('judul', 'Dosen Penguji Seminar Ditetapkan')->count());
         $this->assertEquals(1, $this->pengujiSeminar->notifikasi()->where('judul', 'Penugasan Dosen Penguji Seminar')->count());
-        $this->assertEquals(1, $this->adminProdiTI->notifikasi()->where('judul', 'Dosen Penguji Seminar Telah Ditetapkan')->count());
+        $this->assertEquals(1, $this->adminProdiAgt->notifikasi()->where('judul', 'Dosen Penguji Seminar Telah Ditetapkan')->count());
         $this->assertEquals(1, $this->adminUtama->notifikasi()->where('judul', 'Dosen Penguji Seminar Telah Ditetapkan')->count());
     }
 
     /**
      * Test distribusi notifikasi saat Admin menetapkan Jadwal & SK Seminar.
-     * Hasil: Mahasiswa, Pembimbing 1 & 2, Dosen Penguji Seminar, Kaprodi TI, dan Admin Utama menerima notifikasi.
+     * Hasil: Mahasiswa, Pembimbing 1 & 2, Dosen Penguji Seminar, Kaprodi AGT, dan Admin Utama menerima notifikasi.
      */
     public function test_notifikasi_distribusi_saat_admin_menjadwalkan_seminar(): void
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
             'pembimbing_1_id' => $this->pembimbing1->id,
             'pembimbing_2_id' => $this->pembimbing2->id,
             'status' => StatusPengajuan::Selesai,
@@ -339,7 +339,7 @@ class NotifikasiRoleTest extends TestCase
             'file_toefl' => 'seminar/toefl/dummy.pdf',
         ]);
 
-        $this->actingAs($this->adminProdiTI)->post(route('admin.seminar.jadwal-sk', $seminar->id), [
+        $this->actingAs($this->adminProdiAgt)->post(route('admin.seminar.jadwal-sk', $seminar->id), [
             'tgl_seminar' => '2026-09-15',
             'jam_seminar' => '09:00 - 10:30',
             'ruangan' => 'Ruang Seminar 101',
@@ -353,21 +353,21 @@ class NotifikasiRoleTest extends TestCase
         $this->assertEquals(1, $this->pembimbing2->notifikasi()->where('judul', 'Undangan Seminar Skripsi Mahasiswa Bimbingan')->count());
         $this->assertEquals(1, $this->pengujiSeminar->notifikasi()->where('judul', 'Undangan & Jadwal Ujian Seminar Mahasiswa')->count());
 
-        // Notifikasi ke Kaprodi TI & Admin Utama:
-        $this->assertEquals(1, $this->kaprodiTI->notifikasi()->where('judul', 'Jadwal Seminar Skripsi Ditetapkan')->count());
+        // Notifikasi ke Kaprodi AGT & Admin Utama:
+        $this->assertEquals(1, $this->kaprodiAgt->notifikasi()->where('judul', 'Jadwal Seminar Skripsi Ditetapkan')->count());
         $this->assertEquals(1, $this->adminUtama->notifikasi()->where('judul', 'Jadwal Seminar Skripsi Ditetapkan')->count());
     }
 
     /**
      * Test distribusi notifikasi saat Admin menginput nilai & menyelesaikan seminar.
-     * Hasil: Mahasiswa, Kaprodi TI, dan Admin Utama menerima notifikasi hasil nilai seminar.
+     * Hasil: Mahasiswa, Kaprodi AGT, dan Admin Utama menerima notifikasi hasil nilai seminar.
      */
     public function test_notifikasi_distribusi_saat_admin_menyelesaikan_seminar(): void
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
             'pembimbing_1_id' => $this->pembimbing1->id,
             'pembimbing_2_id' => $this->pembimbing2->id,
             'status' => StatusPengajuan::Selesai,
@@ -389,7 +389,7 @@ class NotifikasiRoleTest extends TestCase
             'file_toefl' => 'seminar/toefl/dummy.pdf',
         ]);
 
-        $this->actingAs($this->adminProdiTI)->post(route('admin.seminar.selesai', $seminar->id), [
+        $this->actingAs($this->adminProdiAgt)->post(route('admin.seminar.selesai', $seminar->id), [
             'nilai_seminar' => 88.00,
             'catatan' => 'Lulus seminar.',
         ]);
@@ -397,21 +397,21 @@ class NotifikasiRoleTest extends TestCase
         // Mahasiswa menerima notif kelulusan
         $this->assertEquals(1, $this->mahasiswa->notifikasi()->where('judul', 'Hasil & Nilai Seminar Telah Keluar')->count());
 
-        // Kaprodi TI & Admin Utama menerima notif hasil seminar
-        $this->assertEquals(1, $this->kaprodiTI->notifikasi()->where('judul', 'Hasil & Nilai Seminar Mahasiswa')->count());
+        // Kaprodi AGT & Admin Utama menerima notif hasil seminar
+        $this->assertEquals(1, $this->kaprodiAgt->notifikasi()->where('judul', 'Hasil & Nilai Seminar Mahasiswa')->count());
         $this->assertEquals(1, $this->adminUtama->notifikasi()->where('judul', 'Hasil & Nilai Seminar Mahasiswa')->count());
     }
 
     /**
      * Test notifikasi saat Mahasiswa mendaftar/mengajukan sidang.
-     * Hasil: Admin Utama, Kaprodi TI, dan Admin Prodi TI menerima notifikasi pendaftaran sidang.
+     * Hasil: Admin Utama, Kaprodi AGT, dan Admin Prodi AGT menerima notifikasi pendaftaran sidang.
      */
     public function test_notifikasi_saat_mahasiswa_mengajukan_sidang(): void
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
             'pembimbing_1_id' => $this->pembimbing1->id,
             'pembimbing_2_id' => $this->pembimbing2->id,
             'status' => StatusPengajuan::Selesai,
@@ -440,20 +440,20 @@ class NotifikasiRoleTest extends TestCase
 
         // Verifikasi notifikasi pendaftaran sidang ke pengelola
         $this->assertEquals(1, $this->adminUtama->notifikasi()->where('judul', 'Pendaftaran Sidang Skripsi Baru')->count());
-        $this->assertEquals(1, $this->kaprodiTI->notifikasi()->where('judul', 'Pendaftaran Sidang Skripsi Baru')->count());
-        $this->assertEquals(1, $this->adminProdiTI->notifikasi()->where('judul', 'Pendaftaran Sidang Skripsi Baru')->count());
+        $this->assertEquals(1, $this->kaprodiAgt->notifikasi()->where('judul', 'Pendaftaran Sidang Skripsi Baru')->count());
+        $this->assertEquals(1, $this->adminProdiAgt->notifikasi()->where('judul', 'Pendaftaran Sidang Skripsi Baru')->count());
     }
 
     /**
      * Test distribusi notifikasi saat Kaprodi menetapkan 2 Penguji Sidang.
-     * Hasil: Mahasiswa, Penguji 1 & 2, Admin Prodi TI, dan Admin Utama menerima notif.
+     * Hasil: Mahasiswa, Penguji 1 & 2, Admin Prodi AGT, dan Admin Utama menerima notif.
      */
     public function test_notifikasi_distribusi_saat_kaprodi_menetapkan_penguji_sidang(): void
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
             'pembimbing_1_id' => $this->pembimbing1->id,
             'pembimbing_2_id' => $this->pembimbing2->id,
             'status' => StatusPengajuan::Selesai,
@@ -471,7 +471,7 @@ class NotifikasiRoleTest extends TestCase
             'file_bukti_bayar_sidang' => 'sidang/bayar/dummy.pdf',
         ]);
 
-        $this->actingAs($this->kaprodiTI)->post(route('kaprodi.sidang.penguji', $sidang->id), [
+        $this->actingAs($this->kaprodiAgt)->post(route('kaprodi.sidang.penguji', $sidang->id), [
             'penguji_1_id' => $this->pengujiSidang1->id,
             'penguji_2_id' => $this->pengujiSidang2->id,
         ]);
@@ -481,21 +481,21 @@ class NotifikasiRoleTest extends TestCase
         $this->assertEquals(1, $this->pengujiSidang1->notifikasi()->where('judul', 'Penugasan Penguji 1 Sidang Skripsi')->count());
         $this->assertEquals(1, $this->pengujiSidang2->notifikasi()->where('judul', 'Penugasan Penguji 2 Sidang Skripsi')->count());
 
-        // Admin Prodi TI & Admin Utama menerima notifikasi
-        $this->assertEquals(1, $this->adminProdiTI->notifikasi()->where('judul', 'Dewan Penguji Sidang Telah Ditetapkan')->count());
+        // Admin Prodi AGT & Admin Utama menerima notifikasi
+        $this->assertEquals(1, $this->adminProdiAgt->notifikasi()->where('judul', 'Dewan Penguji Sidang Telah Ditetapkan')->count());
         $this->assertEquals(1, $this->adminUtama->notifikasi()->where('judul', 'Dewan Penguji Sidang Telah Ditetapkan')->count());
     }
 
     /**
      * Test distribusi notifikasi pada tahap Sidang Skripsi (Penjadwalan & SK Sidang).
-     * Hasil: Mahasiswa, Pembimbing 1 & 2, Penguji 1 & 2, Kaprodi TI, dan Admin Utama menerima notifikasi.
+     * Hasil: Mahasiswa, Pembimbing 1 & 2, Penguji 1 & 2, Kaprodi AGT, dan Admin Utama menerima notifikasi.
      */
     public function test_notifikasi_distribusi_saat_sidang_skripsi_dijadwalkan(): void
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
             'pembimbing_1_id' => $this->pembimbing1->id,
             'pembimbing_2_id' => $this->pembimbing2->id,
             'status' => StatusPengajuan::Selesai,
@@ -515,7 +515,7 @@ class NotifikasiRoleTest extends TestCase
             'file_bukti_bayar_sidang' => 'sidang/bayar/dummy.pdf',
         ]);
 
-        $this->actingAs($this->adminProdiTI)->post(route('admin.sidang.jadwal-sk', $sidang->id), [
+        $this->actingAs($this->adminProdiAgt)->post(route('admin.sidang.jadwal-sk', $sidang->id), [
             'tgl_sidang' => '2026-09-25',
             'jam_sidang' => '13:00 - 15:00',
             'ruangan' => 'Ruang Sidang Utama',
@@ -530,21 +530,21 @@ class NotifikasiRoleTest extends TestCase
         $this->assertEquals(1, $this->pengujiSidang1->notifikasi()->where('judul', 'Jadwal Sidang Skripsi Mahasiswa Ditetapkan')->count());
         $this->assertEquals(1, $this->pengujiSidang2->notifikasi()->where('judul', 'Jadwal Sidang Skripsi Mahasiswa Ditetapkan')->count());
 
-        // Kaprodi TI & Admin Utama menerima notifikasi
-        $this->assertEquals(1, $this->kaprodiTI->notifikasi()->where('judul', 'Jadwal Sidang Skripsi Ditetapkan')->count());
+        // Kaprodi AGT & Admin Utama menerima notifikasi
+        $this->assertEquals(1, $this->kaprodiAgt->notifikasi()->where('judul', 'Jadwal Sidang Skripsi Ditetapkan')->count());
         $this->assertEquals(1, $this->adminUtama->notifikasi()->where('judul', 'Jadwal Sidang Skripsi Ditetapkan')->count());
     }
 
     /**
      * Test distribusi notifikasi saat Admin menginput nilai akhir & menyelesaikan sidang.
-     * Hasil: Mahasiswa, Kaprodi TI, dan Admin Utama menerima notifikasi kelulusan.
+     * Hasil: Mahasiswa, Kaprodi AGT, dan Admin Utama menerima notifikasi kelulusan.
      */
     public function test_notifikasi_distribusi_saat_admin_menyelesaikan_sidang(): void
     {
         $skripsi = PengajuanSkripsi::create([
             'mahasiswa_id' => $this->mahasiswa->id,
-            'program_studi_id' => $this->prodiTI->id,
-            'judul' => 'Sistem Informasi Akademik Berbasis Web',
+            'program_studi_id' => $this->prodiAgt->id,
+            'judul' => 'Respon Pertumbuhan Padi Gogo Terhadap Mikoriza FPST',
             'pembimbing_1_id' => $this->pembimbing1->id,
             'pembimbing_2_id' => $this->pembimbing2->id,
             'status' => StatusPengajuan::Selesai,
@@ -567,7 +567,7 @@ class NotifikasiRoleTest extends TestCase
             'file_bukti_bayar_sidang' => 'sidang/bayar/dummy.pdf',
         ]);
 
-        $this->actingAs($this->adminProdiTI)->post(route('admin.sidang.selesai', $sidang->id), [
+        $this->actingAs($this->adminProdiAgt)->post(route('admin.sidang.selesai', $sidang->id), [
             'nilai_sidang' => 92.50,
             'catatan' => 'Lulus dengan predikat Pujian.',
         ]);
@@ -575,8 +575,8 @@ class NotifikasiRoleTest extends TestCase
         // Mahasiswa menerima notif kelulusan
         $this->assertEquals(1, $this->mahasiswa->notifikasi()->where('judul', 'Selamat! Anda Dinyatakan LULUS Sidang Skripsi')->count());
 
-        // Kaprodi TI & Admin Utama menerima notif hasil akhir sidang
-        $this->assertEquals(1, $this->kaprodiTI->notifikasi()->where('judul', 'Hasil & Nilai Akhir Sidang Skripsi')->count());
+        // Kaprodi AGT & Admin Utama menerima notif hasil akhir sidang
+        $this->assertEquals(1, $this->kaprodiAgt->notifikasi()->where('judul', 'Hasil & Nilai Akhir Sidang Skripsi')->count());
         $this->assertEquals(1, $this->adminUtama->notifikasi()->where('judul', 'Hasil & Nilai Akhir Sidang Skripsi')->count());
     }
 }
