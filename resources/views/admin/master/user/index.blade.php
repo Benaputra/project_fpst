@@ -314,6 +314,7 @@
                     <option value="admin_prodi">Admin Prodi</option>
                     <option value="admin_utama">Admin Utama</option>
                 </select>
+                <input type="hidden" id="edit-user-role-self" name="role" value="" disabled>
                 <div id="self-warning" style="display: none; font-size: 0.72rem; color: #dc2626; margin-top: 0.35rem;">
                     * Ini adalah akun Anda yang sedang aktif. Anda tidak dapat menurunkan role akun sendiri.
                 </div>
