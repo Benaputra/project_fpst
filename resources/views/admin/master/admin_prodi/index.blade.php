@@ -140,20 +140,38 @@
     </div>
 </div>
 
+<script>
+    function editAdminProdi(data) {
+        document.getElementById('edit-admin-name').value = data.name;
+        document.getElementById('edit-admin-email').value = data.email;
+        document.getElementById('edit-admin-nidn').value = data.nomor_induk || '';
+        document.getElementById('edit-admin-prodi-id').value = data.program_studi_id || '';
+        document.getElementById('edit-admin-hp').value = data.no_hp || '';
+        
+        const form = document.getElementById('form-edit-admin-prodi');
+        form.action = "{{ url('admin/master/admin-prodi') }}/" + data.id;
+
+        openModal('modal-edit-admin-prodi');
+    }
+</script>
+
+@endsection
+
+@push('modals')
 <!-- ======================================================== -->
 <!-- MODAL: TAMBAH ADMIN PRODI                                -->
 <!-- ======================================================== -->
-<div id="modal-tambah-admin-prodi" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
-    <div class="modal-dialog" style="background: #fff; border-radius: 0.75rem; width: 100%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; margin: auto;">
-        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">➕ Tambah Admin Program Studi</h3>
-            <button type="button" onclick="closeModal('modal-tambah-admin-prodi')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+<div id="modal-tambah-admin-prodi" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><span>➕</span> Tambah Admin Program Studi</h3>
+            <button type="button" onclick="closeModal('modal-tambah-admin-prodi')" class="modal-dialog-close">&times;</button>
         </div>
-        <form method="POST" action="{{ route('admin.master.admin-prodi.store') }}" style="padding: 1.25rem;">
+        <form method="POST" action="{{ route('admin.master.admin-prodi.store') }}">
             @csrf
             <div style="margin-bottom: 0.85rem;">
                 <label class="form-label">Nama Lengkap Admin <span style="color: #dc2626;">*</span></label>
-                <input type="text" name="name" required class="form-control" placeholder="Contoh: Admin Akademik TI">
+                <input type="text" name="name" required class="form-control" placeholder="Contoh: Admin Akademik AGT">
             </div>
 
             <div style="margin-bottom: 0.85rem;">
@@ -188,7 +206,7 @@
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div class="modal-dialog-footer">
                 <button type="button" onclick="closeModal('modal-tambah-admin-prodi')" class="btn btn-secondary btn-sm">Batal</button>
                 <button type="submit" class="btn btn-primary btn-sm">Simpan Admin Prodi</button>
             </div>
@@ -199,13 +217,13 @@
 <!-- ======================================================== -->
 <!-- MODAL: EDIT ADMIN PRODI                                  -->
 <!-- ======================================================== -->
-<div id="modal-edit-admin-prodi" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
-    <div class="modal-dialog" style="background: #fff; border-radius: 0.75rem; width: 100%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; margin: auto;">
-        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">✏️ Edit Data Admin Prodi</h3>
-            <button type="button" onclick="closeModal('modal-edit-admin-prodi')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+<div id="modal-edit-admin-prodi" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><span>✏️</span> Edit Data Admin Prodi</h3>
+            <button type="button" onclick="closeModal('modal-edit-admin-prodi')" class="modal-dialog-close">&times;</button>
         </div>
-        <form id="form-edit-admin-prodi" method="POST" action="" style="padding: 1.25rem;">
+        <form id="form-edit-admin-prodi" method="POST" action="">
             @csrf
             @method('PUT')
             
@@ -246,52 +264,11 @@
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div class="modal-dialog-footer">
                 <button type="button" onclick="closeModal('modal-edit-admin-prodi')" class="btn btn-secondary btn-sm">Batal</button>
                 <button type="submit" class="btn btn-primary btn-sm">Perbarui Admin Prodi</button>
             </div>
         </form>
     </div>
 </div>
-
-<script>
-    function openModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    function closeModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-    }
-
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-        backdrop.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        });
-    });
-
-    function editAdminProdi(data) {
-        document.getElementById('edit-admin-name').value = data.name;
-        document.getElementById('edit-admin-email').value = data.email;
-        document.getElementById('edit-admin-nidn').value = data.nomor_induk || '';
-        document.getElementById('edit-admin-prodi-id').value = data.program_studi_id || '';
-        document.getElementById('edit-admin-hp').value = data.no_hp || '';
-        
-        const form = document.getElementById('form-edit-admin-prodi');
-        form.action = "{{ url('admin/master/admin-prodi') }}/" + data.id;
-
-        openModal('modal-edit-admin-prodi');
-    }
-</script>
-
-@endsection
+@endpush

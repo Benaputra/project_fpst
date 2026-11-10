@@ -32,6 +32,7 @@
             color: var(--text-main);
             min-height: 100vh;
             -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
         }
         .layout-shell {
             display: flex;
@@ -206,7 +207,7 @@
         .topbar {
             background: #fff;
             border-bottom: 1px solid var(--border);
-            padding: 0.75rem 1.5rem;
+            padding: 0.75rem 2rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -294,10 +295,11 @@
             text-align: center;
         }
         .main-container {
-            padding: 1.5rem;
-            max-width: 1200px;
+            padding: 1.5rem 2rem;
+            max-width: 100%;
             width: 100%;
-            margin: 0 auto;
+            margin: 0;
+            box-sizing: border-box;
         }
 
         /* Bottom Navigation Bar (Khusus Mobile) */
@@ -366,14 +368,16 @@
         .alert-info { background: #f1f7f2; border: 1px solid #c0d8c4; color: #2c4a35; }
         .alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
 
-        /* Card & Components */
+        /* Card & Components (Unboxed & Clean) */
         .card {
             background: var(--card-bg);
-            border: 1px solid var(--border);
+            border: none;
             border-radius: 0.85rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.02);
+            padding: 1.25rem 1.5rem;
             margin-bottom: 1.25rem;
+            width: 100%;
+            box-sizing: border-box;
         }
         .card-header {
             display: flex;
@@ -533,11 +537,13 @@
             margin-top: 0.35rem;
         }
 
-        /* Tables Responsive */
+        /* Tables Responsive (Unboxed & Clean) */
         .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            border-radius: 0.5rem;
+            border: none;
+            border-radius: 0;
+            background: transparent;
         }
         table {
             width: 100%;
@@ -545,6 +551,7 @@
             text-align: left;
             font-size: 0.88rem;
             min-width: 600px;
+            border: none;
         }
         th {
             background: #f4f8f4;
@@ -562,6 +569,166 @@
             vertical-align: middle;
         }
         tr:hover td { background: #f7faf7; }
+
+        /* Modals & Full Screen Blur Overlays (Global Root Presentation) */
+        .app-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 999999;
+            align-items: stretch;
+            justify-content: flex-end;
+            padding: 0;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s;
+        }
+        .app-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        /* Modal Panel: Full-height on desktop, 100% full-screen on mobile */
+        .app-modal-panel {
+            background: #ffffff;
+            width: 100%;
+            max-width: 660px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -14px 0 45px rgba(0, 0, 0, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.2s ease;
+            position: relative;
+        }
+        .app-modal-panel.fullscreen-expanded {
+            max-width: 100vw !important;
+        }
+        .app-modal-overlay.active .app-modal-panel {
+            transform: translateX(0);
+        }
+
+        /* Centered Dialog Modals with Full Screen Blur (Master Data, Confirmations, etc.) */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 999999;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s;
+        }
+        .modal-backdrop.active,
+        .modal-backdrop.show,
+        .modal-backdrop[style*="display: flex"],
+        .modal-backdrop[style*="display:flex"] {
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            display: flex !important;
+        }
+        .modal-dialog {
+            background: #ffffff;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 540px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            border: none;
+            margin: auto;
+            position: relative;
+            transform: scale(0.96) translateY(10px);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: calc(100vh - 2.5rem);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-backdrop.active .modal-dialog,
+        .modal-backdrop.show .modal-dialog,
+        .modal-backdrop[style*="display: flex"] .modal-dialog,
+        .modal-backdrop[style*="display:flex"] .modal-dialog {
+            transform: scale(1) translateY(0) !important;
+        }
+        .modal-dialog-header {
+            padding: 1.1rem 1.35rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            flex-shrink: 0;
+        }
+        .modal-dialog-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1c2b20;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+        .modal-dialog-close {
+            background: none;
+            border: none;
+            font-size: 1.35rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            line-height: 1;
+            padding: 0.25rem;
+            border-radius: 0.35rem;
+            transition: color 0.15s;
+        }
+        .modal-dialog-close:hover {
+            color: #b91c1c;
+        }
+        .modal-dialog form {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+            padding: 1.25rem 1.5rem;
+            flex: 1 1 auto;
+            min-height: 0 !important;
+        }
+        .modal-dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+            margin-top: 1rem;
+            flex-shrink: 0;
+            background: #ffffff;
+            position: sticky;
+            bottom: -1.25rem;
+            padding-bottom: 0.25rem;
+            z-index: 10;
+        }
 
         /* Tabs Scrollable on Mobile */
         .tab-nav {
@@ -604,8 +771,9 @@
         }
         .stat-box {
             background: #fff;
-            border: 1px solid var(--border);
+            border: none;
             border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.02);
             padding: 1.15rem;
         }
         .stat-box-title { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
@@ -782,13 +950,45 @@
             }
             .stat-box {
                 padding: 0.85rem;
+                border: none;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             }
             .stat-box-value {
                 font-size: 1.35rem;
             }
             .card {
-                padding: 1rem;
+                padding: 1rem 0.85rem;
+                border: none;
                 border-radius: 0.75rem;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                margin-bottom: 1rem;
+            }
+            .app-modal-panel {
+                max-width: 100vw !important;
+                height: 100vh !important;
+                box-shadow: none;
+            }
+            .modal-backdrop {
+                padding: 0 !important;
+                align-items: flex-end !important;
+            }
+            .modal-backdrop .modal-dialog {
+                max-width: 100vw !important;
+                width: 100% !important;
+                max-height: 92vh !important;
+                border-radius: 1.25rem 1.25rem 0 0 !important;
+                margin: 0 !important;
+                transform: translateY(100%);
+                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25) !important;
+            }
+            .modal-backdrop.active .modal-dialog,
+            .modal-backdrop.show .modal-dialog,
+            .modal-backdrop[style*="display: flex"] .modal-dialog,
+            .modal-backdrop[style*="display:flex"] .modal-dialog {
+                transform: translateY(0) !important;
+            }
+            .modal-dialog form {
+                max-height: calc(92vh - 65px) !important;
             }
             .stepper::before {
                 left: 1rem;
@@ -862,7 +1062,7 @@
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: none;
             }
         }
 
@@ -1292,8 +1492,46 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 hidePageLoader();
+                const activeBackdrops = document.querySelectorAll('.modal-backdrop.active');
+                activeBackdrops.forEach(m => window.closeModal(m.id));
+            }
+        });
+
+        // Global Modal Management (Full-Screen Blur, Detached Stacking, Smooth Animations)
+        window.openModal = function(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            // Detach from page containers and mount directly to body to avoid transform traps
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+            modal.style.display = 'flex';
+            // Trigger reflow for smooth CSS animation
+            void modal.offsetHeight;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeModal = function(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                const remainingActive = document.querySelectorAll('.modal-backdrop.active, .app-modal-overlay.active');
+                if (remainingActive.length === 0) {
+                    document.body.style.overflow = '';
+                }
+            }, 250);
+        };
+
+        // Close when clicking directly on backdrop
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('modal-backdrop')) {
+                window.closeModal(e.target.id);
             }
         });
     </script>
+    @stack('modals')
 </body>
 </html>

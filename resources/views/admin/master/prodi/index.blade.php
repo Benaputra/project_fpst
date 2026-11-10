@@ -133,25 +133,48 @@
     </div>
 </div>
 
+<script>
+    function editProdi(data) {
+        document.getElementById('edit-prodi-nama').value = data.nama;
+        document.getElementById('edit-prodi-kode').value = data.kode || '';
+        
+        if (data.ttd_url) {
+            document.getElementById('edit-prodi-ttd-preview').style.display = 'block';
+            document.getElementById('edit-prodi-ttd-img').src = data.ttd_url;
+        } else {
+            document.getElementById('edit-prodi-ttd-preview').style.display = 'none';
+            document.getElementById('edit-prodi-ttd-img').src = '';
+        }
+
+        const form = document.getElementById('form-edit-prodi');
+        form.action = "{{ url('admin/master/prodi') }}/" + data.id;
+
+        openModal('modal-edit-prodi');
+    }
+</script>
+
+@endsection
+
+@push('modals')
 <!-- ======================================================== -->
 <!-- MODAL: TAMBAH PROGRAM STUDI                              -->
 <!-- ======================================================== -->
-<div id="modal-tambah-prodi" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
-    <div class="modal-dialog" style="background: #fff; border-radius: 0.75rem; width: 100%; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; margin: auto;">
-        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">➕ Tambah Program Studi</h3>
-            <button type="button" onclick="closeModal('modal-tambah-prodi')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+<div id="modal-tambah-prodi" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><span>➕</span> Tambah Program Studi</h3>
+            <button type="button" onclick="closeModal('modal-tambah-prodi')" class="modal-dialog-close">&times;</button>
         </div>
-        <form method="POST" action="{{ route('admin.master.prodi.store') }}" enctype="multipart/form-data" style="padding: 1.25rem;">
+        <form method="POST" action="{{ route('admin.master.prodi.store') }}" enctype="multipart/form-data">
             @csrf
             <div style="margin-bottom: 1rem;">
                 <label class="form-label">Nama Program Studi <span style="color: #dc2626;">*</span></label>
-                <input type="text" name="nama" required class="form-control" placeholder="Contoh: Teknik Elektro">
+                <input type="text" name="nama" required class="form-control" placeholder="Contoh: Agroteknologi">
             </div>
 
             <div style="margin-bottom: 1rem;">
                 <label class="form-label">Kode Singkatan Prodi</label>
-                <input type="text" name="kode" class="form-control" placeholder="Contoh: TE" style="text-transform: uppercase;">
+                <input type="text" name="kode" class="form-control" placeholder="Contoh: AGT" style="text-transform: uppercase;">
                 <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">Maksimal 10 karakter. Digunakan untuk identifikasi CSV dan nomor surat.</div>
             </div>
 
@@ -161,7 +184,7 @@
                 <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">Format PNG/JPG transparan (Maks. 2MB). Digunakan saat Admin Utama menerbitkan surat undangan.</div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div class="modal-dialog-footer">
                 <button type="button" onclick="closeModal('modal-tambah-prodi')" class="btn btn-secondary btn-sm">Batal</button>
                 <button type="submit" class="btn btn-primary btn-sm">Simpan Program Studi</button>
             </div>
@@ -172,13 +195,13 @@
 <!-- ======================================================== -->
 <!-- MODAL: EDIT PROGRAM STUDI                                -->
 <!-- ======================================================== -->
-<div id="modal-edit-prodi" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
-    <div class="modal-dialog" style="background: #fff; border-radius: 0.75rem; width: 100%; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; margin: auto;">
-        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">✏️ Edit Program Studi</h3>
-            <button type="button" onclick="closeModal('modal-edit-prodi')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+<div id="modal-edit-prodi" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><span>✏️</span> Edit Program Studi</h3>
+            <button type="button" onclick="closeModal('modal-edit-prodi')" class="modal-dialog-close">&times;</button>
         </div>
-        <form id="form-edit-prodi" method="POST" action="" enctype="multipart/form-data" style="padding: 1.25rem;">
+        <form id="form-edit-prodi" method="POST" action="" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div style="margin-bottom: 1rem;">
@@ -201,57 +224,11 @@
                 <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">Kosongkan jika tidak ingin mengubah. Format PNG/JPG transparan (Maks. 2MB).</div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div class="modal-dialog-footer">
                 <button type="button" onclick="closeModal('modal-edit-prodi')" class="btn btn-secondary btn-sm">Batal</button>
                 <button type="submit" class="btn btn-primary btn-sm">Perbarui Program Studi</button>
             </div>
         </form>
     </div>
 </div>
-
-<script>
-    function openModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    function closeModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-    }
-
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-        backdrop.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        });
-    });
-
-    function editProdi(data) {
-        document.getElementById('edit-prodi-nama').value = data.nama;
-        document.getElementById('edit-prodi-kode').value = data.kode || '';
-        
-        if (data.ttd_url) {
-            document.getElementById('edit-prodi-ttd-preview').style.display = 'block';
-            document.getElementById('edit-prodi-ttd-img').src = data.ttd_url;
-        } else {
-            document.getElementById('edit-prodi-ttd-preview').style.display = 'none';
-            document.getElementById('edit-prodi-ttd-img').src = '';
-        }
-
-        const form = document.getElementById('form-edit-prodi');
-        form.action = "{{ url('admin/master/prodi') }}/" + data.id;
-
-        openModal('modal-edit-prodi');
-    }
-</script>
-
-@endsection
+@endpush

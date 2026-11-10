@@ -56,7 +56,7 @@
         </div>
 
         <!-- Filter & Search Toolbar Tab 1 -->
-        <form method="GET" action="{{ route('kaprodi.penetapan.index') }}" style="background: #f8fafc; border: 1px solid var(--border); border-radius: 0.65rem; padding: 0.85rem; margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: space-between; align-items: center;">
+        <form method="GET" action="{{ route('kaprodi.penetapan.index') }}" style="background: #f8fafc; border: none; border-radius: 0.65rem; padding: 0.85rem; margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
             <input type="hidden" name="tab" value="judul">
             @if($user->isAdminUtama() && $prodiFilter)
                 <input type="hidden" name="prodi_id" value="{{ $prodiFilter }}">
@@ -93,7 +93,7 @@
         </form>
 
         <!-- Data Table Tab 1 -->
-        <div class="table-responsive" style="border: 1px solid var(--border); border-radius: 0.65rem;">
+        <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
@@ -266,7 +266,7 @@
         </div>
 
         <!-- Filter & Search Toolbar Tab 2 -->
-        <form method="GET" action="{{ route('kaprodi.penetapan.index') }}" style="background: #f8fafc; border: 1px solid var(--border); border-radius: 0.65rem; padding: 0.85rem; margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: space-between; align-items: center;">
+        <form method="GET" action="{{ route('kaprodi.penetapan.index') }}" style="background: #f8fafc; border: none; border-radius: 0.65rem; padding: 0.85rem; margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
             <input type="hidden" name="tab" value="seminar">
             @if($user->isAdminUtama() && $prodiFilter)
                 <input type="hidden" name="prodi_id" value="{{ $prodiFilter }}">
@@ -303,7 +303,7 @@
         </form>
 
         <!-- Data Table Tab 2 -->
-        <div class="table-responsive" style="border: 1px solid var(--border); border-radius: 0.65rem;">
+        <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
@@ -475,7 +475,7 @@
         </div>
 
         <!-- Filter & Search Toolbar Tab 3 -->
-        <form method="GET" action="{{ route('kaprodi.penetapan.index') }}" style="background: #f8fafc; border: 1px solid var(--border); border-radius: 0.65rem; padding: 0.85rem; margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: space-between; align-items: center;">
+        <form method="GET" action="{{ route('kaprodi.penetapan.index') }}" style="background: #f8fafc; border: none; border-radius: 0.65rem; padding: 0.85rem; margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
             <input type="hidden" name="tab" value="sidang">
             @if($user->isAdminUtama() && $prodiFilter)
                 <input type="hidden" name="prodi_id" value="{{ $prodiFilter }}">
@@ -512,7 +512,7 @@
         </form>
 
         <!-- Data Table Tab 3 -->
-        <div class="table-responsive" style="border: 1px solid var(--border); border-radius: 0.65rem;">
+        <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
@@ -691,29 +691,37 @@
     </div>
 </div>
 
+@push('modals')
 <!-- ========================================== -->
-<!-- SLIDE-OVER DRAWER MODAL (UNIVERSAL) -->
+<!-- MODAL REVIEW & PENETAPAN (FULL SCREEN BLUR & SLIDE-IN/FULLSCREEN) -->
 <!-- ========================================== -->
-<div id="drawer-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px); z-index: 100; transition: opacity 0.2s;" onclick="closeDrawer()"></div>
-
-<div id="drawer-panel" style="position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 580px; background: #ffffff; z-index: 101; box-shadow: -4px 0 25px rgba(0,0,0,0.15); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column;">
-    <!-- Drawer Header -->
-    <div style="padding: 1.15rem 1.25rem; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; align-items: center; justify-content: space-between;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span id="drawer-badge" class="badge"></span>
-                <span id="drawer-tgl" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+<div id="modal-penetapan" class="app-modal-overlay" onclick="if(event.target === this) closeDrawer()">
+    <!-- Modal Dialog / Drawer Panel (Full Screen on Mobile, Full Height Desktop) -->
+    <div id="drawer-panel" class="app-modal-panel">
+        <!-- Modal Header -->
+        <div style="padding: 1.15rem 1.25rem; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+            <div style="min-width: 0; flex: 1; padding-right: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <span id="drawer-badge" class="badge"></span>
+                    <span id="drawer-tgl" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+                </div>
+                <h2 id="drawer-title" style="font-size: 1.08rem; font-weight: 700; color: #0f172a; margin-top: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Review & Penetapan</h2>
             </div>
-            <h2 id="drawer-title" style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-top: 0.25rem;">Review & Penetapan</h2>
+            <div style="display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;">
+                <button type="button" onclick="toggleExpandDrawer()" id="btn-expand-drawer" style="background: #e2e8f0; border: none; border-radius: 0.45rem; width: 34px; height: 34px; font-weight: 700; cursor: pointer; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; transition: background 0.15s;" title="Layar Penuh (Toggle Full Screen)">⛶</button>
+                <button type="button" onclick="closeDrawer()" style="background: #fee2e2; border: none; border-radius: 0.45rem; width: 34px; height: 34px; font-weight: 700; cursor: pointer; color: #991b1b; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: background 0.15s;" title="Tutup Modal">✕</button>
+            </div>
         </div>
-        <button type="button" onclick="closeDrawer()" style="background: #e2e8f0; border: none; border-radius: 0.45rem; width: 32px; height: 32px; font-weight: 700; cursor: pointer; color: #475569;">✕</button>
-    </div>
 
-    <!-- Drawer Body (Scrollable) -->
-    <div id="drawer-body" style="flex: 1; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem;">
-        <!-- Dynamic content injected by JS -->
+        <!-- Modal Body (Scrollable Full Height) -->
+        <div id="drawer-body" style="flex: 1; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; -webkit-overflow-scrolling: touch;">
+            <!-- Dynamic content injected by JS -->
+        </div>
     </div>
 </div>
+<!-- Alias backdrop element for safety -->
+<div id="drawer-backdrop" style="display: none;"></div>
+@endpush
 
 <script>
     const csrfToken = '{{ csrf_token() }}';
@@ -1148,23 +1156,58 @@
         showDrawer();
     }
 
-    function showDrawer() {
-        const backdrop = document.getElementById('drawer-backdrop');
+    function toggleExpandDrawer() {
         const panel = document.getElementById('drawer-panel');
-        backdrop.style.display = 'block';
-        setTimeout(() => {
-            panel.style.transform = 'translateX(0)';
-        }, 10);
+        const btn = document.getElementById('btn-expand-drawer');
+        if (!panel) return;
+        panel.classList.toggle('fullscreen-expanded');
+        if (btn) {
+            btn.innerText = panel.classList.contains('fullscreen-expanded') ? '🗗' : '⛶';
+            btn.title = panel.classList.contains('fullscreen-expanded') ? 'Kembalikan Ukuran' : 'Layar Penuh (Toggle Full Screen)';
+        }
+    }
+
+    function showDrawer() {
+        const modal = document.getElementById('modal-penetapan');
+        const panel = document.getElementById('drawer-panel');
+        if (!modal || !panel) return;
+
+        // Pindahkan ke document.body jika berada di dalam container/card agar blur bebas ke seluruh layar
+        if (modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+            modal.classList.add('active');
+        });
     }
 
     function closeDrawer() {
-        const backdrop = document.getElementById('drawer-backdrop');
+        const modal = document.getElementById('modal-penetapan');
         const panel = document.getElementById('drawer-panel');
-        panel.style.transform = 'translateX(100%)';
+        if (!modal) return;
+        modal.classList.remove('active');
         setTimeout(() => {
-            backdrop.style.display = 'none';
-        }, 300);
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            if (panel) {
+                panel.classList.remove('fullscreen-expanded');
+                const btn = document.getElementById('btn-expand-drawer');
+                if (btn) {
+                    btn.innerText = '⛶';
+                    btn.title = 'Layar Penuh (Toggle Full Screen)';
+                }
+            }
+        }, 280);
     }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDrawer();
+        }
+    });
 </script>
 
 @endsection

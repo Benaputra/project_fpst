@@ -182,16 +182,34 @@
     </div>
 </div>
 
+<script>
+    function editMahasiswa(data) {
+        document.getElementById('edit-name').value = data.name;
+        document.getElementById('edit-nim').value = data.nomor_induk;
+        document.getElementById('edit-email').value = data.email;
+        document.getElementById('edit-prodi').value = data.program_studi_id || '';
+        document.getElementById('edit-hp').value = data.no_hp || '';
+        
+        const form = document.getElementById('form-edit-mhs');
+        form.action = "{{ url('admin/master/mahasiswa') }}/" + data.id;
+
+        openModal('modal-edit-mhs');
+    }
+</script>
+
+@endsection
+
+@push('modals')
 <!-- ======================================================== -->
 <!-- MODAL: TAMBAH MAHASISWA (SATU PER SATU)                  -->
 <!-- ======================================================== -->
-<div id="modal-tambah-mhs" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
-    <div class="modal-dialog" style="background: #fff; border-radius: 0.75rem; width: 100%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; margin: auto;">
-        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">➕ Tambah Data Mahasiswa</h3>
-            <button type="button" onclick="closeModal('modal-tambah-mhs')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+<div id="modal-tambah-mhs" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><span>➕</span> Tambah Data Mahasiswa</h3>
+            <button type="button" onclick="closeModal('modal-tambah-mhs')" class="modal-dialog-close">&times;</button>
         </div>
-        <form method="POST" action="{{ route('admin.master.mahasiswa.store') }}" style="padding: 1.25rem;">
+        <form method="POST" action="{{ route('admin.master.mahasiswa.store') }}">
             @csrf
             <div style="margin-bottom: 0.85rem;">
                 <label class="form-label">Nama Lengkap Mahasiswa <span style="color: #dc2626;">*</span></label>
@@ -231,7 +249,7 @@
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div class="modal-dialog-footer">
                 <button type="button" onclick="closeModal('modal-tambah-mhs')" class="btn btn-secondary btn-sm">Batal</button>
                 <button type="submit" class="btn btn-primary btn-sm">Simpan Mahasiswa</button>
             </div>
@@ -242,13 +260,13 @@
 <!-- ======================================================== -->
 <!-- MODAL: EDIT MAHASISWA                                    -->
 <!-- ======================================================== -->
-<div id="modal-edit-mhs" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
-    <div class="modal-dialog" style="background: #fff; border-radius: 0.75rem; width: 100%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; margin: auto;">
-        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">✏️ Edit Data Mahasiswa</h3>
-            <button type="button" onclick="closeModal('modal-edit-mhs')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+<div id="modal-edit-mhs" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><span>✏️</span> Edit Data Mahasiswa</h3>
+            <button type="button" onclick="closeModal('modal-edit-mhs')" class="modal-dialog-close">&times;</button>
         </div>
-        <form id="form-edit-mhs" method="POST" action="" style="padding: 1.25rem;">
+        <form id="form-edit-mhs" method="POST" action="">
             @csrf
             @method('PUT')
             <div style="margin-bottom: 0.85rem;">
@@ -288,7 +306,7 @@
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div class="modal-dialog-footer">
                 <button type="button" onclick="closeModal('modal-edit-mhs')" class="btn btn-secondary btn-sm">Batal</button>
                 <button type="submit" class="btn btn-primary btn-sm">Perbarui Mahasiswa</button>
             </div>
@@ -299,20 +317,20 @@
 <!-- ======================================================== -->
 <!-- MODAL: BATCH IMPORT MAHASISWA MENGGUNAKAN FILE CSV       -->
 <!-- ======================================================== -->
-<div id="modal-import-csv" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
-    <div class="modal-dialog" style="background: #fff; border-radius: 0.75rem; width: 100%; max-width: 520px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; margin: auto;">
-        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">📥 Batch Import Mahasiswa (.CSV)</h3>
-            <button type="button" onclick="closeModal('modal-import-csv')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+<div id="modal-import-csv" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 560px;">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><span>📥</span> Batch Import Mahasiswa (.CSV)</h3>
+            <button type="button" onclick="closeModal('modal-import-csv')" class="modal-dialog-close">&times;</button>
         </div>
-        <form method="POST" action="{{ route('admin.master.mahasiswa.import-csv') }}" enctype="multipart/form-data" style="padding: 1.25rem;">
+        <form method="POST" action="{{ route('admin.master.mahasiswa.import-csv') }}" enctype="multipart/form-data">
             @csrf
             
             <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 0.5rem; padding: 0.85rem; margin-bottom: 1rem; font-size: 0.82rem; color: #166534;">
                 <div style="font-weight: 700; margin-bottom: 0.35rem;">Petunjuk Format File CSV:</div>
                 <ul style="margin: 0; padding-left: 1.25rem; line-height: 1.5;">
                     <li>Gunakan format baris header: <code>nama,nim,email,kode_prodi,no_hp,password</code></li>
-                    <li>Kolom <code>kode_prodi</code> dapat diisi kode (misal: <strong>TI</strong> atau <strong>SI</strong>) atau nama lengkap prodi.</li>
+                    <li>Kolom <code>kode_prodi</code> dapat diisi kode (misal: <strong>AGT</strong> atau <strong>AGB</strong>) atau nama lengkap prodi.</li>
                     <li>Jika kolom <code>password</code> dikosongkan, sistem akan otomatis mengeset ke <code>password</code>.</li>
                     <li>Pemisah (delimiter) otomatis mendeteksi koma (<code>,</code>) atau titik koma (<code>;</code>).</li>
                 </ul>
@@ -329,53 +347,11 @@
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div class="modal-dialog-footer">
                 <button type="button" onclick="closeModal('modal-import-csv')" class="btn btn-secondary btn-sm">Batal</button>
                 <button type="submit" class="btn btn-primary btn-sm" style="background: #2f855a; border-color: #276749;">Mulai Proses Import</button>
             </div>
         </form>
     </div>
 </div>
-
-<script>
-    function openModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    function closeModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-    }
-
-    // Pasang handler klik backdrop untuk menutup modal
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-        backdrop.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        });
-    });
-
-    function editMahasiswa(data) {
-        document.getElementById('edit-name').value = data.name;
-        document.getElementById('edit-nim').value = data.nomor_induk;
-        document.getElementById('edit-email').value = data.email;
-        document.getElementById('edit-prodi').value = data.program_studi_id || '';
-        document.getElementById('edit-hp').value = data.no_hp || '';
-        
-        const form = document.getElementById('form-edit-mhs');
-        form.action = "{{ url('admin/master/mahasiswa') }}/" + data.id;
-
-        openModal('modal-edit-mhs');
-    }
-</script>
-
-@endsection
+@endpush

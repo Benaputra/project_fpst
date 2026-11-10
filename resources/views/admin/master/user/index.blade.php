@@ -168,16 +168,53 @@
     </div>
 </div>
 
+<script>
+    function editUser(data) {
+        document.getElementById('edit-user-name').value = data.name;
+        document.getElementById('edit-user-email').value = data.email;
+        document.getElementById('edit-user-nidn').value = data.nomor_induk || '';
+        document.getElementById('edit-user-role').value = data.role;
+        document.getElementById('edit-user-prodi').value = data.program_studi_id || '';
+        document.getElementById('edit-user-hp').value = data.no_hp || '';
+        
+        const warning = document.getElementById('self-warning');
+        const roleSelect = document.getElementById('edit-user-role');
+        const roleHidden = document.getElementById('edit-user-role-self');
+        if (data.is_self) {
+            warning.style.display = 'block';
+            roleSelect.disabled = true;
+            if (roleHidden) {
+                roleHidden.disabled = false;
+                roleHidden.value = data.role;
+            }
+        } else {
+            warning.style.display = 'none';
+            roleSelect.disabled = false;
+            if (roleHidden) {
+                roleHidden.disabled = true;
+            }
+        }
+
+        const form = document.getElementById('form-edit-user');
+        form.action = "{{ url('admin/master/user') }}/" + data.id;
+
+        openModal('modal-edit-user');
+    }
+</script>
+
+@endsection
+
+@push('modals')
 <!-- ======================================================== -->
 <!-- MODAL: TAMBAH USER BARU                                  -->
 <!-- ======================================================== -->
-<div id="modal-tambah-user" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
-    <div class="modal-dialog" style="background: #fff; border-radius: 0.75rem; width: 100%; max-width: 520px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; margin: auto;">
-        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">➕ Tambah Pengguna Baru</h3>
-            <button type="button" onclick="closeModal('modal-tambah-user')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+<div id="modal-tambah-user" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><span>➕</span> Tambah Pengguna Baru</h3>
+            <button type="button" onclick="closeModal('modal-tambah-user')" class="modal-dialog-close">&times;</button>
         </div>
-        <form method="POST" action="{{ route('admin.master.user.store') }}" style="padding: 1.25rem;">
+        <form method="POST" action="{{ route('admin.master.user.store') }}">
             @csrf
             <div style="margin-bottom: 0.85rem;">
                 <label class="form-label">Nama Lengkap <span style="color: #dc2626;">*</span></label>
@@ -228,7 +265,7 @@
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div class="modal-dialog-footer">
                 <button type="button" onclick="closeModal('modal-tambah-user')" class="btn btn-secondary btn-sm">Batal</button>
                 <button type="submit" class="btn btn-primary btn-sm">Simpan Pengguna</button>
             </div>
@@ -239,13 +276,13 @@
 <!-- ======================================================== -->
 <!-- MODAL: EDIT USER & GANTI ROLE                            -->
 <!-- ======================================================== -->
-<div id="modal-edit-user" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
-    <div class="modal-dialog" style="background: #fff; border-radius: 0.75rem; width: 100%; max-width: 520px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; margin: auto;">
-        <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: #1c2b20;">🔄 Edit Pengguna & Pergantian Role</h3>
-            <button type="button" onclick="closeModal('modal-edit-user')" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+<div id="modal-edit-user" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><span>🔄</span> Edit Pengguna & Pergantian Role</h3>
+            <button type="button" onclick="closeModal('modal-edit-user')" class="modal-dialog-close">&times;</button>
         </div>
-        <form id="form-edit-user" method="POST" action="" style="padding: 1.25rem;">
+        <form id="form-edit-user" method="POST" action="">
             @csrf
             @method('PUT')
             
@@ -303,62 +340,11 @@
                 <input type="password" name="password" class="form-control" placeholder="Kosongkan jika tidak ingin mengubah password">
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div class="modal-dialog-footer">
                 <button type="button" onclick="closeModal('modal-edit-user')" class="btn btn-secondary btn-sm">Batal</button>
                 <button type="submit" class="btn btn-primary btn-sm">Perbarui User & Role</button>
             </div>
         </form>
     </div>
 </div>
-
-<script>
-    function openModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    function closeModal(id) {
-        const modal = document.getElementById(id);
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-    }
-
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-        backdrop.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        });
-    });
-
-    function editUser(data) {
-        document.getElementById('edit-user-name').value = data.name;
-        document.getElementById('edit-user-email').value = data.email;
-        document.getElementById('edit-user-nidn').value = data.nomor_induk || '';
-        document.getElementById('edit-user-role').value = data.role;
-        document.getElementById('edit-user-prodi').value = data.program_studi_id || '';
-        document.getElementById('edit-user-hp').value = data.no_hp || '';
-        
-        const warning = document.getElementById('self-warning');
-        if (data.is_self) {
-            warning.style.display = 'block';
-            document.getElementById('edit-user-role').disabled = true;
-        } else {
-            warning.style.display = 'none';
-            document.getElementById('edit-user-role').disabled = false;
-        }
-
-        const form = document.getElementById('form-edit-user');
-        form.action = "{{ url('admin/master/user') }}/" + data.id;
-
-        openModal('modal-edit-user');
-    }
-</script>
-
-@endsection
+@endpush

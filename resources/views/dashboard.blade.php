@@ -55,7 +55,7 @@
                 </a>
             </div>
         @else
-            <div style="background: #f8fafc; border-radius: 0.5rem; padding: 1.25rem; border: 1px solid var(--border);">
+            <div style="background: #f8fafc; border-radius: 0.5rem; padding: 1.25rem; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
                 <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Judul Skripsi Terdaftar</div>
                 <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0.35rem 0 1rem;">
                     "{{ $skripsi->judul }}"
@@ -86,14 +86,14 @@
             <!-- Quick Action Cards for Mahasiswa -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
                 <!-- Card Fase 1 -->
-                <div style="border: 1px solid var(--border); border-radius: 0.65rem; padding: 1rem; background: #fff;">
+                <div style="border: none; border-radius: 0.65rem; padding: 1rem; background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
                     <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.35rem;">1. Judul & SK Bimbingan</div>
                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Status: <strong class="badge badge-{{ $skripsi->status->value }}">{{ $skripsi->status->label() }}</strong></p>
                     <a href="{{ route('mahasiswa.skripsi.index') }}" class="btn btn-secondary btn-sm" style="width: 100%;">Detail Judul & SK</a>
                 </div>
 
                 <!-- Card Fase 2 -->
-                <div style="border: 1px solid var(--border); border-radius: 0.65rem; padding: 1rem; background: #fff;">
+                <div style="border: none; border-radius: 0.65rem; padding: 1rem; background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
                     <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.35rem;">2. Seminar Skripsi</div>
                     @if (!$skripsi->canAjukanSeminar())
                         <p style="font-size: 0.8rem; color: #dc2626; margin-bottom: 0.75rem;">🔒 Terkunci (Tunggu SK Bimbingan)</p>
@@ -108,7 +108,7 @@
                 </div>
 
                 <!-- Card Fase 3 -->
-                <div style="border: 1px solid var(--border); border-radius: 0.65rem; padding: 1rem; background: #fff;">
+                <div style="border: none; border-radius: 0.65rem; padding: 1rem; background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
                     <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.35rem;">3. Sidang Skripsi</div>
                     @if (!$isFase2Done)
                         <p style="font-size: 0.8rem; color: #dc2626; margin-bottom: 0.75rem;">🔒 Terkunci (Selesaikan Seminar)</p>
