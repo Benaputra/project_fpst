@@ -167,7 +167,7 @@
 <script>
     function editDosen(data) {
         document.getElementById('edit-dosen-name').value = data.name;
-        document.getElementById('edit-dosen-nidn').value = data.nomor_induk;
+        document.getElementById('edit-dosen-nidn').value = data.nomor_induk || '';
         document.getElementById('edit-dosen-email').value = data.email;
         document.getElementById('edit-dosen-prodi').value = data.program_studi_id || '';
         document.getElementById('edit-dosen-role').value = data.role;

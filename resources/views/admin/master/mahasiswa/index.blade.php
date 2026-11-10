@@ -185,7 +185,7 @@
 <script>
     function editMahasiswa(data) {
         document.getElementById('edit-name').value = data.name;
-        document.getElementById('edit-nim').value = data.nomor_induk;
+        document.getElementById('edit-nim').value = data.nomor_induk || '';
         document.getElementById('edit-email').value = data.email;
         document.getElementById('edit-prodi').value = data.program_studi_id || '';
         document.getElementById('edit-hp').value = data.no_hp || '';
