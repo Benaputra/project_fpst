@@ -24,6 +24,9 @@ Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 })->name('home');
 
+// Preview Landing Page
+Route::view('/preview-landing', 'landing')->name('landing.preview');
+
 // Autentikasi
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
