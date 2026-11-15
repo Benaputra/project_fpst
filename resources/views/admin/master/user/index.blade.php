@@ -26,6 +26,10 @@
         <div class="stat-box-value">{{ $roleCounts['admin_prodi'] }}</div>
     </div>
     <div class="stat-box">
+        <div class="stat-box-title">Tendik & Pimpinan</div>
+        <div class="stat-box-value">{{ $roleCounts['tendik'] + $roleCounts['pimpinan_fakultas'] }}</div>
+    </div>
+    <div class="stat-box">
         <div class="stat-box-title">Admin Utama</div>
         <div class="stat-box-value">{{ $roleCounts['admin_utama'] }}</div>
     </div>
@@ -40,13 +44,11 @@
 
         <!-- Filter & Pencarian -->
         <form method="GET" action="{{ route('admin.master.user.index') }}" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
-            <select name="role" class="form-control" style="font-size: 0.82rem; height: 38px; width: 170px;" onchange="this.form.submit()">
+            <select name="role" class="form-control" style="font-size: 0.82rem; height: 38px; width: 190px;" onchange="this.form.submit()">
                 <option value="">Semua Role</option>
-                <option value="mahasiswa" {{ $roleFilter === 'mahasiswa' ? 'selected' : '' }}>Mahasiswa</option>
-                <option value="dosen" {{ $roleFilter === 'dosen' ? 'selected' : '' }}>Dosen</option>
-                <option value="kaprodi" {{ $roleFilter === 'kaprodi' ? 'selected' : '' }}>Kaprodi</option>
-                <option value="admin_prodi" {{ $roleFilter === 'admin_prodi' ? 'selected' : '' }}>Admin Prodi</option>
-                <option value="admin_utama" {{ $roleFilter === 'admin_utama' ? 'selected' : '' }}>Admin Utama</option>
+                @foreach (\App\Enums\UserRole::cases() as $roleCase)
+                    <option value="{{ $roleCase->value }}" {{ $roleFilter === $roleCase->value ? 'selected' : '' }}>{{ $roleCase->label() }}</option>
+                @endforeach
             </select>
 
             <select name="prodi_id" class="form-control" style="font-size: 0.82rem; height: 38px; width: 170px;" onchange="this.form.submit()">
@@ -97,6 +99,11 @@
                                     <span class="badge badge--success" style="font-size: 0.68rem; margin-left: 0.25rem;">(Anda)</span>
                                 @endif
                             </div>
+                            @if ($u->jabatan || $u->unit_kerja)
+                                <div style="font-size: 0.74rem; color: var(--text-muted);">
+                                    {{ $u->jabatan ?: '' }}{{ $u->jabatan && $u->unit_kerja ? ' • ' : '' }}{{ $u->unit_kerja ?: '' }}
+                                </div>
+                            @endif
                             @if ($u->no_hp)
                                 <div style="font-size: 0.75rem; color: var(--text-muted);">📱 {{ $u->no_hp }}</div>
                             @endif
@@ -108,9 +115,18 @@
                         </td>
                         <td style="font-size: 0.85rem;">{{ $u->email }}</td>
                         <td>
-                            <span class="badge {{ $u->role->badgeClass() }}" style="font-size: 0.75rem; font-weight: 700;">
-                                {{ $u->role->label() }}
-                            </span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                <span class="badge {{ $u->role->badgeClass() }}" style="font-size: 0.75rem; font-weight: 700;">
+                                    {{ $u->role->label() }}
+                                </span>
+                                @foreach ($u->extraRoles as $extra)
+                                    @if ($extra->role)
+                                        <span class="badge {{ $extra->role->badgeClass() }}" style="font-size: 0.68rem; opacity: 0.88;" title="Role Tambahan">
+                                            + {{ $extra->role->label() }}
+                                        </span>
+                                    @endif
+                                @endforeach
+                            </div>
                         </td>
                         <td>
                             @if ($u->programStudi)
@@ -133,8 +149,11 @@
                                         'email' => $u->email,
                                         'nomor_induk' => $u->nomor_induk,
                                         'role' => $u->role->value,
+                                        'extra_roles' => $u->extraRoles->map(fn ($r) => $r->role?->value)->filter()->values()->all(),
                                         'program_studi_id' => $u->program_studi_id,
                                         'no_hp' => $u->no_hp,
+                                        'jabatan' => $u->jabatan,
+                                        'unit_kerja' => $u->unit_kerja,
                                         'is_self' => $u->id === auth()->id(),
                                     ]) }})">
                                     🔄 Role / Edit
@@ -176,6 +195,13 @@
         document.getElementById('edit-user-role').value = data.role;
         document.getElementById('edit-user-prodi').value = data.program_studi_id || '';
         document.getElementById('edit-user-hp').value = data.no_hp || '';
+        document.getElementById('edit-user-jabatan').value = data.jabatan || '';
+        document.getElementById('edit-user-unit-kerja').value = data.unit_kerja || '';
+
+        const extraRoles = Array.isArray(data.extra_roles) ? data.extra_roles : [];
+        document.querySelectorAll('.edit-extra-role-checkbox').forEach((cb) => {
+            cb.checked = extraRoles.includes(cb.value);
+        });
         
         const warning = document.getElementById('self-warning');
         const roleSelect = document.getElementById('edit-user-role');
@@ -236,11 +262,9 @@
                 <div>
                     <label class="form-label">Role Pengguna <span style="color: #dc2626;">*</span></label>
                     <select name="role" required class="form-control">
-                        <option value="mahasiswa">Mahasiswa</option>
-                        <option value="dosen">Dosen</option>
-                        <option value="kaprodi">Kaprodi</option>
-                        <option value="admin_prodi">Admin Prodi</option>
-                        <option value="admin_utama">Admin Utama</option>
+                        @foreach (\App\Enums\UserRole::cases() as $roleCase)
+                            <option value="{{ $roleCase->value }}">{{ $roleCase->label() }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
@@ -251,6 +275,29 @@
                             <option value="{{ $p->id }}">{{ $p->nama }} ({{ $p->kode }})</option>
                         @endforeach
                     </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 0.85rem;">
+                <label class="form-label">Role Tambahan / Rangkap Jabatan (Opsional)</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; font-size: 0.8rem; background: #f8faf8; padding: 0.65rem 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem;">
+                    @foreach (\App\Enums\UserRole::cases() as $roleCase)
+                        <label style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+                            <input type="checkbox" name="extra_roles[]" value="{{ $roleCase->value }}">
+                            <span>{{ $roleCase->label() }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.85rem;">
+                <div>
+                    <label class="form-label">Jabatan Struktural</label>
+                    <input type="text" name="jabatan" class="form-control" placeholder="Misal: Dekan / Staf TU">
+                </div>
+                <div>
+                    <label class="form-label">Unit Kerja</label>
+                    <input type="text" name="unit_kerja" class="form-control" placeholder="Misal: Subbag Akademik FPST">
                 </div>
             </div>
 
@@ -308,15 +355,25 @@
                     🛡️ Tetapkan / Ganti Role User:
                 </label>
                 <select id="edit-user-role" name="role" required class="form-control" style="font-weight: 600;">
-                    <option value="mahasiswa">Mahasiswa</option>
-                    <option value="dosen">Dosen</option>
-                    <option value="kaprodi">Kaprodi</option>
-                    <option value="admin_prodi">Admin Prodi</option>
-                    <option value="admin_utama">Admin Utama</option>
+                    @foreach (\App\Enums\UserRole::cases() as $roleCase)
+                        <option value="{{ $roleCase->value }}">{{ $roleCase->label() }}</option>
+                    @endforeach
                 </select>
                 <input type="hidden" id="edit-user-role-self" name="role" value="" disabled>
                 <div id="self-warning" style="display: none; font-size: 0.72rem; color: #dc2626; margin-top: 0.35rem;">
                     * Ini adalah akun Anda yang sedang aktif. Anda tidak dapat menurunkan role akun sendiri.
+                </div>
+
+                <div style="margin-top: 0.7rem;">
+                    <div style="font-size: 0.78rem; color: #166534; font-weight: 600; margin-bottom: 0.35rem;">Role Tambahan (Rangkap Peran):</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.45rem 0.85rem; font-size: 0.78rem;">
+                        @foreach (\App\Enums\UserRole::cases() as $roleCase)
+                            <label style="display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="extra_roles[]" value="{{ $roleCase->value }}" class="edit-extra-role-checkbox">
+                                <span>{{ $roleCase->label() }}</span>
+                            </label>
+                        @endforeach
+                    </div>
                 </div>
             </div>
 
@@ -333,6 +390,17 @@
                 <div>
                     <label class="form-label">No. WhatsApp / HP</label>
                     <input type="text" id="edit-user-hp" name="no_hp" class="form-control">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.85rem;">
+                <div>
+                    <label class="form-label">Jabatan Struktural</label>
+                    <input type="text" id="edit-user-jabatan" name="jabatan" class="form-control" placeholder="Misal: Dekan / Staf TU">
+                </div>
+                <div>
+                    <label class="form-label">Unit Kerja</label>
+                    <input type="text" id="edit-user-unit-kerja" name="unit_kerja" class="form-control" placeholder="Misal: Subbag Akademik FPST">
                 </div>
             </div>
 

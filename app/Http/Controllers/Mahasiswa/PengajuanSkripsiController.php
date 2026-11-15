@@ -7,8 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Models\AktivitasLog;
 use App\Models\Notifikasi;
 use App\Models\PengajuanSkripsi;
+use App\Models\User;
+use App\Services\JudulSimilarityService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class PengajuanSkripsiController extends Controller
@@ -36,6 +41,16 @@ class PengajuanSkripsiController extends Controller
         return view('mahasiswa.skripsi.create', compact('user'));
     }
 
+    public function cekKemiripan(Request $request, JudulSimilarityService $similarityService): JsonResponse
+    {
+        $judul = (string) $request->query('judul', '');
+        $matches = $similarityService->findSimilarTitles($judul, minThreshold: 35.0, limit: 5);
+
+        return response()->json([
+            'matches' => $matches,
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
@@ -55,36 +70,63 @@ class PengajuanSkripsiController extends Controller
         ]);
 
         $paths = [
-            'file_proposal' => $request->file('file_proposal')->store('skripsi/proposal'),
-            'file_transkrip' => $request->file('file_transkrip')->store('skripsi/transkrip'),
-            'file_bukti_bayar' => $request->file('file_bukti_bayar')->store('skripsi/bukti_bayar'),
+            'file_proposal' => $request->file('file_proposal')->store('skripsi/proposal', 'local'),
+            'file_transkrip' => $request->file('file_transkrip')->store('skripsi/transkrip', 'local'),
+            'file_bukti_bayar' => $request->file('file_bukti_bayar')->store('skripsi/bukti_bayar', 'local'),
         ];
 
-        $skripsi = PengajuanSkripsi::create([
-            'mahasiswa_id' => $user->id,
-            'program_studi_id' => $user->program_studi_id,
-            'judul' => $validated['judul'],
-            'abstrak' => $validated['abstrak'] ?? null,
-            'file_proposal' => $paths['file_proposal'],
-            'file_transkrip' => $paths['file_transkrip'],
-            'file_bukti_bayar' => $paths['file_bukti_bayar'],
-            'status' => StatusPengajuan::Diajukan,
-        ]);
+        try {
+            $blocked = DB::transaction(function () use ($user, $validated, $paths): bool {
+                User::whereKey($user->id)->lockForUpdate()->first();
 
-        AktivitasLog::catat(
-            $user,
-            'Pengajuan Judul Skripsi',
-            "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan judul: '{$skripsi->judul}'"
-        );
+                $existing = PengajuanSkripsi::where('mahasiswa_id', $user->id)
+                    ->latest('id')
+                    ->lockForUpdate()
+                    ->first();
 
-        // Notifikasi ke Pengelola (Kaprodi, Admin Prodi, Admin Utama)
-        Notifikasi::kirimKePengelola(
-            $user->program_studi_id,
-            'Pengajuan Judul Skripsi Baru',
-            "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan judul skripsi baru: '{$skripsi->judul}'.",
-            null,
-            $user->id
-        );
+                if ($existing && $existing->status !== StatusPengajuan::Ditolak) {
+                    return true;
+                }
+
+                $skripsi = PengajuanSkripsi::create([
+                    'mahasiswa_id' => $user->id,
+                    'program_studi_id' => $user->program_studi_id,
+                    'judul' => $validated['judul'],
+                    'abstrak' => $validated['abstrak'] ?? null,
+                    'file_proposal' => $paths['file_proposal'],
+                    'file_transkrip' => $paths['file_transkrip'],
+                    'file_bukti_bayar' => $paths['file_bukti_bayar'],
+                    'status' => StatusPengajuan::Diajukan,
+                ]);
+
+                AktivitasLog::catat(
+                    $user,
+                    'Pengajuan Judul Skripsi',
+                    "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan judul: '{$skripsi->judul}'"
+                );
+
+                // Notifikasi ke Pengelola (Kaprodi, Admin Prodi, Admin Utama)
+                Notifikasi::kirimKePengelola(
+                    $user->program_studi_id,
+                    'Pengajuan Judul Skripsi Baru',
+                    "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan judul skripsi baru: '{$skripsi->judul}'.",
+                    null,
+                    $user->id
+                );
+
+                return false;
+            });
+        } catch (\Throwable $e) {
+            Storage::disk('local')->delete(array_values($paths));
+            throw $e;
+        }
+
+        if ($blocked) {
+            Storage::disk('local')->delete(array_values($paths));
+
+            return redirect()->route('mahasiswa.skripsi.index')
+                ->with('error', 'Anda sudah memiliki pengajuan judul skripsi yang aktif.');
+        }
 
         return redirect()->route('mahasiswa.skripsi.index')
             ->with('success', 'Pengajuan judul skripsi berhasil dikirim dan sedang menunggu verifikasi/penetapan pembimbing.');

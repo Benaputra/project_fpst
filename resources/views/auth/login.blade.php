@@ -43,17 +43,28 @@
             </button>
         </form>
 
-        <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px dashed var(--border);">
+        <div style="margin-top: 1rem; text-align: center;">
+            <a href="{{ route('jadwal.publik') }}" class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center;">
+                📅 Lihat Jadwal Seminar &amp; Sidang Skripsi Publik
+            </a>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px dashed var(--border);">
             <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.75rem; text-align: center;">
                 Akun Uji Coba Cepat (Password: password)
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; font-size: 0.78rem;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('mahasiswa1@example.test')">Mahasiswa 1 (Baru)</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('mahasiswa2@example.test')">Mahasiswa 2 (SK)</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('kaprodi.ti@example.test')">Kaprodi TI</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('admin.ti@example.test')">Admin Prodi TI</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('mahasiswa1@example.test')">Mhs AGT (Judul Baru)</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('mahasiswa2@example.test')">Mhs AGT (SK Terbit)</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('mahasiswa3@example.test')">Mhs AGB (Siap Sidang)</button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('dosen1@example.test')">Dosen (Penguji)</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('admin.utama@example.test')">Admin Utama</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('kaprodi.agt@example.test')">Kaprodi Agroteknologi</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('kaprodi.agb@example.test')">Kaprodi Agribisnis</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('admin.agt@example.test')">Admin Prodi AGT</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('admin.agb@example.test')">Admin Prodi AGB</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('tendik.fpst@example.test')">Tendik FPST</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setLogin('dekan.fpst@example.test')">Pimpinan Fakultas</button>
+                <button type="button" class="btn btn-secondary btn-sm" style="grid-column: span 2;" onclick="setLogin('admin.utama@example.test')">Admin Utama FPST</button>
             </div>
         </div>
     </div>

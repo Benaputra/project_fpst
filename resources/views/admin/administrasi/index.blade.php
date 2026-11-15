@@ -348,28 +348,41 @@
                                 </div>
                             </td>
                             <td style="text-align: center;">
-                                <button type="button" class="btn {{ $isWaiting ? 'btn-primary' : 'btn-secondary' }} btn-sm" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;" onclick="openDrawerAdminSeminar({{ json_encode([
-                                    'id' => $seminar->id,
-                                    'mhs_name' => $sk->mahasiswa->name,
-                                    'mhs_nim' => $sk->mahasiswa->nomor_induk,
-                                    'judul' => $sk->judul,
-                                    'penguji_name' => $seminar->penguji ? $seminar->penguji->name : 'Belum ditetapkan Kaprodi',
-                                    'tgl_seminar' => $seminar->tgl_seminar ? $seminar->tgl_seminar->format('Y-m-d') : '',
-                                    'jam_seminar' => $seminar->jam_seminar ?? '09:00 - 10:30',
-                                    'ruangan' => $seminar->ruangan ?? 'Ruang Seminar',
-                                    'nomor_undangan' => $seminar->nomor_undangan_seminar,
-                                    'nomor_sk' => $seminar->nomor_sk_seminar,
-                                    'file_undangan_url' => $seminar->file_undangan_seminar ? route('dokumen.download', base64_encode($seminar->file_undangan_seminar)) : null,
-                                    'file_sk_url' => $seminar->file_sk_seminar ? route('dokumen.download', base64_encode($seminar->file_sk_seminar)) : null,
-                                    'nilai_seminar' => $seminar->nilai_seminar,
-                                    'catatan' => $seminar->catatan,
-                                    'is_locked_nilai' => ($seminar->nilai_seminar !== null && !$user->isAdminUtama()),
-                                    'is_admin_utama' => $user->isAdminUtama(),
-                                    'action_jadwal' => route('admin.seminar.jadwal-sk', $seminar->id),
-                                    'action_selesai' => route('admin.seminar.selesai', $seminar->id),
-                                ]) }})">
-                                    ⚙️ Kelola
-                                </button>
+                                <div style="display:flex; gap:0.35rem; justify-content:center; flex-wrap:wrap;">
+                                    <button type="button" class="btn {{ $isWaiting ? 'btn-primary' : 'btn-secondary' }} btn-sm" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;" onclick="openDrawerAdminSeminar({{ json_encode([
+                                        'id' => $seminar->id,
+                                        'mhs_name' => $sk->mahasiswa->name,
+                                        'mhs_nim' => $sk->mahasiswa->nomor_induk,
+                                        'judul' => $sk->judul,
+                                        'penguji_name' => $seminar->penguji ? $seminar->penguji->name : 'Belum ditetapkan Kaprodi',
+                                        'tgl_seminar' => $seminar->tgl_seminar ? $seminar->tgl_seminar->format('Y-m-d') : '',
+                                        'jam_seminar' => $seminar->jam_seminar ?? '09:00 - 10:30',
+                                        'ruangan' => $seminar->ruangan ?? 'Ruang Seminar',
+                                        'kuota_penonton' => $seminar->kuota_penonton ?? 35,
+                                        'kuota_penyanggah' => $seminar->kuota_penyanggah ?? 2,
+                                        'pendaftaran_audiens_dibuka' => (bool) ($seminar->pendaftaran_audiens_dibuka ?? true),
+                                        'nomor_undangan' => $seminar->nomor_undangan_seminar,
+                                        'nomor_sk' => $seminar->nomor_sk_seminar,
+                                        'file_undangan_url' => $seminar->file_undangan_seminar ? route('dokumen.download', base64_encode($seminar->file_undangan_seminar)) : null,
+                                        'file_sk_url' => $seminar->file_sk_seminar ? route('dokumen.download', base64_encode($seminar->file_sk_seminar)) : null,
+                                        'nilai_seminar' => $seminar->nilai_seminar,
+                                        'hasil_evaluasi' => $seminar->hasil_evaluasi?->value ?? 'lulus',
+                                        'rincian_nilai' => $seminar->rincian_nilai ?? [],
+                                        'catatan' => $seminar->catatan,
+                                        'catatan_revisi' => $seminar->catatan_revisi,
+                                        'tenggat_revisi' => $seminar->tenggat_revisi ? $seminar->tenggat_revisi->format('Y-m-d') : '',
+                                        'bebas_revisi_at' => $seminar->bebas_revisi_at ? $seminar->bebas_revisi_at->translatedFormat('d M Y, H:i') : null,
+                                        'is_locked_nilai' => ($seminar->nilai_seminar !== null && !$user->isAdminUtama()),
+                                        'is_admin_utama' => $user->isAdminUtama(),
+                                        'action_jadwal' => route('admin.seminar.jadwal-sk', $seminar->id),
+                                        'action_selesai' => route('admin.seminar.selesai', $seminar->id),
+                                        'action_bebas_revisi' => route('admin.seminar.bebas-revisi', $seminar->id),
+                                        'action_audiens' => route('kelola.audiens.show', $seminar->id),
+                                    ]) }})">
+                                        ⚙️ Kelola
+                                    </button>
+                                    <a href="{{ route('kelola.audiens.show', $seminar->id) }}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.35rem 0.6rem;">👥 Audiens</a>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -537,11 +550,18 @@
                                     'file_undangan_url' => $sidang->file_undangan_sidang ? route('dokumen.download', base64_encode($sidang->file_undangan_sidang)) : null,
                                     'file_sk_url' => $sidang->file_sk_sidang ? route('dokumen.download', base64_encode($sidang->file_sk_sidang)) : null,
                                     'nilai_sidang' => $sidang->nilai_sidang,
+                                    'hasil_evaluasi' => $sidang->hasil_evaluasi?->value ?? 'lulus',
+                                    'predikat_yudisium' => $sidang->predikat_yudisium ?? '',
+                                    'rincian_nilai' => $sidang->rincian_nilai ?? [],
                                     'catatan' => $sidang->catatan,
+                                    'catatan_revisi' => $sidang->catatan_revisi,
+                                    'tenggat_revisi' => $sidang->tenggat_revisi ? $sidang->tenggat_revisi->format('Y-m-d') : '',
+                                    'bebas_revisi_at' => $sidang->bebas_revisi_at ? $sidang->bebas_revisi_at->translatedFormat('d M Y, H:i') : null,
                                     'is_locked_nilai' => ($sidang->nilai_sidang !== null && !$user->isAdminUtama()),
                                     'is_admin_utama' => $user->isAdminUtama(),
                                     'action_jadwal' => route('admin.sidang.jadwal-sk', $sidang->id),
                                     'action_selesai' => route('admin.sidang.selesai', $sidang->id),
+                                    'action_bebas_revisi' => route('admin.sidang.bebas-revisi', $sidang->id),
                                 ]) }})">
                                     ⚙️ Kelola
                                 </button>
@@ -764,12 +784,15 @@
         let content = `
             <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">
                 <div style="font-size: 1rem; font-weight: 700; color: #0f172a; line-height: 1.4;">"${data.judul}"</div>
-                <div style="font-size: 0.82rem; color: #2e6840; margin-top: 0.35rem; font-weight: 600;">🎓 Penguji: ${data.penguji_name}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top: 0.45rem;">
+                    <div style="font-size: 0.82rem; color: #2e6840; font-weight: 600;">🎓 Penguji: ${data.penguji_name}</div>
+                    ${data.action_audiens ? `<a href="${data.action_audiens}" class="btn btn-secondary btn-sm" style="font-size:0.76rem;">👥 Kelola & Presensi Audiens</a>` : ''}
+                </div>
             </div>
 
             <!-- Form 1: Jadwal & Surat -->
             <div style="border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; background: #ffffff;">
-                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.75rem; color: #0f172a;">1. Pengaturan Jadwal & Dokumen Surat/SK:</div>
+                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.75rem; color: #0f172a;">1. Pengaturan Jadwal, Kuota Audiens & Dokumen Surat/SK:</div>
                 <form method="POST" action="${data.action_jadwal}" enctype="multipart/form-data">
                     <input type="hidden" name="_token" value="${csrfToken}">
                     
@@ -784,9 +807,27 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label" style="font-size: 0.75rem;">Ruangan / Tempat *</label>
-                        <input type="text" name="ruangan" value="${data.ruangan}" class="form-control" required>
+                    <div style="display: grid; grid-template-columns: 1fr 120px 120px; gap: 0.75rem;">
+                        <div class="form-group">
+                            <label class="form-label" style="font-size: 0.75rem;">Ruangan / Tempat *</label>
+                            <input type="text" name="ruangan" value="${data.ruangan}" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" style="font-size: 0.75rem;">Kuota Maks (35)</label>
+                            <input type="number" min="1" max="35" name="kuota_penonton" value="${data.kuota_penonton ?? 35}" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" style="font-size: 0.75rem;">Slot Penyanggah</label>
+                            <input type="number" min="0" max="10" name="kuota_penyanggah" value="${data.kuota_penyanggah ?? 2}" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0.65rem;">
+                        <input type="hidden" name="pendaftaran_audiens_dibuka" value="0">
+                        <label style="display:inline-flex; align-items:center; gap:0.45rem; font-size:0.78rem; color:#334155; cursor:pointer;">
+                            <input type="checkbox" name="pendaftaran_audiens_dibuka" value="1" ${data.pendaftaran_audiens_dibuka ? 'checked' : ''}>
+                            Buka Pendaftaran Penonton &amp; Penyanggah Seminar
+                        </label>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -846,14 +887,46 @@
                     ` : ''}
                     <form method="POST" action="${data.action_selesai}">
                         <input type="hidden" name="_token" value="${csrfToken}">
-                        <div style="display: grid; grid-template-columns: 140px 1fr; gap: 0.75rem;">
+                        <div style="display: grid; grid-template-columns: 130px 1fr; gap: 0.75rem;">
                             <div class="form-group">
                                 <label class="form-label" style="font-size: 0.75rem;">Nilai Akhir (0-100) *</label>
                                 <input type="number" step="0.01" min="0" max="100" name="nilai_seminar" value="${data.nilai_seminar !== null ? data.nilai_seminar : ''}" class="form-control" placeholder="85.50" required>
                             </div>
                             <div class="form-group">
-                                <label class="form-label" style="font-size: 0.75rem;">Catatan Hasil Seminar</label>
-                                <input type="text" name="catatan" value="${data.catatan || ''}" class="form-control" placeholder="Catatan hasil / berita acara...">
+                                <label class="form-label" style="font-size: 0.75rem;">Hasil Evaluasi</label>
+                                <select name="hasil_evaluasi" class="form-control">
+                                    <option value="lulus" ${data.hasil_evaluasi === 'lulus' ? 'selected' : ''}>Lulus Tanpa Revisi</option>
+                                    <option value="lulus_revisi" ${data.hasil_evaluasi === 'lulus_revisi' ? 'selected' : ''}>Lulus dengan Revisi</option>
+                                    <option value="mengulang" ${data.hasil_evaluasi === 'mengulang' ? 'selected' : ''}>Mengulang / Penjadwalan Ulang</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem;">
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.72rem;">Nilai Pemb. 1 (Ops.)</label>
+                                <input type="number" step="0.01" min="0" max="100" name="nilai_pembimbing_1" value="${data.rincian_nilai?.pembimbing_1 ?? ''}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.72rem;">Nilai Pemb. 2 (Ops.)</label>
+                                <input type="number" step="0.01" min="0" max="100" name="nilai_pembimbing_2" value="${data.rincian_nilai?.pembimbing_2 ?? ''}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.72rem;">Nilai Penguji (Ops.)</label>
+                                <input type="number" step="0.01" min="0" max="100" name="nilai_penguji" value="${data.rincian_nilai?.penguji ?? ''}" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" style="font-size: 0.75rem;">Catatan Hasil Seminar</label>
+                            <input type="text" name="catatan" value="${data.catatan || ''}" class="form-control" placeholder="Catatan hasil / berita acara...">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 160px; gap: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.75rem;">Catatan Revisi (Opsional)</label>
+                                <input type="text" name="catatan_revisi" value="${data.catatan_revisi || ''}" class="form-control" placeholder="Perbaikan metodologi / BAB III...">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.75rem;">Tenggat Revisi</label>
+                                <input type="date" name="tenggat_revisi" value="${data.tenggat_revisi || ''}" class="form-control">
                             </div>
                         </div>
                         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
@@ -863,6 +936,19 @@
                         </div>
                     </form>
                 `}
+                ${data.nilai_seminar !== null ? `
+                    <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed var(--border); display:flex; justify-content:space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                        <span style="font-size:0.78rem; color:#334155;">
+                            Bebas Revisi Digital: <strong>${data.bebas_revisi_at ? 'Disetujui (' + data.bebas_revisi_at + ')' : 'Belum Disetujui'}</strong>
+                        </span>
+                        ${!data.bebas_revisi_at && data.action_bebas_revisi ? `
+                            <form method="POST" action="${data.action_bebas_revisi}">
+                                <input type="hidden" name="_token" value="${csrfToken}">
+                                <button type="submit" class="btn btn-primary btn-sm" style="font-size:0.75rem;">✓ Setujui Bebas Revisi Digital</button>
+                            </form>
+                        ` : ''}
+                    </div>
+                ` : ''}
             </div>
         `;
 
@@ -961,14 +1047,54 @@
                     ` : ''}
                     <form method="POST" action="${data.action_selesai}">
                         <input type="hidden" name="_token" value="${csrfToken}">
-                        <div style="display: grid; grid-template-columns: 140px 1fr; gap: 0.75rem;">
+                        <div style="display: grid; grid-template-columns: 120px 1fr 1fr; gap: 0.65rem;">
                             <div class="form-group">
-                                <label class="form-label" style="font-size: 0.75rem;">Nilai Akhir (0-100) *</label>
+                                <label class="form-label" style="font-size: 0.75rem;">Nilai Akhir *</label>
                                 <input type="number" step="0.01" min="0" max="100" name="nilai_sidang" value="${data.nilai_sidang !== null ? data.nilai_sidang : ''}" class="form-control" placeholder="88.00" required>
                             </div>
                             <div class="form-group">
-                                <label class="form-label" style="font-size: 0.75rem;">Catatan Kelulusan / Predikat Yudisium</label>
-                                <input type="text" name="catatan" value="${data.catatan || ''}" class="form-control" placeholder="Dinyatakan Lulus dengan predikat Sangat Memuaskan...">
+                                <label class="form-label" style="font-size: 0.75rem;">Hasil Evaluasi</label>
+                                <select name="hasil_evaluasi" class="form-control">
+                                    <option value="lulus" ${data.hasil_evaluasi === 'lulus' ? 'selected' : ''}>Lulus Tanpa Revisi</option>
+                                    <option value="lulus_revisi" ${data.hasil_evaluasi === 'lulus_revisi' ? 'selected' : ''}>Lulus dengan Revisi</option>
+                                    <option value="mengulang" ${data.hasil_evaluasi === 'mengulang' ? 'selected' : ''}>Mengulang / Penjadwalan Ulang</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.75rem;">Predikat Yudisium</label>
+                                <input type="text" name="predikat_yudisium" value="${data.predikat_yudisium || ''}" class="form-control" placeholder="Sangat Memuaskan / Pujian">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.7rem;">Pemb. 1</label>
+                                <input type="number" step="0.01" min="0" max="100" name="nilai_pembimbing_1" value="${data.rincian_nilai?.pembimbing_1 ?? ''}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.7rem;">Pemb. 2</label>
+                                <input type="number" step="0.01" min="0" max="100" name="nilai_pembimbing_2" value="${data.rincian_nilai?.pembimbing_2 ?? ''}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.7rem;">Penguji 1</label>
+                                <input type="number" step="0.01" min="0" max="100" name="nilai_penguji_1" value="${data.rincian_nilai?.penguji_1 ?? ''}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.7rem;">Penguji 2</label>
+                                <input type="number" step="0.01" min="0" max="100" name="nilai_penguji_2" value="${data.rincian_nilai?.penguji_2 ?? ''}" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" style="font-size: 0.75rem;">Catatan Kelulusan / Berita Acara</label>
+                            <input type="text" name="catatan" value="${data.catatan || ''}" class="form-control" placeholder="Dinyatakan Lulus dengan predikat Sangat Memuaskan...">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 160px; gap: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.75rem;">Catatan Revisi (Opsional)</label>
+                                <input type="text" name="catatan_revisi" value="${data.catatan_revisi || ''}" class="form-control" placeholder="Revisi naskah akhir...">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.75rem;">Tenggat Revisi</label>
+                                <input type="date" name="tenggat_revisi" value="${data.tenggat_revisi || ''}" class="form-control">
                             </div>
                         </div>
                         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
@@ -978,6 +1104,19 @@
                         </div>
                     </form>
                 `}
+                ${data.nilai_sidang !== null ? `
+                    <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed var(--border); display:flex; justify-content:space-between; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                        <span style="font-size:0.78rem; color:#334155;">
+                            Bebas Revisi Digital: <strong>${data.bebas_revisi_at ? 'Disetujui (' + data.bebas_revisi_at + ')' : 'Belum Disetujui'}</strong>
+                        </span>
+                        ${!data.bebas_revisi_at && data.action_bebas_revisi ? `
+                            <form method="POST" action="${data.action_bebas_revisi}">
+                                <input type="hidden" name="_token" value="${csrfToken}">
+                                <button type="submit" class="btn btn-primary btn-sm" style="font-size:0.75rem;">✓ Setujui Bebas Revisi Digital</button>
+                            </form>
+                        ` : ''}
+                    </div>
+                ` : ''}
             </div>
         `;
 

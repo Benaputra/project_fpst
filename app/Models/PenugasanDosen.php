@@ -94,6 +94,7 @@ class PenugasanDosen extends Model
             'penguji_seminar' => 'Penguji Seminar Skripsi',
             'penguji_1' => 'Penguji 1 Sidang Skripsi',
             'penguji_2' => 'Penguji 2 Sidang Skripsi',
+            'dpl' => 'Dosen Pembimbing Lapang (DPL)',
             default => ucfirst(str_replace('_', ' ', $this->peran)),
         };
     }

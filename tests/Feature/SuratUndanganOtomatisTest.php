@@ -322,6 +322,19 @@ class SuratUndanganOtomatisTest extends TestCase
         $this->prodiAgb->refresh();
         $this->assertNotNull($this->prodiAgb->file_ttd_kaprodi);
         $this->assertStringStartsWith('ttd/', $this->prodiAgb->file_ttd_kaprodi);
-        Storage::disk('public')->assertExists($this->prodiAgb->file_ttd_kaprodi);
+        Storage::disk('local')->assertExists($this->prodiAgb->file_ttd_kaprodi);
+
+        // Pastikan hanya Admin Utama yang dapat mengakses endpoint preview TTD privat
+        $this->actingAs($this->adminUtama)
+            ->get(route('admin.master.prodi.ttd', $this->prodiAgb->id))
+            ->assertOk();
+
+        $this->actingAs($this->adminAgb)
+            ->get(route('admin.master.prodi.ttd', $this->prodiAgb->id))
+            ->assertForbidden();
+
+        $this->actingAs($this->mahasiswa)
+            ->get(route('admin.master.prodi.ttd', $this->prodiAgb->id))
+            ->assertForbidden();
     }
 }

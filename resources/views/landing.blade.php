@@ -1026,6 +1026,7 @@
 
             <nav class="nav-links" aria-label="Navigasi Landing Page">
                 <a href="#beranda" class="nav-link">Beranda</a>
+                <a href="{{ route('jadwal.publik') }}" class="nav-link">Jadwal Seminar &amp; Sidang</a>
                 <a href="#alur" class="nav-link">Alur Skripsi</a>
                 <a href="#prodi" class="nav-link">Program Studi</a>
             </nav>
@@ -1071,6 +1072,7 @@
                         @else
                             <a href="{{ route('login') }}" class="btn btn-primary">Masuk / Login Akun</a>
                         @endauth
+                        <a href="{{ route('jadwal.publik') }}" class="btn btn-outline">📅 Jadwal Seminar &amp; Sidang</a>
                         <a href="#alur" class="btn btn-outline">Lihat Alur Pelaksanaan</a>
                     </div>
 
@@ -1511,6 +1513,7 @@
 
             <div class="footer-links">
                 <a href="#beranda">Beranda</a>
+                <a href="{{ route('jadwal.publik') }}">Jadwal Seminar &amp; Sidang</a>
                 <a href="#alur">Alur Skripsi</a>
                 <a href="#prodi">Program Studi</a>
                 <a href="{{ route('login') }}">Login</a>

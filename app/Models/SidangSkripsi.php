@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\HasilEvaluasiAkademik;
 use App\Enums\StatusPengajuan;
 use App\Enums\StatusPenugasanDosen;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,16 +33,27 @@ class SidangSkripsi extends Model
         'nomor_sk_sidang',
         'file_sk_sidang',
         'nilai_sidang',
+        'hasil_evaluasi',
+        'predikat_yudisium',
+        'rincian_nilai',
         'status',
         'catatan',
+        'catatan_revisi',
+        'tenggat_revisi',
+        'bebas_revisi_at',
+        'bebas_revisi_oleh',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => StatusPengajuan::class,
+            'hasil_evaluasi' => HasilEvaluasiAkademik::class,
             'tgl_sidang' => 'date',
+            'tenggat_revisi' => 'date',
+            'bebas_revisi_at' => 'datetime',
             'nilai_sidang' => 'decimal:2',
+            'rincian_nilai' => 'array',
         ];
     }
 
@@ -58,6 +70,11 @@ class SidangSkripsi extends Model
     public function penguji2(): BelongsTo
     {
         return $this->belongsTo(User::class, 'penguji_2_id');
+    }
+
+    public function bebasRevisiOleh(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'bebas_revisi_oleh');
     }
 
     public function surat(): HasMany

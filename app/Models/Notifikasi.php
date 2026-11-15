@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\KirimNotifikasiMassalJob;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -78,13 +79,15 @@ class Notifikasi extends Model
         array $roles = [\App\Enums\UserRole::AdminUtama, \App\Enums\UserRole::Kaprodi, \App\Enums\UserRole::AdminProdi]
     ): void {
         $roleValues = array_map(fn($r) => $r instanceof \BackedEnum ? $r->value : (string) $r, $roles);
-        $query = User::query()->whereIn('role', $roleValues);
+        $query = User::query()->with('extraRoles:id,user_id,role,program_studi_id')->whereHasRoles($roleValues);
 
         if ($excludeUserId) {
             $query->where('id', '!=', $excludeUserId);
         }
 
-        $users = $query->get();
+        $users = $query->get(['id', 'role', 'program_studi_id']);
+        $now = now();
+        $rows = [];
 
         foreach ($users as $user) {
             if (
@@ -94,16 +97,44 @@ class Notifikasi extends Model
             ) {
                 $userLink = $link;
                 if (!$userLink) {
-                    if ($user->isKaprodi()) {
+                    if ($user->isTendik() || $user->isPimpinanFakultas()) {
+                        $userLink = route('admin.persuratan.index');
+                    } elseif ($user->isKaprodi()) {
                         $userLink = route('kaprodi.penetapan.index');
                     } elseif ($user->isAdmin()) {
                         $userLink = route('admin.administrasi.index');
                     }
                 }
 
-                self::kirim($user->id, $judul, $pesan, $userLink);
+                $rows[] = [
+                    'user_id' => $user->id,
+                    'judul' => $judul,
+                    'pesan' => $pesan,
+                    'link' => $userLink,
+                    'dibaca' => false,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
             }
         }
+
+        if (! empty($rows)) {
+            self::insert($rows);
+        }
+    }
+
+    /**
+     * Dispatch pengiriman notifikasi massal ke queue worker agar tidak memblokir respons HTTP saat peak.
+     *
+     * @param array<int, int> $userIds
+     */
+    public static function kirimMassalAsync(array $userIds, string $judul, string $pesan, ?string $link = null): void
+    {
+        if (empty($userIds)) {
+            return;
+        }
+
+        KirimNotifikasiMassalJob::dispatch($userIds, $judul, $pesan, $link);
     }
 }
 

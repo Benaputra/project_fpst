@@ -8,8 +8,10 @@ use App\Models\AktivitasLog;
 use App\Models\ProgramStudi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ProgramStudiController extends Controller
 {
@@ -58,7 +60,7 @@ class ProgramStudiController extends Controller
 
         $pathTtd = null;
         if ($request->hasFile('file_ttd_kaprodi')) {
-            $pathTtd = $request->file('file_ttd_kaprodi')->store('ttd', 'public');
+            $pathTtd = $request->file('file_ttd_kaprodi')->store('ttd', 'local');
         }
 
         $prodi = ProgramStudi::create([
@@ -96,12 +98,20 @@ class ProgramStudiController extends Controller
         ];
 
         if ($request->hasFile('file_ttd_kaprodi')) {
-            if ($prodi->file_ttd_kaprodi && \Illuminate\Support\Facades\Storage::disk('public')->exists($prodi->file_ttd_kaprodi)) {
-                if (! str_contains($prodi->file_ttd_kaprodi, 'ttd_agribisnis.png') && ! str_contains($prodi->file_ttd_kaprodi, 'ttd_agroteknologi.png')) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($prodi->file_ttd_kaprodi);
+            if ($prodi->file_ttd_kaprodi) {
+                $isDefaultSeedTtd = str_contains($prodi->file_ttd_kaprodi, 'ttd_agribisnis.png')
+                    || str_contains($prodi->file_ttd_kaprodi, 'ttd_agroteknologi.png');
+
+                if (! $isDefaultSeedTtd) {
+                    if (Storage::disk('local')->exists($prodi->file_ttd_kaprodi)) {
+                        Storage::disk('local')->delete($prodi->file_ttd_kaprodi);
+                    }
+                    if (Storage::disk('public')->exists($prodi->file_ttd_kaprodi)) {
+                        Storage::disk('public')->delete($prodi->file_ttd_kaprodi);
+                    }
                 }
             }
-            $dataUpdate['file_ttd_kaprodi'] = $request->file('file_ttd_kaprodi')->store('ttd', 'public');
+            $dataUpdate['file_ttd_kaprodi'] = $request->file('file_ttd_kaprodi')->store('ttd', 'local');
         }
 
         $prodi->update($dataUpdate);
@@ -140,5 +150,44 @@ class ProgramStudiController extends Controller
 
         return redirect()->route('admin.master.prodi.index')
             ->with('success', "Program studi {$nama} berhasil dihapus.");
+    }
+
+    public function showTtd(ProgramStudi $prodi): BinaryFileResponse
+    {
+        if (! $prodi->file_ttd_kaprodi) {
+            abort(404, 'Berkas tanda tangan tidak ditemukan.');
+        }
+
+        if (Storage::disk('local')->exists($prodi->file_ttd_kaprodi)) {
+            $fullPath = Storage::disk('local')->path($prodi->file_ttd_kaprodi);
+            $mime = Storage::disk('local')->mimeType($prodi->file_ttd_kaprodi) ?: 'image/png';
+
+            return response()->file($fullPath, [
+                'Content-Type' => $mime,
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        }
+
+        if (Storage::disk('public')->exists($prodi->file_ttd_kaprodi)) {
+            $fullPath = Storage::disk('public')->path($prodi->file_ttd_kaprodi);
+            $mime = Storage::disk('public')->mimeType($prodi->file_ttd_kaprodi) ?: 'image/png';
+
+            return response()->file($fullPath, [
+                'Content-Type' => $mime,
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        }
+
+        $imgFallback = public_path('images/' . $prodi->file_ttd_kaprodi);
+        if (file_exists($imgFallback)) {
+            $mime = mime_content_type($imgFallback) ?: 'image/png';
+
+            return response()->file($imgFallback, [
+                'Content-Type' => $mime,
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        }
+
+        abort(404, 'Berkas tanda tangan tidak ditemukan.');
     }
 }

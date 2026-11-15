@@ -181,7 +181,7 @@ class SuratUndanganService
     protected function createDompdf(): Dompdf
     {
         $options = new Options();
-        $options->set('isRemoteEnabled', true);
+        $options->set('isRemoteEnabled', false);
         $options->set('isHtml5ParserEnabled', true);
         $options->set('defaultFont', 'Times-Roman');
 
@@ -208,6 +208,13 @@ class SuratUndanganService
     {
         if (! $withSignature || ! $prodi || ! $prodi->file_ttd_kaprodi) {
             return '';
+        }
+
+        if (Storage::disk('local')->exists($prodi->file_ttd_kaprodi)) {
+            $content = Storage::disk('local')->get($prodi->file_ttd_kaprodi);
+            $mime = Storage::disk('local')->mimeType($prodi->file_ttd_kaprodi) ?: 'image/png';
+
+            return 'data:' . $mime . ';base64,' . base64_encode($content);
         }
 
         if (Storage::disk('public')->exists($prodi->file_ttd_kaprodi)) {

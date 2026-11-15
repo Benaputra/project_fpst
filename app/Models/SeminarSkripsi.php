@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\HasilEvaluasiAkademik;
+use App\Enums\PeranAudiensSeminar;
+use App\Enums\StatusAudiensSeminar;
 use App\Enums\StatusPengajuan;
 use App\Enums\StatusPenugasanDosen;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,21 +29,38 @@ class SeminarSkripsi extends Model
         'tgl_seminar',
         'jam_seminar',
         'ruangan',
+        'kuota_penonton',
+        'kuota_penyanggah',
+        'pendaftaran_audiens_dibuka',
+        'token_presensi',
         'nomor_undangan_seminar',
         'file_undangan_seminar',
         'nomor_sk_seminar',
         'file_sk_seminar',
         'nilai_seminar',
+        'hasil_evaluasi',
+        'rincian_nilai',
         'status',
         'catatan',
+        'catatan_revisi',
+        'tenggat_revisi',
+        'bebas_revisi_at',
+        'bebas_revisi_oleh',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => StatusPengajuan::class,
+            'hasil_evaluasi' => HasilEvaluasiAkademik::class,
             'tgl_seminar' => 'date',
+            'tenggat_revisi' => 'date',
+            'bebas_revisi_at' => 'datetime',
             'nilai_seminar' => 'decimal:2',
+            'rincian_nilai' => 'array',
+            'kuota_penonton' => 'integer',
+            'kuota_penyanggah' => 'integer',
+            'pendaftaran_audiens_dibuka' => 'boolean',
         ];
     }
 
@@ -52,6 +72,58 @@ class SeminarSkripsi extends Model
     public function penguji(): BelongsTo
     {
         return $this->belongsTo(User::class, 'penguji_seminar_id');
+    }
+
+    public function bebasRevisiOleh(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'bebas_revisi_oleh');
+    }
+
+    public function audiens(): HasMany
+    {
+        return $this->hasMany(SeminarAudiens::class, 'seminar_skripsi_id')->orderBy('waktu_daftar');
+    }
+
+    public function kapasitasEfektif(): int
+    {
+        $maksSistem = (int) config('fpst.seminar_audiens.maks_kuota_sesi', 35);
+        $kuota = (int) ($this->kuota_penonton ?: $maksSistem);
+
+        return max(1, min($kuota, $maksSistem));
+    }
+
+    public function kapasitasPenyanggahEfektif(): int
+    {
+        $maksKapasitas = $this->kapasitasEfektif();
+        $kuotaPenyanggah = $this->kuota_penyanggah !== null ? (int) $this->kuota_penyanggah : 2;
+
+        return max(0, min($kuotaPenyanggah, $maksKapasitas));
+    }
+
+    public function jumlahAudiensAktif(): int
+    {
+        return $this->audiens()->aktif()->count();
+    }
+
+    public function jumlahPenyanggahAktif(): int
+    {
+        return $this->audiens()
+            ->aktif()
+            ->where('peran', PeranAudiensSeminar::Penyanggah->value)
+            ->count();
+    }
+
+    public function sisaKuotaPenonton(): int
+    {
+        return max(0, $this->kapasitasEfektif() - $this->jumlahAudiensAktif());
+    }
+
+    public function sisaKuotaPenyanggah(): int
+    {
+        $sisaTotal = $this->sisaKuotaPenonton();
+        $sisaSlotPenyanggah = max(0, $this->kapasitasPenyanggahEfektif() - $this->jumlahPenyanggahAktif());
+
+        return min($sisaTotal, $sisaSlotPenyanggah);
     }
 
     public function surat(): HasMany

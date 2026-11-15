@@ -236,6 +236,7 @@
                                         'is_mandat' => $p->is_mandat_admin_utama,
                                         'tgl' => $p->created_at->translatedFormat('d M Y, H:i'),
                                     ])->values(),
+                                    'kemiripan' => $kemiripanMap[$skripsi->id] ?? [],
                                 ]) }})">
                                     {{ $needsReplacementP ? '🔄 Ganti Dosen' : ($isWaiting ? '✓ Tetapkan' : ($user->isAdminUtama() ? '✏️ Ubah' : '👁️ Detail')) }}
                                 </button>
@@ -445,6 +446,7 @@
                                         'is_mandat' => $p->is_mandat_admin_utama,
                                         'tgl' => $p->created_at->translatedFormat('d M Y, H:i'),
                                     ])->values(),
+                                    'kemiripan' => $kemiripanMap[$skripsi->id] ?? [],
                                 ]) }})">
                                     {{ $needsReplacementSem ? '🔄 Ganti Dosen' : ($isWaiting ? '✓ Tetapkan' : ($user->isAdminUtama() ? '✏️ Ubah' : '👁️ Detail')) }}
                                 </button>
@@ -669,6 +671,7 @@
                                         'is_mandat' => $p->is_mandat_admin_utama,
                                         'tgl' => $p->created_at->translatedFormat('d M Y, H:i'),
                                     ])->values(),
+                                    'kemiripan' => $kemiripanMap[$skripsi->id] ?? [],
                                 ]) }})">
                                     {{ $needsReplacementSidang ? '🔄 Ganti Dosen' : ($isWaiting ? '✓ Tetapkan' : ($user->isAdminUtama() ? '✏️ Ubah' : '👁️ Detail')) }}
                                 </button>
@@ -821,6 +824,23 @@
 
         content += buildRiwayatHtml(data.riwayat_penugasan);
 
+        if (Array.isArray(data.kemiripan) && data.kemiripan.length > 0) {
+            const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+            content += `
+                <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 0.5rem; padding: 0.9rem 1rem;">
+                    <div style="font-weight: 700; font-size: 0.82rem; color: #92400e; margin-bottom: 0.4rem;">
+                        🔍 Deteksi Kemiripan Judul Lintas Angkatan
+                    </div>
+                    ${data.kemiripan.map(m => `
+                        <div style="font-size: 0.8rem; color: #78350f; padding: 0.3rem 0; border-top: 1px dashed #fcd34d;">
+                            <strong>${esc(m.skor_kemiripan)}% mirip</strong> &mdash; ${esc(m.judul)}
+                            <span style="color:#64748b;">(${esc(m.mahasiswa_nama)}${m.prodi_kode ? ' / ' + esc(m.prodi_kode) : ''}${m.tahun ? ' • ' + esc(m.tahun) : ''})</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         if (data.is_locked) {
             content += `
                 <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 1rem;">
@@ -960,6 +980,23 @@
 
         content += buildRiwayatHtml(data.riwayat_penugasan);
 
+        if (Array.isArray(data.kemiripan) && data.kemiripan.length > 0) {
+            const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+            content += `
+                <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 0.5rem; padding: 0.9rem 1rem;">
+                    <div style="font-weight: 700; font-size: 0.82rem; color: #92400e; margin-bottom: 0.4rem;">
+                        🔍 Deteksi Kemiripan Judul Lintas Angkatan
+                    </div>
+                    ${data.kemiripan.map(m => `
+                        <div style="font-size: 0.8rem; color: #78350f; padding: 0.3rem 0; border-top: 1px dashed #fcd34d;">
+                            <strong>${esc(m.skor_kemiripan)}% mirip</strong> &mdash; ${esc(m.judul)}
+                            <span style="color:#64748b;">(${esc(m.mahasiswa_nama)}${m.prodi_kode ? ' / ' + esc(m.prodi_kode) : ''}${m.tahun ? ' • ' + esc(m.tahun) : ''})</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         if (data.is_locked) {
             content += `
                 <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; padding: 1rem;">
@@ -1053,6 +1090,23 @@
         `;
 
         content += buildRiwayatHtml(data.riwayat_penugasan);
+
+        if (Array.isArray(data.kemiripan) && data.kemiripan.length > 0) {
+            const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+            content += `
+                <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 0.5rem; padding: 0.9rem 1rem;">
+                    <div style="font-weight: 700; font-size: 0.82rem; color: #92400e; margin-bottom: 0.4rem;">
+                        🔍 Deteksi Kemiripan Judul Lintas Angkatan
+                    </div>
+                    ${data.kemiripan.map(m => `
+                        <div style="font-size: 0.8rem; color: #78350f; padding: 0.3rem 0; border-top: 1px dashed #fcd34d;">
+                            <strong>${esc(m.skor_kemiripan)}% mirip</strong> &mdash; ${esc(m.judul)}
+                            <span style="color:#64748b;">(${esc(m.mahasiswa_nama)}${m.prodi_kode ? ' / ' + esc(m.prodi_kode) : ''}${m.tahun ? ' • ' + esc(m.tahun) : ''})</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
 
         if (data.is_locked) {
             content += `

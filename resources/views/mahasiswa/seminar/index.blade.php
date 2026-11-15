@@ -25,12 +25,46 @@
     <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
         <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
         <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">Siap Mengajukan Seminar Skripsi</h2>
-        <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 1.5rem; font-size: 0.9rem;">
+        <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 1.25rem; font-size: 0.9rem;">
             SK Bimbingan Anda telah aktif (No: <strong>{{ $skripsi->nomor_sk_bimbingan }}</strong>). Silakan siapkan naskah proposal, lembar persetujuan (ACC) pembimbing, bukti bayar seminar, dan sertifikat TOEFL untuk mendaftar.
         </p>
-        <a href="{{ route('mahasiswa.seminar.create') }}" class="btn btn-primary">
-            + Daftar Seminar Skripsi Sekarang
-        </a>
+
+        @if (isset($kartuKendali))
+            @php
+                $syaratTerpenuhi = $kartuKendali['memenuhi_syarat_seminar'] ?? false;
+            @endphp
+            <div style="max-width: 540px; margin: 0 auto 1.5rem; text-align: left; padding: 1rem 1.15rem; border-radius: 0.65rem; border: 1px solid {{ $syaratTerpenuhi ? '#bbf7d0' : '#fde68a' }}; background: {{ $syaratTerpenuhi ? '#f0fdf4' : '#fffbeb' }};">
+                <div style="font-size: 0.82rem; font-weight: 700; color: {{ $syaratTerpenuhi ? '#166534' : '#92400e' }}; margin-bottom: 0.35rem;">
+                    🎫 Status Kartu Kendali Audiens Seminar ({{ $kartuKendali['total_hadir'] }}/{{ $kartuKendali['maks_total'] }} Tonton Hadir)
+                </div>
+                <div style="font-size: 0.8rem; color: #334155;">
+                    Penyanggah Hadir: <strong>{{ $kartuKendali['penyanggah_hadir'] }}/{{ $kartuKendali['maks_penyanggah'] }}</strong> &bull;
+                    Peserta Hadir: <strong>{{ $kartuKendali['peserta_hadir'] }}/{{ $kartuKendali['maks_total'] - $kartuKendali['maks_penyanggah'] }}</strong>
+                </div>
+                <div style="margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <span style="font-size: 0.76rem; color: #475569;">
+                        @if ($syaratTerpenuhi)
+                            Persyaratan {{ $kartuKendali['maks_total'] }}x menonton seminar telah terpenuhi.
+                        @elseif (!empty($enforceSyaratAudiens))
+                            Wajib memenuhi {{ $kartuKendali['maks_total'] }}x kehadiran audiens sebelum mendaftar seminar.
+                        @else
+                            Pantau progres kehadiran seminar Anda melalui Kartu Kendali.
+                        @endif
+                    </span>
+                    <a href="{{ route('mahasiswa.audiens.index') }}" class="btn btn-secondary btn-sm" style="font-size: 0.76rem;">Buka Kartu Kendali</a>
+                </div>
+            </div>
+        @endif
+
+        @if (!empty($enforceSyaratAudiens) && isset($kartuKendali) && !($kartuKendali['memenuhi_syarat_seminar'] ?? false))
+            <a href="{{ route('mahasiswa.audiens.index') }}" class="btn btn-primary">
+                Lengkapi Kehadiran Audiens ({{ $kartuKendali['total_hadir'] }}/{{ $kartuKendali['maks_total'] }})
+            </a>
+        @else
+            <a href="{{ route('mahasiswa.seminar.create') }}" class="btn btn-primary">
+                + Daftar Seminar Skripsi Sekarang
+            </a>
+        @endif
     </div>
 @else
     <!-- Tampilan Detail Seminar Terdaftar -->
@@ -96,19 +130,49 @@
 
             <!-- Box Hasil Nilai Seminar (Jika Selesai) -->
             @if ($seminar->nilai_seminar !== null)
+                @php
+                    $evalSem = $seminar->hasil_evaluasi;
+                @endphp
                 <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 0.5rem; padding: 1.25rem;">
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                         <div>
                             <span style="font-size: 0.75rem; font-weight: 700; color: #065f46; text-transform: uppercase;">Hasil / Nilai Akhir Seminar</span>
                             <div style="font-size: 1.5rem; font-weight: 800; color: #047857; margin-top: 0.25rem;">
                                 {{ number_format($seminar->nilai_seminar, 2) }}
                             </div>
                         </div>
-                        <span class="badge badge-selesai" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">LULUS SEMINAR</span>
+                        <span class="badge {{ $evalSem ? $evalSem->badgeClass() : 'badge-selesai' }}" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                            {{ $evalSem ? strtoupper($evalSem->label()) : 'LULUS SEMINAR' }}
+                        </span>
                     </div>
+                    @if (!empty($seminar->rincian_nilai))
+                        <div style="font-size: 0.78rem; color: #065f46; margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                            @if (isset($seminar->rincian_nilai['pembimbing_1'])) <span>Pembimbing 1: <strong>{{ $seminar->rincian_nilai['pembimbing_1'] }}</strong></span> @endif
+                            @if (isset($seminar->rincian_nilai['pembimbing_2'])) <span>Pembimbing 2: <strong>{{ $seminar->rincian_nilai['pembimbing_2'] }}</strong></span> @endif
+                            @if (isset($seminar->rincian_nilai['penguji'])) <span>Penguji: <strong>{{ $seminar->rincian_nilai['penguji'] }}</strong></span> @endif
+                        </div>
+                    @endif
                     @if ($seminar->catatan)
                         <div style="font-size: 0.85rem; color: #065f46; margin-top: 0.75rem; border-top: 1px dashed #a7f3d0; padding-top: 0.5rem;">
                             <strong>Catatan / Saran Penguji:</strong> {{ $seminar->catatan }}
+                        </div>
+                    @endif
+                    @if ($seminar->catatan_revisi || $seminar->tenggat_revisi || $seminar->bebas_revisi_at)
+                        <div style="font-size: 0.82rem; color: #064e3b; margin-top: 0.65rem; border-top: 1px dashed #a7f3d0; padding-top: 0.55rem;">
+                            @if ($seminar->catatan_revisi)
+                                <div><strong>Catatan Revisi:</strong> {{ $seminar->catatan_revisi }}</div>
+                            @endif
+                            @if ($seminar->tenggat_revisi)
+                                <div><strong>Tenggat Revisi:</strong> {{ $seminar->tenggat_revisi->translatedFormat('d F Y') }}</div>
+                            @endif
+                            <div>
+                                <strong>Status Bebas Revisi:</strong>
+                                @if ($seminar->bebas_revisi_at)
+                                    <span style="color:#047857; font-weight:700;">Disetujui Digital ({{ $seminar->bebas_revisi_at->translatedFormat('d M Y, H:i') }})</span>
+                                @else
+                                    <span style="color:#b45309; font-weight:600;">Menunggu Verifikasi Bebas Revisi</span>
+                                @endif
+                            </div>
                         </div>
                     @endif
                 </div>

@@ -1172,6 +1172,10 @@
                         <span>📊</span> Dashboard
                     </a>
 
+                    <a href="{{ route('jadwal.publik') }}" class="nav-link {{ request()->routeIs('jadwal.publik') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                        <span>📅</span> Jadwal Seminar &amp; Sidang
+                    </a>
+
                     <a href="{{ route('notifikasi.index') }}" class="nav-link {{ request()->routeIs('notifikasi.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
                         <span>🔔</span> Notifikasi
                         @if ($unreadCount > 0)
@@ -1190,12 +1194,35 @@
                         <a href="{{ route('mahasiswa.sidang.index') }}" class="nav-link {{ request()->routeIs('mahasiswa.sidang.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
                             <span>🎓</span> 3. Sidang Skripsi
                         </a>
+                        <div class="menu-label">Layanan Akademik</div>
+                        <a href="{{ route('mahasiswa.audiens.index') }}" class="nav-link {{ request()->routeIs('mahasiswa.audiens.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                            <span>🎫</span> Kartu Kendali & Audiens
+                        </a>
+                        <a href="{{ route('mahasiswa.pl.index') }}" class="nav-link {{ request()->routeIs('mahasiswa.pl.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                            <span>🌱</span> Praktik Lapang (PL)
+                        </a>
+                        <a href="{{ route('mahasiswa.surat-internal.index') }}" class="nav-link {{ request()->routeIs('mahasiswa.surat-internal.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                            <span>✉️</span> Pengajuan Surat Internal
+                        </a>
                     @endif
 
                     @if ($user->isKaprodi() || $user->isAdminUtama())
                         <div class="menu-label">{{ $user->isAdminUtama() ? 'Penetapan Pembimbing & Penguji' : 'Menu Kaprodi' }}</div>
                         <a href="{{ route('kaprodi.penetapan.index') }}" class="nav-link {{ request()->routeIs('kaprodi.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
                             <span>⚖️</span> Penetapan Pembimbing & Penguji
+                        </a>
+                    @endif
+
+                    @if ($user->hasRole(\App\Enums\UserRole::AdminUtama, \App\Enums\UserRole::AdminProdi, \App\Enums\UserRole::Tendik, \App\Enums\UserRole::Kaprodi, \App\Enums\UserRole::PimpinanFakultas))
+                        <div class="menu-label">Layanan Fakultas</div>
+                        <a href="{{ route('admin.persuratan.index') }}" class="nav-link {{ request()->routeIs('admin.persuratan.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                            <span>✉️</span> Persuratan Internal
+                        </a>
+                    @endif
+
+                    @if ($user->hasRole(\App\Enums\UserRole::AdminUtama, \App\Enums\UserRole::AdminProdi, \App\Enums\UserRole::Tendik, \App\Enums\UserRole::Kaprodi, \App\Enums\UserRole::Dosen))
+                        <a href="{{ route('kelola.pl.index') }}" class="nav-link {{ request()->routeIs('kelola.pl.*') ? 'active' : '' }}" onclick="toggleSidebar(false)">
+                            <span>🌱</span> Kelola Praktik Lapang (PL)
                         </a>
                     @endif
 

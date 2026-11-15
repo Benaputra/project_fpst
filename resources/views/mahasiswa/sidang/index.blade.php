@@ -97,19 +97,55 @@
 
             <!-- Box Hasil Nilai Sidang (Jika Selesai) -->
             @if ($sidang->nilai_sidang !== null)
+                @php
+                    $evalSid = $sidang->hasil_evaluasi;
+                @endphp
                 <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 0.5rem; padding: 1.25rem;">
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                         <div>
                             <span style="font-size: 0.75rem; font-weight: 700; color: #065f46; text-transform: uppercase;">Nilai Akhir Sidang Skripsi</span>
                             <div style="font-size: 1.6rem; font-weight: 800; color: #047857; margin-top: 0.25rem;">
                                 {{ number_format($sidang->nilai_sidang, 2) }}
                             </div>
+                            @if ($sidang->predikat_yudisium)
+                                <div style="font-size: 0.82rem; font-weight: 700; color: #065f46; margin-top: 0.15rem;">
+                                    Predikat Yudisium: {{ $sidang->predikat_yudisium }}
+                                </div>
+                            @endif
                         </div>
-                        <span class="badge badge-selesai" style="font-size: 0.9rem; padding: 0.5rem 1rem;">LULUS SIDANG SKRIPSI</span>
+                        <span class="badge {{ $evalSid ? $evalSid->badgeClass() : 'badge-selesai' }}" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+                            {{ $evalSid ? strtoupper($evalSid->label()) : 'LULUS SIDANG SKRIPSI' }}
+                        </span>
                     </div>
+                    @if (!empty($sidang->rincian_nilai))
+                        <div style="font-size: 0.78rem; color: #065f46; margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                            @if (isset($sidang->rincian_nilai['pembimbing_1'])) <span>Pembimbing 1: <strong>{{ $sidang->rincian_nilai['pembimbing_1'] }}</strong></span> @endif
+                            @if (isset($sidang->rincian_nilai['pembimbing_2'])) <span>Pembimbing 2: <strong>{{ $sidang->rincian_nilai['pembimbing_2'] }}</strong></span> @endif
+                            @if (isset($sidang->rincian_nilai['penguji_1'])) <span>Penguji 1: <strong>{{ $sidang->rincian_nilai['penguji_1'] }}</strong></span> @endif
+                            @if (isset($sidang->rincian_nilai['penguji_2'])) <span>Penguji 2: <strong>{{ $sidang->rincian_nilai['penguji_2'] }}</strong></span> @endif
+                        </div>
+                    @endif
                     @if ($sidang->catatan)
                         <div style="font-size: 0.85rem; color: #065f46; margin-top: 0.75rem; border-top: 1px dashed #a7f3d0; padding-top: 0.5rem;">
                             <strong>Catatan Dewan Penguji:</strong> {{ $sidang->catatan }}
+                        </div>
+                    @endif
+                    @if ($sidang->catatan_revisi || $sidang->tenggat_revisi || $sidang->bebas_revisi_at)
+                        <div style="font-size: 0.82rem; color: #064e3b; margin-top: 0.65rem; border-top: 1px dashed #a7f3d0; padding-top: 0.55rem;">
+                            @if ($sidang->catatan_revisi)
+                                <div><strong>Catatan Revisi:</strong> {{ $sidang->catatan_revisi }}</div>
+                            @endif
+                            @if ($sidang->tenggat_revisi)
+                                <div><strong>Tenggat Revisi:</strong> {{ $sidang->tenggat_revisi->translatedFormat('d F Y') }}</div>
+                            @endif
+                            <div>
+                                <strong>Status Bebas Revisi:</strong>
+                                @if ($sidang->bebas_revisi_at)
+                                    <span style="color:#047857; font-weight:700;">Disetujui Digital ({{ $sidang->bebas_revisi_at->translatedFormat('d M Y, H:i') }})</span>
+                                @else
+                                    <span style="color:#b45309; font-weight:600;">Menunggu Verifikasi Bebas Revisi</span>
+                                @endif
+                            </div>
                         </div>
                     @endif
                 </div>

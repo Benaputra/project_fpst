@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Enums\StatusPengajuan;
+use App\Enums\StatusPengajuanSurat;
+use App\Enums\UserRole;
 use App\Models\PengajuanSkripsi;
+use App\Models\PengajuanSurat;
 use App\Models\SeminarSkripsi;
 use App\Models\SidangSkripsi;
 use Illuminate\Http\Request;
@@ -61,6 +64,17 @@ class DashboardController extends Controller
             $data['pendingJadwalSidangCount'] = (clone $querySidang)->whereNull('tgl_sidang')->count();
 
             $data['recentSkripsi'] = (clone $querySkripsi)->with(['mahasiswa', 'pembimbing1', 'pembimbing2'])->latest()->take(5)->get();
+        } elseif ($user->hasRole(UserRole::Tendik, UserRole::PimpinanFakultas)) {
+            $counts = PengajuanSurat::query()
+                ->selectRaw('status, COUNT(*) as total')
+                ->groupBy('status')
+                ->pluck('total', 'status');
+
+            $data['suratDiajukanCount'] = (int) ($counts[StatusPengajuanSurat::Diajukan->value] ?? 0);
+            $data['suratDiverifikasiCount'] = (int) ($counts[StatusPengajuanSurat::Diverifikasi->value] ?? 0);
+            $data['suratDisetujuiCount'] = (int) ($counts[StatusPengajuanSurat::Disetujui->value] ?? 0);
+            $data['suratDiterbitkanCount'] = (int) ($counts[StatusPengajuanSurat::Diterbitkan->value] ?? 0);
+            $data['recentSurat'] = PengajuanSurat::with(['mahasiswa:id,name,nomor_induk', 'programStudi:id,nama,kode'])->latest()->take(6)->get();
         } elseif ($user->isDosen()) {
             $data['bimbingan1Count'] = PengajuanSkripsi::where('pembimbing_1_id', $user->id)->count();
             $data['bimbingan2Count'] = PengajuanSkripsi::where('pembimbing_2_id', $user->id)->count();

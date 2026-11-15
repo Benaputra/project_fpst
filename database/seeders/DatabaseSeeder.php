@@ -2,11 +2,14 @@
 
 namespace Database\Seeders;
 
+use App\Enums\JenisSuratInternal;
 use App\Enums\StatusPengajuan;
+use App\Enums\StatusPengajuanSurat;
 use App\Enums\UserRole;
 use App\Models\AktivitasLog;
 use App\Models\Notifikasi;
 use App\Models\PengajuanSkripsi;
+use App\Models\PengajuanSurat;
 use App\Models\ProgramStudi;
 use App\Models\SeminarSkripsi;
 use App\Models\SidangSkripsi;
@@ -22,12 +25,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
-            // Pastikan file tanda tangan awal ada di storage public
-            if (! Storage::disk('public')->exists('ttd/ttd_agribisnis.png') && file_exists(public_path('images/ttd/ttd_agribisnis.png'))) {
-                Storage::disk('public')->put('ttd/ttd_agribisnis.png', file_get_contents(public_path('images/ttd/ttd_agribisnis.png')));
+            // Pastikan file tanda tangan awal ada di storage privat (local)
+            if (! Storage::disk('local')->exists('ttd/ttd_agribisnis.png') && file_exists(public_path('images/ttd/ttd_agribisnis.png'))) {
+                Storage::disk('local')->put('ttd/ttd_agribisnis.png', file_get_contents(public_path('images/ttd/ttd_agribisnis.png')));
             }
-            if (! Storage::disk('public')->exists('ttd/ttd_agroteknologi.png') && file_exists(public_path('images/ttd/ttd_agroteknologi.png'))) {
-                Storage::disk('public')->put('ttd/ttd_agroteknologi.png', file_get_contents(public_path('images/ttd/ttd_agroteknologi.png')));
+            if (! Storage::disk('local')->exists('ttd/ttd_agroteknologi.png') && file_exists(public_path('images/ttd/ttd_agroteknologi.png'))) {
+                Storage::disk('local')->put('ttd/ttd_agroteknologi.png', file_get_contents(public_path('images/ttd/ttd_agroteknologi.png')));
             }
 
             // 1. Program Studi
@@ -43,14 +46,38 @@ class DatabaseSeeder extends Seeder
                 'file_ttd_kaprodi' => 'ttd/ttd_agribisnis.png',
             ]);
 
-            // 2. Admin Utama
+            // 2. Admin Utama & Civitas Fakultas (Tendik / Pimpinan)
             $adminUtama = User::create([
                 'name' => 'Admin Utama FPST',
                 'email' => 'admin.utama@example.test',
                 'nomor_induk' => 'ADM001',
                 'password' => Hash::make('password'),
                 'role' => UserRole::AdminUtama,
+                'jabatan' => 'Administrator Sistem FPST',
+                'unit_kerja' => 'Fakultas Pertanian, Sains dan Teknologi',
                 'no_hp' => '081299990001',
+            ]);
+
+            User::create([
+                'name' => 'Rina Suryani, A.Md.',
+                'email' => 'tendik.fpst@example.test',
+                'nomor_induk' => 'TDK001',
+                'password' => Hash::make('password'),
+                'role' => UserRole::Tendik,
+                'jabatan' => 'Staf Tata Usaha Akademik',
+                'unit_kerja' => 'Subbagian Akademik & Kemahasiswaan FPST',
+                'no_hp' => '081299990004',
+            ]);
+
+            User::create([
+                'name' => 'Prof. Dr. Ir. Hendra Kusuma, M.S.',
+                'email' => 'dekan.fpst@example.test',
+                'nomor_induk' => '1000000099',
+                'password' => Hash::make('password'),
+                'role' => UserRole::PimpinanFakultas,
+                'jabatan' => 'Dekan FPST',
+                'unit_kerja' => 'Dekanat Fakultas Pertanian, Sains dan Teknologi',
+                'no_hp' => '081299990005',
             ]);
 
             // 3. Admin Prodi
@@ -353,6 +380,58 @@ class DatabaseSeeder extends Seeder
                 'link' => route('mahasiswa.sidang.index'),
                 'dibaca' => false,
                 'created_at' => now()->subHours(6),
+            ]);
+
+            // 9. Tendik & Pimpinan Fakultas + Contoh Pengajuan Surat Internal FPST (AGT & AGB)
+            User::create([
+                'name' => 'Rina Kartika, S.E.',
+                'email' => 'tendik.fpst@example.test',
+                'nomor_induk' => 'TDK-FPST-01',
+                'password' => Hash::make('password'),
+                'role' => UserRole::Tendik,
+                'jabatan' => 'Staf Tata Usaha Persuratan',
+                'unit_kerja' => 'Subbagian Akademik & Kemahasiswaan FPST',
+                'no_hp' => '081299990010',
+            ]);
+
+            $dekan = User::create([
+                'name' => 'Prof. Dr. Ir. Hendro Wijoyo, M.P.',
+                'email' => 'dekan.fpst@example.test',
+                'nomor_induk' => '1000000099',
+                'password' => Hash::make('password'),
+                'role' => UserRole::PimpinanFakultas,
+                'jabatan' => 'Dekan Fakultas Pertanian, Sains dan Teknologi',
+                'unit_kerja' => 'Dekanat FPST Universitas Panca Bhakti',
+                'no_hp' => '081299990011',
+            ]);
+            $dekan->syncExtraRoles([UserRole::Dosen->value]);
+
+            PengajuanSurat::create([
+                'mahasiswa_id' => $mhs2->id,
+                'program_studi_id' => $agt->id,
+                'jenis_surat' => JenisSuratInternal::IzinPenelitian,
+                'perihal' => 'Permohonan Izin Pengambilan Data Tanah & Kelembaban Lahan Tomat',
+                'tujuan_instansi' => 'Balai Pengkajian Teknologi Pertanian Kalimantan Barat',
+                'alamat_instansi' => 'Pontianak',
+                'tanggal_mulai' => now()->addDays(5),
+                'tanggal_selesai' => now()->addDays(35),
+                'keterangan_kebutuhan' => 'Pengambilan sampel kadar air tanah pada sistem irigasi tetes budidaya tanaman tomat (Program Studi Agroteknologi).',
+                'status' => StatusPengajuanSurat::Diajukan,
+            ]);
+
+            PengajuanSurat::create([
+                'mahasiswa_id' => $mhs3->id,
+                'program_studi_id' => $agb->id,
+                'jenis_surat' => JenisSuratInternal::PengantarPl,
+                'perihal' => 'Permohonan Surat Pengantar Praktik Lapang Manajemen Rantai Pasok Kopi',
+                'tujuan_instansi' => 'Koperasi Agribisnis Karya Mandiri Pontianak',
+                'alamat_instansi' => 'Kota Pontianak',
+                'tanggal_mulai' => now()->addDays(10),
+                'tanggal_selesai' => now()->addDays(40),
+                'keterangan_kebutuhan' => 'Pelaksanaan kegiatan Praktik Lapang mahasiswa Program Studi Agribisnis bidang analisis rantai pasok komoditas.',
+                'status' => StatusPengajuanSurat::Diverifikasi,
+                'diverifikasi_oleh' => $adminAgb->id,
+                'diverifikasi_pada' => now()->subHours(2),
             ]);
         });
     }

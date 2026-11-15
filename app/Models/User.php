@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,6 +23,8 @@ class User extends Authenticatable
         'role',
         'program_studi_id',
         'no_hp',
+        'jabatan',
+        'unit_kerja',
     ];
 
     protected $hidden = [
@@ -43,35 +46,140 @@ class User extends Authenticatable
         return $this->belongsTo(ProgramStudi::class);
     }
 
+    public function extraRoles(): HasMany
+    {
+        return $this->hasMany(UserRoleAssignment::class);
+    }
+
+    /**
+     * Kembalikan seluruh role aktif (role utama + role tambahan).
+     *
+     * @return array<int, UserRole>
+     */
+    public function allRoles(): array
+    {
+        $roles = [];
+        if ($this->role instanceof UserRole) {
+            $roles[$this->role->value] = $this->role;
+        }
+
+        $extra = $this->relationLoaded('extraRoles')
+            ? $this->extraRoles
+            : $this->extraRoles()->get();
+
+        foreach ($extra as $assignment) {
+            if ($assignment->role instanceof UserRole) {
+                $roles[$assignment->role->value] = $assignment->role;
+            }
+        }
+
+        return array_values($roles);
+    }
+
+    public function hasRole(UserRole|string ...$roles): bool
+    {
+        $targetValues = array_map(
+            fn (UserRole|string $role): string => $role instanceof UserRole ? $role->value : $role,
+            $roles
+        );
+
+        foreach ($this->allRoles() as $ownedRole) {
+            if (in_array($ownedRole->value, $targetValues, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function scopeWhereHasRoles(Builder $query, array $roles): Builder
+    {
+        $values = array_map(
+            fn (UserRole|string $role): string => $role instanceof UserRole ? $role->value : $role,
+            $roles
+        );
+
+        return $query->where(function (Builder $q) use ($values) {
+            $q->whereIn('role', $values)
+                ->orWhereHas('extraRoles', fn (Builder $sub) => $sub->whereIn('role', $values));
+        });
+    }
+
+    /**
+     * Sinkronkan role tambahan di luar role utama.
+     *
+     * @param array<int, UserRole|string> $roles
+     */
+    public function syncExtraRoles(array $roles): void
+    {
+        $primaryValue = $this->role?->value;
+        $normalized = collect($roles)
+            ->map(fn ($r) => $r instanceof UserRole ? $r->value : (string) $r)
+            ->filter(fn ($v) => $v !== '' && $v !== $primaryValue && UserRole::tryFrom($v) !== null)
+            ->unique()
+            ->values();
+
+        $this->extraRoles()->whereNotIn('role', $normalized->all())->delete();
+
+        foreach ($normalized as $roleValue) {
+            $this->extraRoles()->firstOrCreate(
+                ['role' => $roleValue],
+                ['program_studi_id' => $this->program_studi_id]
+            );
+        }
+
+        $this->unsetRelation('extraRoles');
+    }
+
     // Role helpers
     public function isMahasiswa(): bool
     {
-        return $this->role === UserRole::Mahasiswa;
+        return $this->hasRole(UserRole::Mahasiswa);
     }
 
     public function isDosen(): bool
     {
-        return $this->role === UserRole::Dosen || $this->role === UserRole::Kaprodi;
+        return $this->hasRole(UserRole::Dosen, UserRole::Kaprodi);
     }
 
     public function isKaprodi(): bool
     {
-        return $this->role === UserRole::Kaprodi;
+        return $this->hasRole(UserRole::Kaprodi);
     }
 
     public function isAdminProdi(): bool
     {
-        return $this->role === UserRole::AdminProdi;
+        return $this->hasRole(UserRole::AdminProdi);
+    }
+
+    public function isTendik(): bool
+    {
+        return $this->hasRole(UserRole::Tendik);
+    }
+
+    public function isPimpinanFakultas(): bool
+    {
+        return $this->hasRole(UserRole::PimpinanFakultas);
     }
 
     public function isAdminUtama(): bool
     {
-        return $this->role === UserRole::AdminUtama;
+        return $this->hasRole(UserRole::AdminUtama);
     }
 
     public function isAdmin(): bool
     {
         return $this->isAdminProdi() || $this->isAdminUtama();
+    }
+
+    public function isStaffPersuratan(): bool
+    {
+        return $this->hasRole(UserRole::AdminUtama, UserRole::AdminProdi, UserRole::Tendik);
+    }
+
+    public function canApproveSurat(): bool
+    {
+        return $this->hasRole(UserRole::AdminUtama, UserRole::PimpinanFakultas, UserRole::Kaprodi);
     }
 
     // Relasi Mahasiswa ke Pengajuan Skripsi
@@ -135,5 +243,20 @@ class User extends Authenticatable
     public function pendingPenugasanDosenCount(): int
     {
         return $this->penugasanDosen()->where('status', \App\Enums\StatusPenugasanDosen::Menunggu)->count();
+    }
+
+    public function riwayatAudiensSeminar(): HasMany
+    {
+        return $this->hasMany(SeminarAudiens::class, 'mahasiswa_id')->latest('waktu_daftar');
+    }
+
+    public function praktikLapang(): HasMany
+    {
+        return $this->hasMany(PraktikLapang::class, 'mahasiswa_id')->latest();
+    }
+
+    public function bimbinganPl(): HasMany
+    {
+        return $this->hasMany(PraktikLapang::class, 'dpl_id')->latest();
     }
 }

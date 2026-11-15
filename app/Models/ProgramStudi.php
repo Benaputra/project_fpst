@@ -24,7 +24,7 @@ class ProgramStudi extends Model
             return null;
         }
 
-        return asset('storage/' . $this->file_ttd_kaprodi);
+        return route('admin.master.prodi.ttd', $this->id);
     }
 
     public function users(): HasMany

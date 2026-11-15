@@ -11,10 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->append(\App\Http\Middleware\ApplySecurityHeaders::class);
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo('/dashboard');
         $middleware->alias([
             'admin_utama' => \App\Http\Middleware\EnsureUserIsAdminUtama::class,
+            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

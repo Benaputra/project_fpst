@@ -14,14 +14,16 @@ use App\Models\ProgramStudi;
 use App\Models\SeminarSkripsi;
 use App\Models\SidangSkripsi;
 use App\Models\User;
+use App\Services\JudulSimilarityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class PenetapanController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, JudulSimilarityService $similarityService): View
     {
         $user = $request->user();
         if (!$user->isKaprodi() && !$user->isAdminUtama()) {
@@ -29,7 +31,9 @@ class PenetapanController extends Controller
         }
 
         $daftarProdi = ProgramStudi::all();
-        $prodiFilter = $request->input('prodi_id', $user->isAdminUtama() ? ($daftarProdi->first()?->id) : $user->program_studi_id);
+        $prodiFilter = $user->isAdminUtama()
+            ? $request->input('prodi_id', $daftarProdi->first()?->id)
+            : $user->program_studi_id;
         $prodiId = $prodiFilter;
 
         // Filter & Search untuk Tab 1: Review Judul & Pembimbing
@@ -114,10 +118,21 @@ class PenetapanController extends Controller
         $pendingSeminarCount = SeminarSkripsi::whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiId))->whereNull('penguji_seminar_id')->count();
         $pendingSidangCount = SidangSkripsi::whereHas('pengajuanSkripsi', fn($q) => $q->where('program_studi_id', $prodiId))->where(fn($q) => $q->whereNull('penguji_1_id')->orWhereNull('penguji_2_id'))->count();
 
+        $kemiripanMap = [];
+        foreach ($daftarJudul as $itemJudul) {
+            $kemiripanMap[$itemJudul->id] = $similarityService->findSimilarTitles(
+                $itemJudul->judul,
+                excludeSkripsiId: $itemJudul->id,
+                minThreshold: 40.0,
+                limit: 3
+            )->all();
+        }
+
         return view('kaprodi.penetapan.index', compact(
-            'daftarJudul', 'daftarSeminar', 'daftarSidang', 
+            'daftarJudul', 'daftarSeminar', 'daftarSidang',
             'daftarDosen', 'daftarProdi', 'prodiFilter', 'user',
-            'pendingJudulCount', 'pendingSeminarCount', 'pendingSidangCount'
+            'pendingJudulCount', 'pendingSeminarCount', 'pendingSidangCount',
+            'kemiripanMap'
         ));
     }
 
@@ -127,24 +142,7 @@ class PenetapanController extends Controller
         if (!$user->isKaprodi() && !$user->isAdminUtama()) {
             abort(403, 'Akses khusus Kaprodi dan Admin Utama.');
         }
-
-        // Ambil penugasan terakhir untuk P1 dan P2
-        $latestP1 = $skripsi->latestPenugasanPembimbing1();
-        $latestP2 = $skripsi->latestPenugasanPembimbing2();
-
-        // Aturan 5: Selain Admin Utama, tidak boleh merubah dosen pembimbing yang SUDAH MENYETUJUI atau yang sudah terkunci
-        if (!$user->isAdminUtama()) {
-            if ($latestP1 && $latestP1->isDisetujui() && $request->filled('pembimbing_1_id') && (int)$request->input('pembimbing_1_id') !== (int)$latestP1->dosen_id) {
-                return back()->with('error', 'Pembimbing Utama (' . ($latestP1->dosen ? $latestP1->dosen->name : '') . ') telah menyetujui penugasan dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.');
-            }
-            if ($latestP2 && $latestP2->isDisetujui() && $request->filled('pembimbing_2_id') && (int)$request->input('pembimbing_2_id') !== (int)$latestP2->dosen_id) {
-                return back()->with('error', 'Pembimbing Pendamping (' . ($latestP2->dosen ? $latestP2->dosen->name : '') . ') telah menyetujui penugasan dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.');
-            }
-            $adaPenolakan = ($latestP1 && $latestP1->isDitolak()) || ($latestP2 && $latestP2->isDitolak());
-            if ($skripsi->pembimbing_1_id !== null && !$adaPenolakan) {
-                return back()->with('error', 'Dosen pembimbing telah ditentukan oleh Kaprodi dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.');
-            }
-        }
+        $this->authorizeProdiScope($user, (int) $skripsi->program_studi_id);
 
         $action = $request->input('action'); // 'terima' or 'tolak'
 
@@ -155,105 +153,153 @@ class PenetapanController extends Controller
                 'catatan.required' => 'Catatan penolakan / alasan wajib diisi.',
             ]);
 
-            $skripsi->update([
-                'status' => StatusPengajuan::Ditolak,
-                'catatan' => $request->input('catatan'),
-            ]);
+            $errorMessage = DB::transaction(function () use ($request, $user, $skripsi): ?string {
+                $lockedSkripsi = PengajuanSkripsi::with('mahasiswa')->whereKey($skripsi->id)->lockForUpdate()->firstOrFail();
 
-            $actorRole = $user->isAdminUtama() ? 'Admin Utama' : 'Kaprodi';
-            AktivitasLog::catat(
-                $user,
-                'Penolakan Judul Skripsi',
-                "{$actorRole} {$user->name} menolak judul mahasiswa {$skripsi->mahasiswa->name} ({$skripsi->mahasiswa->nomor_induk}): '{$skripsi->judul}'. Catatan: {$request->input('catatan')}"
-            );
+                $latestP1 = $lockedSkripsi->latestPenugasanPembimbing1();
+                $latestP2 = $lockedSkripsi->latestPenugasanPembimbing2();
 
-            Notifikasi::kirim(
-                $skripsi->mahasiswa_id,
-                'Pengajuan Judul Ditolak / Perlu Revisi',
-                "Pengajuan judul Anda '{$skripsi->judul}' ditolak oleh {$actorRole} dengan catatan: {$request->input('catatan')}",
-                route('mahasiswa.skripsi.index')
-            );
+                if (!$user->isAdminUtama()) {
+                    $adaPenolakan = ($latestP1 && $latestP1->isDitolak()) || ($latestP2 && $latestP2->isDitolak());
+                    if ($lockedSkripsi->pembimbing_1_id !== null && !$adaPenolakan) {
+                        return 'Dosen pembimbing telah ditentukan oleh Kaprodi dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.';
+                    }
+                }
+
+                $lockedSkripsi->update([
+                    'status' => StatusPengajuan::Ditolak,
+                    'catatan' => $request->input('catatan'),
+                ]);
+
+                $actorRole = $user->isAdminUtama() ? 'Admin Utama' : 'Kaprodi';
+                AktivitasLog::catat(
+                    $user,
+                    'Penolakan Judul Skripsi',
+                    "{$actorRole} {$user->name} menolak judul mahasiswa {$lockedSkripsi->mahasiswa->name} ({$lockedSkripsi->mahasiswa->nomor_induk}): '{$lockedSkripsi->judul}'. Catatan: {$request->input('catatan')}"
+                );
+
+                Notifikasi::kirim(
+                    $lockedSkripsi->mahasiswa_id,
+                    'Pengajuan Judul Ditolak / Perlu Revisi',
+                    "Pengajuan judul Anda '{$lockedSkripsi->judul}' ditolak oleh {$actorRole} dengan catatan: {$request->input('catatan')}",
+                    route('mahasiswa.skripsi.index')
+                );
+
+                return null;
+            });
+
+            if ($errorMessage !== null) {
+                return back()->with('error', $errorMessage);
+            }
 
             return back()->with('success', 'Pengajuan judul berhasil ditolak dengan catatan.');
         }
 
+        $dosenExistsRule = Rule::exists('users', 'id')->whereIn('role', [UserRole::Dosen->value, UserRole::Kaprodi->value]);
         $validated = $request->validate([
-            'pembimbing_1_id' => ['required', 'exists:users,id'],
-            'pembimbing_2_id' => ['nullable', 'exists:users,id', 'different:pembimbing_1_id'],
+            'pembimbing_1_id' => ['required', $dosenExistsRule],
+            'pembimbing_2_id' => ['nullable', $dosenExistsRule, 'different:pembimbing_1_id'],
             'catatan' => ['nullable', 'string', 'max:1000'],
         ], [
             'pembimbing_1_id.required' => 'Pembimbing Utama (1) wajib dipilih.',
             'pembimbing_2_id.different' => 'Pembimbing 2 tidak boleh sama dengan Pembimbing 1.',
         ]);
 
-        $isUpdatePembimbing = $skripsi->pembimbing_1_id !== null;
+        $result = DB::transaction(function () use ($request, $user, $skripsi, $validated): array {
+            $lockedSkripsi = PengajuanSkripsi::with('mahasiswa')->whereKey($skripsi->id)->lockForUpdate()->firstOrFail();
 
-        $skripsi->update([
-            'pembimbing_1_id' => $validated['pembimbing_1_id'],
-            'pembimbing_2_id' => $validated['pembimbing_2_id'] ?? null,
-            'status' => StatusPengajuan::Diproses, // Menunggu SK Bimbingan dari Admin
-            'catatan' => $validated['catatan'] ?? null,
-        ]);
+            $latestP1 = $lockedSkripsi->latestPenugasanPembimbing1();
+            $latestP2 = $lockedSkripsi->latestPenugasanPembimbing2();
 
-        $mhs = $skripsi->mahasiswa;
-        $mhsName = $mhs ? $mhs->name : 'Mahasiswa';
-        $mhsNim = $mhs ? $mhs->nomor_induk : '-';
-        $judul = $skripsi->judul;
+            // Aturan 5: Selain Admin Utama, tidak boleh merubah dosen pembimbing yang SUDAH MENYETUJUI atau yang sudah terkunci
+            if (!$user->isAdminUtama()) {
+                if ($latestP1 && $latestP1->isDisetujui() && $request->filled('pembimbing_1_id') && (int)$request->input('pembimbing_1_id') !== (int)$latestP1->dosen_id) {
+                    return ['error' => 'Pembimbing Utama (' . ($latestP1->dosen ? $latestP1->dosen->name : '') . ') telah menyetujui penugasan dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.'];
+                }
+                if ($latestP2 && $latestP2->isDisetujui() && $request->filled('pembimbing_2_id') && (int)$request->input('pembimbing_2_id') !== (int)$latestP2->dosen_id) {
+                    return ['error' => 'Pembimbing Pendamping (' . ($latestP2->dosen ? $latestP2->dosen->name : '') . ') telah menyetujui penugasan dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.'];
+                }
+                $adaPenolakan = ($latestP1 && $latestP1->isDitolak()) || ($latestP2 && $latestP2->isDitolak());
+                if ($lockedSkripsi->pembimbing_1_id !== null && !$adaPenolakan) {
+                    return ['error' => 'Dosen pembimbing telah ditentukan oleh Kaprodi dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.'];
+                }
+            }
 
-        // Proses Pembimbing 1 (pertahankan jika sudah disetujui)
-        $this->handlePenugasanRole(
-            $skripsi,
-            'pembimbing_1',
-            (int)$validated['pembimbing_1_id'],
-            $user,
-            'Pembimbing Utama (1)',
-            $mhsName,
-            $mhsNim,
-            $judul
-        );
+            $isUpdatePembimbing = $lockedSkripsi->pembimbing_1_id !== null;
 
-        // Proses Pembimbing 2 (pertahankan jika sudah disetujui)
-        if (!empty($validated['pembimbing_2_id'])) {
+            $lockedSkripsi->update([
+                'pembimbing_1_id' => $validated['pembimbing_1_id'],
+                'pembimbing_2_id' => $validated['pembimbing_2_id'] ?? null,
+                'status' => StatusPengajuan::Diproses, // Menunggu SK Bimbingan dari Admin
+                'catatan' => $validated['catatan'] ?? null,
+            ]);
+
+            $mhs = $lockedSkripsi->mahasiswa;
+            $mhsName = $mhs ? $mhs->name : 'Mahasiswa';
+            $mhsNim = $mhs ? $mhs->nomor_induk : '-';
+            $judul = $lockedSkripsi->judul;
+
+            // Proses Pembimbing 1 (pertahankan jika sudah disetujui)
             $this->handlePenugasanRole(
-                $skripsi,
-                'pembimbing_2',
-                (int)$validated['pembimbing_2_id'],
+                $lockedSkripsi,
+                'pembimbing_1',
+                (int)$validated['pembimbing_1_id'],
                 $user,
-                'Pembimbing Pendamping (2)',
+                'Pembimbing Utama (1)',
                 $mhsName,
                 $mhsNim,
                 $judul
             );
-        } else {
-            // Batalkan tiket pembimbing 2 jika sebelumnya ada yang menunggu
-            PenugasanDosen::where('assignable_type', PengajuanSkripsi::class)
-                ->where('assignable_id', $skripsi->id)
-                ->where('peran', 'pembimbing_2')
-                ->where('status', StatusPenugasanDosen::Menunggu)
-                ->update(['status' => StatusPenugasanDosen::Dibatalkan]);
+
+            // Proses Pembimbing 2 (pertahankan jika sudah disetujui)
+            if (!empty($validated['pembimbing_2_id'])) {
+                $this->handlePenugasanRole(
+                    $lockedSkripsi,
+                    'pembimbing_2',
+                    (int)$validated['pembimbing_2_id'],
+                    $user,
+                    'Pembimbing Pendamping (2)',
+                    $mhsName,
+                    $mhsNim,
+                    $judul
+                );
+            } else {
+                // Batalkan tiket pembimbing 2 jika sebelumnya ada yang menunggu
+                PenugasanDosen::where('assignable_type', PengajuanSkripsi::class)
+                    ->where('assignable_id', $lockedSkripsi->id)
+                    ->where('peran', 'pembimbing_2')
+                    ->where('status', StatusPenugasanDosen::Menunggu)
+                    ->update(['status' => StatusPenugasanDosen::Dibatalkan]);
+            }
+
+            $actorRole = $user->isAdminUtama() ? 'Admin Utama' : 'Kaprodi';
+            $logAction = $isUpdatePembimbing ? 'Pembaruan Dosen Pembimbing' : 'Penetapan Dosen Pembimbing';
+            AktivitasLog::catat(
+                $user,
+                $logAction,
+                "{$actorRole} {$user->name} " . ($isUpdatePembimbing ? "memperbarui penetapan" : "menyetujui judul & menetapkan") . " Dosen Pembimbing untuk mahasiswa {$mhsName} ({$mhsNim})" . ($user->isAdminUtama() ? ' (Mandat Langsung Admin Utama)' : '')
+            );
+
+            // Notifikasi ke Mahasiswa
+            Notifikasi::kirim(
+                $lockedSkripsi->mahasiswa_id,
+                'Judul Disetujui & Pembimbing Ditetapkan',
+                "Pengajuan judul Anda '{$lockedSkripsi->judul}' telah disetujui. Dosen Pembimbing telah ditetapkan dan menunggu penerbitan SK Bimbingan.",
+                route('mahasiswa.skripsi.index')
+            );
+
+            $msg = $user->isAdminUtama()
+                ? ($isUpdatePembimbing ? 'Dosen Pembimbing berhasil diperbarui secara langsung oleh Admin Utama (Mandat).' : 'Dosen Pembimbing berhasil ditetapkan langsung oleh Admin Utama (Mandat Resmi).')
+                : ($isUpdatePembimbing ? 'Dosen Pembimbing berhasil diperbarui oleh Kaprodi.' : 'Judul disetujui & Dosen Pembimbing berhasil ditetapkan. Menunggu konfirmasi kesediaan dosen di Portal Dosen.');
+
+            return ['success' => $msg];
+        });
+
+        if (isset($result['error'])) {
+            return back()->with('error', $result['error']);
         }
 
-        $actorRole = $user->isAdminUtama() ? 'Admin Utama' : 'Kaprodi';
-        $logAction = $isUpdatePembimbing ? 'Pembaruan Dosen Pembimbing' : 'Penetapan Dosen Pembimbing';
-        AktivitasLog::catat(
-            $user,
-            $logAction,
-            "{$actorRole} {$user->name} " . ($isUpdatePembimbing ? "memperbarui penetapan" : "menyetujui judul & menetapkan") . " Dosen Pembimbing untuk mahasiswa {$mhsName} ({$mhsNim})" . ($user->isAdminUtama() ? ' (Mandat Langsung Admin Utama)' : '')
-        );
-
-        // Notifikasi ke Mahasiswa
-        Notifikasi::kirim(
-            $skripsi->mahasiswa_id,
-            'Judul Disetujui & Pembimbing Ditetapkan',
-            "Pengajuan judul Anda '{$skripsi->judul}' telah disetujui. Dosen Pembimbing telah ditetapkan dan menunggu penerbitan SK Bimbingan.",
-            route('mahasiswa.skripsi.index')
-        );
-
-        $msg = $user->isAdminUtama()
-            ? ($isUpdatePembimbing ? 'Dosen Pembimbing berhasil diperbarui secara langsung oleh Admin Utama (Mandat).' : 'Dosen Pembimbing berhasil ditetapkan langsung oleh Admin Utama (Mandat Resmi).')
-            : ($isUpdatePembimbing ? 'Dosen Pembimbing berhasil diperbarui oleh Kaprodi.' : 'Judul disetujui & Dosen Pembimbing berhasil ditetapkan. Menunggu konfirmasi kesediaan dosen di Portal Dosen.');
-
-        return back()->with('success', $msg);
+        return back()->with('success', $result['success']);
     }
 
     public function assignPengujiSeminar(Request $request, SeminarSkripsi $seminar): RedirectResponse
@@ -263,23 +309,14 @@ class PenetapanController extends Controller
             abort(403, 'Akses khusus Kaprodi dan Admin Utama.');
         }
 
-        $latestPenguji = $seminar->latestPenugasanPenguji();
-
-        // Aturan 5: Selain Admin Utama, tidak boleh merubah dosen penguji yang SUDAH MENYETUJUI atau yang sudah terkunci
-        if (!$user->isAdminUtama()) {
-            if ($latestPenguji && $latestPenguji->isDisetujui() && $request->filled('penguji_seminar_id') && (int)$request->input('penguji_seminar_id') !== (int)$latestPenguji->dosen_id) {
-                return back()->with('error', 'Dosen penguji seminar (' . ($latestPenguji->dosen ? $latestPenguji->dosen->name : '') . ') telah menyetujui penugasan dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.');
-            }
-            if ($seminar->penguji_seminar_id !== null && (!$latestPenguji || !$latestPenguji->isDitolak())) {
-                return back()->with('error', 'Dosen penguji seminar telah ditentukan oleh Kaprodi dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.');
-            }
-        }
-
         $skripsi = $seminar->pengajuanSkripsi;
+        $this->authorizeProdiScope($user, (int) $skripsi->program_studi_id);
+
         $excludedDosenIds = array_values(array_filter([$skripsi->pembimbing_1_id, $skripsi->pembimbing_2_id]));
+        $dosenExistsRule = Rule::exists('users', 'id')->whereIn('role', [UserRole::Dosen->value, UserRole::Kaprodi->value]);
 
         $rules = [
-            'penguji_seminar_id' => ['required', 'exists:users,id'],
+            'penguji_seminar_id' => ['required', $dosenExistsRule],
         ];
         if (!empty($excludedDosenIds)) {
             $rules['penguji_seminar_id'][] = Rule::notIn($excludedDosenIds);
@@ -290,62 +327,83 @@ class PenetapanController extends Controller
             'penguji_seminar_id.not_in' => 'Dosen pembimbing skripsi tidak dapat dipilih sebagai dosen penguji seminar untuk mahasiswa yang sama.',
         ]);
 
-        $isUpdatePenguji = $seminar->penguji_seminar_id !== null;
+        $result = DB::transaction(function () use ($request, $user, $seminar, $validated): array {
+            $lockedSeminar = SeminarSkripsi::with('pengajuanSkripsi.mahasiswa')->whereKey($seminar->id)->lockForUpdate()->firstOrFail();
+            $latestPenguji = $lockedSeminar->latestPenugasanPenguji();
 
-        $seminar->update([
-            'penguji_seminar_id' => $validated['penguji_seminar_id'],
-            'status' => StatusPengajuan::Diproses,
-        ]);
+            // Aturan 5: Selain Admin Utama, tidak boleh merubah dosen penguji yang SUDAH MENYETUJUI atau yang sudah terkunci
+            if (!$user->isAdminUtama()) {
+                if ($latestPenguji && $latestPenguji->isDisetujui() && $request->filled('penguji_seminar_id') && (int)$request->input('penguji_seminar_id') !== (int)$latestPenguji->dosen_id) {
+                    return ['error' => 'Dosen penguji seminar (' . ($latestPenguji->dosen ? $latestPenguji->dosen->name : '') . ') telah menyetujui penugasan dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.'];
+                }
+                if ($lockedSeminar->penguji_seminar_id !== null && (!$latestPenguji || !$latestPenguji->isDitolak())) {
+                    return ['error' => 'Dosen penguji seminar telah ditentukan oleh Kaprodi dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.'];
+                }
+            }
 
-        $mhs = $seminar->pengajuanSkripsi->mahasiswa;
-        $mhsName = $mhs ? $mhs->name : 'Mahasiswa';
-        $mhsNim = $mhs ? $mhs->nomor_induk : '-';
-        $judul = $seminar->pengajuanSkripsi->judul;
+            $isUpdatePenguji = $lockedSeminar->penguji_seminar_id !== null;
 
-        // Tangani penugasan penguji seminar (pertahankan jika sudah disetujui)
-        $this->handlePenugasanRole(
-            $seminar,
-            'penguji_seminar',
-            (int)$validated['penguji_seminar_id'],
-            $user,
-            'Dosen Penguji Seminar',
-            $mhsName,
-            $mhsNim,
-            $judul
-        );
+            $lockedSeminar->update([
+                'penguji_seminar_id' => $validated['penguji_seminar_id'],
+                'status' => StatusPengajuan::Diproses,
+            ]);
 
-        $actorRole = $user->isAdminUtama() ? 'Admin Utama' : 'Kaprodi';
-        $logAction = $isUpdatePenguji ? 'Pembaruan Penguji Seminar' : 'Penetapan Penguji Seminar';
+            $mhs = $lockedSeminar->pengajuanSkripsi->mahasiswa;
+            $mhsName = $mhs ? $mhs->name : 'Mahasiswa';
+            $mhsNim = $mhs ? $mhs->nomor_induk : '-';
+            $judul = $lockedSeminar->pengajuanSkripsi->judul;
 
-        AktivitasLog::catat(
-            $user,
-            $logAction,
-            "{$actorRole} {$user->name} " . ($isUpdatePenguji ? "memperbarui" : "menetapkan") . " Dosen Penguji Seminar untuk mahasiswa {$mhsName} ({$mhsNim})" . ($user->isAdminUtama() ? ' (Mandat Langsung Admin Utama)' : '')
-        );
+            // Tangani penugasan penguji seminar (pertahankan jika sudah disetujui)
+            $this->handlePenugasanRole(
+                $lockedSeminar,
+                'penguji_seminar',
+                (int)$validated['penguji_seminar_id'],
+                $user,
+                'Dosen Penguji Seminar',
+                $mhsName,
+                $mhsNim,
+                $judul
+            );
 
-        // Notifikasi ke Mahasiswa
-        Notifikasi::kirim(
-            $mhs->id,
-            'Dosen Penguji Seminar Ditetapkan',
-            "Dosen Penguji Seminar Anda telah ditetapkan. Menunggu pengaturan jadwal pelaksanaan dari Admin.",
-            route('mahasiswa.seminar.index')
-        );
+            $actorRole = $user->isAdminUtama() ? 'Admin Utama' : 'Kaprodi';
+            $logAction = $isUpdatePenguji ? 'Pembaruan Penguji Seminar' : 'Penetapan Penguji Seminar';
 
-        // Notifikasi ke Admin (Prodi & Utama) untuk persiapan jadwal
-        Notifikasi::kirimKePengelola(
-            $seminar->pengajuanSkripsi->program_studi_id,
-            'Dosen Penguji Seminar Telah Ditetapkan',
-            "Dosen Penguji Seminar untuk mahasiswa {$mhsName} ({$mhsNim}) telah ditetapkan. Silakan atur jadwal dan terbitkan dokumen seminar.",
-            null,
-            $user->id,
-            [UserRole::AdminUtama, UserRole::AdminProdi]
-        );
+            AktivitasLog::catat(
+                $user,
+                $logAction,
+                "{$actorRole} {$user->name} " . ($isUpdatePenguji ? "memperbarui" : "menetapkan") . " Dosen Penguji Seminar untuk mahasiswa {$mhsName} ({$mhsNim})" . ($user->isAdminUtama() ? ' (Mandat Langsung Admin Utama)' : '')
+            );
 
-        $msg = $user->isAdminUtama()
-            ? ($isUpdatePenguji ? 'Dosen Penguji Seminar berhasil diperbarui secara langsung oleh Admin Utama (Mandat).' : 'Dosen Penguji Seminar berhasil ditetapkan langsung oleh Admin Utama (Mandat Resmi).')
-            : ($isUpdatePenguji ? 'Dosen Penguji Seminar berhasil diperbarui oleh Kaprodi.' : 'Dosen Penguji Seminar berhasil ditetapkan. Menunggu konfirmasi kesediaan dosen di Portal Dosen.');
+            // Notifikasi ke Mahasiswa
+            Notifikasi::kirim(
+                $mhs->id,
+                'Dosen Penguji Seminar Ditetapkan',
+                "Dosen Penguji Seminar Anda telah ditetapkan. Menunggu pengaturan jadwal pelaksanaan dari Admin.",
+                route('mahasiswa.seminar.index')
+            );
 
-        return back()->with('success', $msg);
+            // Notifikasi ke Admin (Prodi & Utama) untuk persiapan jadwal
+            Notifikasi::kirimKePengelola(
+                $lockedSeminar->pengajuanSkripsi->program_studi_id,
+                'Dosen Penguji Seminar Telah Ditetapkan',
+                "Dosen Penguji Seminar untuk mahasiswa {$mhsName} ({$mhsNim}) telah ditetapkan. Silakan atur jadwal dan terbitkan dokumen seminar.",
+                null,
+                $user->id,
+                [UserRole::AdminUtama, UserRole::AdminProdi]
+            );
+
+            $msg = $user->isAdminUtama()
+                ? ($isUpdatePenguji ? 'Dosen Penguji Seminar berhasil diperbarui secara langsung oleh Admin Utama (Mandat).' : 'Dosen Penguji Seminar berhasil ditetapkan langsung oleh Admin Utama (Mandat Resmi).')
+                : ($isUpdatePenguji ? 'Dosen Penguji Seminar berhasil diperbarui oleh Kaprodi.' : 'Dosen Penguji Seminar berhasil ditetapkan. Menunggu konfirmasi kesediaan dosen di Portal Dosen.');
+
+            return ['success' => $msg];
+        });
+
+        if (isset($result['error'])) {
+            return back()->with('error', $result['error']);
+        }
+
+        return back()->with('success', $result['success']);
     }
 
     public function assignPengujiSidang(Request $request, SidangSkripsi $sidang): RedirectResponse
@@ -355,29 +413,15 @@ class PenetapanController extends Controller
             abort(403, 'Akses khusus Kaprodi dan Admin Utama.');
         }
 
-        $latestPenguji1 = $sidang->latestPenugasanPenguji1();
-        $latestPenguji2 = $sidang->latestPenugasanPenguji2();
-
-        // Aturan 5: Selain Admin Utama, tidak boleh merubah dosen penguji yang SUDAH MENYETUJUI atau yang sudah terkunci
-        if (!$user->isAdminUtama()) {
-            if ($latestPenguji1 && $latestPenguji1->isDisetujui() && $request->filled('penguji_1_id') && (int)$request->input('penguji_1_id') !== (int)$latestPenguji1->dosen_id) {
-                return back()->with('error', 'Penguji 1 Sidang (' . ($latestPenguji1->dosen ? $latestPenguji1->dosen->name : '') . ') telah menyetujui penugasan dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.');
-            }
-            if ($latestPenguji2 && $latestPenguji2->isDisetujui() && $request->filled('penguji_2_id') && (int)$request->input('penguji_2_id') !== (int)$latestPenguji2->dosen_id) {
-                return back()->with('error', 'Penguji 2 Sidang (' . ($latestPenguji2->dosen ? $latestPenguji2->dosen->name : '') . ') telah menyetujui penugasan dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.');
-            }
-            $adaPenolakan = ($latestPenguji1 && $latestPenguji1->isDitolak()) || ($latestPenguji2 && $latestPenguji2->isDitolak());
-            if ($sidang->penguji_1_id !== null && $sidang->penguji_2_id !== null && !$adaPenolakan) {
-                return back()->with('error', 'Dewan penguji sidang telah ditentukan oleh Kaprodi dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.');
-            }
-        }
-
         $skripsi = $sidang->pengajuanSkripsi;
+        $this->authorizeProdiScope($user, (int) $skripsi->program_studi_id);
+
         $excludedDosenIds = array_values(array_filter([$skripsi->pembimbing_1_id, $skripsi->pembimbing_2_id]));
+        $dosenExistsRule = Rule::exists('users', 'id')->whereIn('role', [UserRole::Dosen->value, UserRole::Kaprodi->value]);
 
         $rules = [
-            'penguji_1_id' => ['required', 'exists:users,id'],
-            'penguji_2_id' => ['required', 'exists:users,id', 'different:penguji_1_id'],
+            'penguji_1_id' => ['required', $dosenExistsRule],
+            'penguji_2_id' => ['required', $dosenExistsRule, 'different:penguji_1_id'],
         ];
         if (!empty($excludedDosenIds)) {
             $rules['penguji_1_id'][] = Rule::notIn($excludedDosenIds);
@@ -392,75 +436,109 @@ class PenetapanController extends Controller
             'penguji_2_id.not_in' => 'Dosen pembimbing skripsi tidak dapat dipilih sebagai dewan penguji sidang untuk mahasiswa yang sama.',
         ]);
 
-        $isUpdatePenguji = ($sidang->penguji_1_id !== null || $sidang->penguji_2_id !== null);
+        $result = DB::transaction(function () use ($request, $user, $sidang, $validated): array {
+            $lockedSidang = SidangSkripsi::with('pengajuanSkripsi.mahasiswa')->whereKey($sidang->id)->lockForUpdate()->firstOrFail();
 
-        $sidang->update([
-            'penguji_1_id' => $validated['penguji_1_id'],
-            'penguji_2_id' => $validated['penguji_2_id'],
-            'status' => StatusPengajuan::Diproses,
-        ]);
+            $latestPenguji1 = $lockedSidang->latestPenugasanPenguji1();
+            $latestPenguji2 = $lockedSidang->latestPenugasanPenguji2();
 
-        $mhs = $sidang->pengajuanSkripsi->mahasiswa;
-        $mhsName = $mhs ? $mhs->name : 'Mahasiswa';
-        $mhsNim = $mhs ? $mhs->nomor_induk : '-';
-        $judul = $sidang->pengajuanSkripsi->judul;
+            // Aturan 5: Selain Admin Utama, tidak boleh merubah dosen penguji yang SUDAH MENYETUJUI atau yang sudah terkunci
+            if (!$user->isAdminUtama()) {
+                if ($latestPenguji1 && $latestPenguji1->isDisetujui() && $request->filled('penguji_1_id') && (int)$request->input('penguji_1_id') !== (int)$latestPenguji1->dosen_id) {
+                    return ['error' => 'Penguji 1 Sidang (' . ($latestPenguji1->dosen ? $latestPenguji1->dosen->name : '') . ') telah menyetujui penugasan dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.'];
+                }
+                if ($latestPenguji2 && $latestPenguji2->isDisetujui() && $request->filled('penguji_2_id') && (int)$request->input('penguji_2_id') !== (int)$latestPenguji2->dosen_id) {
+                    return ['error' => 'Penguji 2 Sidang (' . ($latestPenguji2->dosen ? $latestPenguji2->dosen->name : '') . ') telah menyetujui penugasan dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.'];
+                }
+                $adaPenolakan = ($latestPenguji1 && $latestPenguji1->isDitolak()) || ($latestPenguji2 && $latestPenguji2->isDitolak());
+                if ($lockedSidang->penguji_1_id !== null && $lockedSidang->penguji_2_id !== null && !$adaPenolakan) {
+                    return ['error' => 'Dewan penguji sidang telah ditentukan oleh Kaprodi dan terkunci. Hanya Admin Utama yang berwenang mengubahnya.'];
+                }
+            }
 
-        // Proses Penguji 1 (pertahankan jika sudah disetujui)
-        $this->handlePenugasanRole(
-            $sidang,
-            'penguji_1',
-            (int)$validated['penguji_1_id'],
-            $user,
-            'Penguji 1 Sidang Skripsi',
-            $mhsName,
-            $mhsNim,
-            $judul
-        );
+            $isUpdatePenguji = ($lockedSidang->penguji_1_id !== null || $lockedSidang->penguji_2_id !== null);
 
-        // Proses Penguji 2 (pertahankan jika sudah disetujui)
-        $this->handlePenugasanRole(
-            $sidang,
-            'penguji_2',
-            (int)$validated['penguji_2_id'],
-            $user,
-            'Penguji 2 Sidang Skripsi',
-            $mhsName,
-            $mhsNim,
-            $judul
-        );
+            $lockedSidang->update([
+                'penguji_1_id' => $validated['penguji_1_id'],
+                'penguji_2_id' => $validated['penguji_2_id'],
+                'status' => StatusPengajuan::Diproses,
+            ]);
 
-        $actorRole = $user->isAdminUtama() ? 'Admin Utama' : 'Kaprodi';
-        $logAction = $isUpdatePenguji ? 'Pembaruan 2 Penguji Sidang' : 'Penetapan 2 Penguji Sidang';
+            $mhs = $lockedSidang->pengajuanSkripsi->mahasiswa;
+            $mhsName = $mhs ? $mhs->name : 'Mahasiswa';
+            $mhsNim = $mhs ? $mhs->nomor_induk : '-';
+            $judul = $lockedSidang->pengajuanSkripsi->judul;
 
-        AktivitasLog::catat(
-            $user,
-            $logAction,
-            "{$actorRole} {$user->name} " . ($isUpdatePenguji ? "memperbarui" : "menetapkan") . " 2 Penguji Sidang Skripsi untuk mahasiswa {$mhsName} ({$mhsNim})" . ($user->isAdminUtama() ? ' (Mandat Langsung Admin Utama)' : '')
-        );
+            // Proses Penguji 1 (pertahankan jika sudah disetujui)
+            $this->handlePenugasanRole(
+                $lockedSidang,
+                'penguji_1',
+                (int)$validated['penguji_1_id'],
+                $user,
+                'Penguji 1 Sidang Skripsi',
+                $mhsName,
+                $mhsNim,
+                $judul
+            );
 
-        // Notifikasi ke Mahasiswa
-        Notifikasi::kirim(
-            $mhs->id,
-            '2 Dosen Penguji Sidang Ditetapkan',
-            "2 Orang Dosen Penguji Sidang Skripsi telah ditetapkan. Menunggu pengaturan jadwal pelaksanaan dari Admin.",
-            route('mahasiswa.sidang.index')
-        );
+            // Proses Penguji 2 (pertahankan jika sudah disetujui)
+            $this->handlePenugasanRole(
+                $lockedSidang,
+                'penguji_2',
+                (int)$validated['penguji_2_id'],
+                $user,
+                'Penguji 2 Sidang Skripsi',
+                $mhsName,
+                $mhsNim,
+                $judul
+            );
 
-        // Notifikasi ke Admin (Prodi & Utama) untuk persiapan jadwal
-        Notifikasi::kirimKePengelola(
-            $sidang->pengajuanSkripsi->program_studi_id,
-            'Dewan Penguji Sidang Telah Ditetapkan',
-            "Dewan Penguji Sidang Skripsi untuk mahasiswa {$mhsName} ({$mhsNim}) telah ditetapkan. Silakan atur jadwal dan terbitkan dokumen sidang.",
-            null,
-            $user->id,
-            [UserRole::AdminUtama, UserRole::AdminProdi]
-        );
+            $actorRole = $user->isAdminUtama() ? 'Admin Utama' : 'Kaprodi';
+            $logAction = $isUpdatePenguji ? 'Pembaruan 2 Penguji Sidang' : 'Penetapan 2 Penguji Sidang';
 
-        $msg = $user->isAdminUtama()
-            ? ($isUpdatePenguji ? '2 Orang Dosen Penguji Sidang Skripsi berhasil diperbarui secara langsung oleh Admin Utama (Mandat).' : '2 Orang Dosen Penguji Sidang Skripsi berhasil ditetapkan langsung oleh Admin Utama (Mandat Resmi).')
-            : ($isUpdatePenguji ? '2 Orang Dosen Penguji Sidang Skripsi berhasil diperbarui oleh Kaprodi.' : '2 Orang Dosen Penguji Sidang Skripsi berhasil ditetapkan. Menunggu konfirmasi kesediaan dosen di Portal Dosen.');
+            AktivitasLog::catat(
+                $user,
+                $logAction,
+                "{$actorRole} {$user->name} " . ($isUpdatePenguji ? "memperbarui" : "menetapkan") . " 2 Penguji Sidang Skripsi untuk mahasiswa {$mhsName} ({$mhsNim})" . ($user->isAdminUtama() ? ' (Mandat Langsung Admin Utama)' : '')
+            );
 
-        return back()->with('success', $msg);
+            // Notifikasi ke Mahasiswa
+            Notifikasi::kirim(
+                $mhs->id,
+                '2 Dosen Penguji Sidang Ditetapkan',
+                "2 Orang Dosen Penguji Sidang Skripsi telah ditetapkan. Menunggu pengaturan jadwal pelaksanaan dari Admin.",
+                route('mahasiswa.sidang.index')
+            );
+
+            // Notifikasi ke Admin (Prodi & Utama) untuk persiapan jadwal
+            Notifikasi::kirimKePengelola(
+                $lockedSidang->pengajuanSkripsi->program_studi_id,
+                'Dewan Penguji Sidang Telah Ditetapkan',
+                "Dewan Penguji Sidang Skripsi untuk mahasiswa {$mhsName} ({$mhsNim}) telah ditetapkan. Silakan atur jadwal dan terbitkan dokumen sidang.",
+                null,
+                $user->id,
+                [UserRole::AdminUtama, UserRole::AdminProdi]
+            );
+
+            $msg = $user->isAdminUtama()
+                ? ($isUpdatePenguji ? '2 Orang Dosen Penguji Sidang Skripsi berhasil diperbarui secara langsung oleh Admin Utama (Mandat).' : '2 Orang Dosen Penguji Sidang Skripsi berhasil ditetapkan langsung oleh Admin Utama (Mandat Resmi).')
+                : ($isUpdatePenguji ? '2 Orang Dosen Penguji Sidang Skripsi berhasil diperbarui oleh Kaprodi.' : '2 Orang Dosen Penguji Sidang Skripsi berhasil ditetapkan. Menunggu konfirmasi kesediaan dosen di Portal Dosen.');
+
+            return ['success' => $msg];
+        });
+
+        if (isset($result['error'])) {
+            return back()->with('error', $result['error']);
+        }
+
+        return back()->with('success', $result['success']);
+    }
+
+    private function authorizeProdiScope(User $user, int $programStudiId): void
+    {
+        if ($user->isKaprodi() && (int) $user->program_studi_id !== $programStudiId) {
+            abort(403, 'Anda tidak berwenang mengelola data program studi lain.');
+        }
     }
 
     /**

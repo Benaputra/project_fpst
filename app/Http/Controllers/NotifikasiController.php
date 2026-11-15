@@ -25,11 +25,25 @@ class NotifikasiController extends Controller
 
         $notifikasi->tandaiDibaca();
 
-        if ($notifikasi->link) {
+        if ($notifikasi->link && $this->isSafeRedirectUrl($notifikasi->link, $request)) {
             return redirect($notifikasi->link);
         }
 
         return back()->with('success', 'Notifikasi telah ditandai dibaca.');
+    }
+
+    private function isSafeRedirectUrl(string $url, Request $request): bool
+    {
+        if (str_starts_with($url, '/') && ! str_starts_with($url, '//')) {
+            return true;
+        }
+
+        $parsed = parse_url($url);
+        if (! is_array($parsed) || empty($parsed['host'])) {
+            return false;
+        }
+
+        return strcasecmp($parsed['host'], $request->getHost()) === 0;
     }
 
     public function markAllAsRead(Request $request): RedirectResponse

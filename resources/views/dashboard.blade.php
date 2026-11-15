@@ -246,6 +246,65 @@
         </div>
     </div>
 
+@elseif ($user->hasRole(\App\Enums\UserRole::Tendik, \App\Enums\UserRole::PimpinanFakultas))
+    <!-- Dashboard Tendik / Pimpinan Fakultas -->
+    <div class="grid-stats">
+        <div class="stat-box">
+            <div class="stat-box-title">Menunggu Verifikasi (Tendik)</div>
+            <div class="stat-box-value">{{ $suratDiajukanCount }}</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-title">Menunggu Persetujuan Pejabat</div>
+            <div class="stat-box-value">{{ $suratDiverifikasiCount }}</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-title">Siap Penomoran &amp; Terbit</div>
+            <div class="stat-box-value">{{ $suratDisetujuiCount }}</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-title">Total Surat Terbit</div>
+            <div class="stat-box-value">{{ $suratDiterbitkanCount }}</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Antrean Persuratan Internal Terbaru</h2>
+            <a href="{{ route('admin.persuratan.index') }}" class="btn btn-primary btn-sm">Buka Panel Persuratan</a>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pemohon</th>
+                        <th>Jenis &amp; Perihal</th>
+                        <th>Instansi Tujuan</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($recentSurat as $suratItem)
+                        <tr>
+                            <td>
+                                <strong>{{ $suratItem->mahasiswa?->name ?? '-' }}</strong>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ $suratItem->programStudi?->kode ?? '-' }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600;">{{ $suratItem->jenis_surat->label() }}</div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted);">{{ $suratItem->perihal }}</div>
+                            </td>
+                            <td>{{ $suratItem->tujuan_instansi }}</td>
+                            <td><span class="badge {{ $suratItem->status->badgeClass() }}">{{ $suratItem->status->label() }}</span></td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Belum ada permohonan surat internal.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 @elseif ($user->isDosen())
     <!-- Dashboard Dosen -->
     <div class="grid-stats">

@@ -25,10 +25,10 @@ class UserController extends Controller
         $roleFilter = $request->input('role');
         $prodiFilter = $request->input('prodi_id');
 
-        $query = User::with('programStudi');
+        $query = User::with(['programStudi', 'extraRoles']);
 
         if ($roleFilter) {
-            $query->where('role', $roleFilter);
+            $query->whereHasRoles([$roleFilter]);
         }
 
         if ($prodiFilter) {
@@ -39,7 +39,8 @@ class UserController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('nomor_induk', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('jabatan', 'like', "%{$search}%");
             });
         }
 
@@ -47,11 +48,13 @@ class UserController extends Controller
         $daftarProdi = ProgramStudi::orderBy('nama')->get();
         $totalUser = User::count();
         $roleCounts = [
-            'mahasiswa' => User::where('role', UserRole::Mahasiswa)->count(),
-            'dosen' => User::where('role', UserRole::Dosen)->count(),
-            'kaprodi' => User::where('role', UserRole::Kaprodi)->count(),
-            'admin_prodi' => User::where('role', UserRole::AdminProdi)->count(),
-            'admin_utama' => User::where('role', UserRole::AdminUtama)->count(),
+            'mahasiswa' => User::whereHasRoles([UserRole::Mahasiswa])->count(),
+            'dosen' => User::whereHasRoles([UserRole::Dosen])->count(),
+            'kaprodi' => User::whereHasRoles([UserRole::Kaprodi])->count(),
+            'admin_prodi' => User::whereHasRoles([UserRole::AdminProdi])->count(),
+            'tendik' => User::whereHasRoles([UserRole::Tendik])->count(),
+            'pimpinan_fakultas' => User::whereHasRoles([UserRole::PimpinanFakultas])->count(),
+            'admin_utama' => User::whereHasRoles([UserRole::AdminUtama])->count(),
         ];
 
         return view('admin.master.user.index', compact(
@@ -72,8 +75,12 @@ class UserController extends Controller
             'email' => 'required|email|max:255|unique:users,email',
             'nomor_induk' => 'nullable|string|max:50|unique:users,nomor_induk',
             'role' => ['required', new Enum(UserRole::class)],
+            'extra_roles' => 'nullable|array',
+            'extra_roles.*' => [new Enum(UserRole::class)],
             'program_studi_id' => 'nullable|exists:program_studi,id',
             'no_hp' => 'nullable|string|max:20',
+            'jabatan' => 'nullable|string|max:120',
+            'unit_kerja' => 'nullable|string|max:120',
             'password' => 'nullable|string|min:6',
         ], [
             'email.unique' => 'Email sudah terdaftar.',
@@ -90,8 +97,12 @@ class UserController extends Controller
             'role' => $roleEnum,
             'program_studi_id' => $validated['program_studi_id'] ?? null,
             'no_hp' => $validated['no_hp'] ?? null,
+            'jabatan' => $validated['jabatan'] ?? null,
+            'unit_kerja' => $validated['unit_kerja'] ?? null,
             'password' => Hash::make($validated['password'] ?? 'password'),
         ]);
+
+        $newUser->syncExtraRoles($validated['extra_roles'] ?? []);
 
         AktivitasLog::catat(
             $actor,
@@ -112,8 +123,12 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'nomor_induk' => ['nullable', 'string', 'max:50', Rule::unique('users', 'nomor_induk')->ignore($user->id)],
             'role' => ['required', new Enum(UserRole::class)],
+            'extra_roles' => 'nullable|array',
+            'extra_roles.*' => [new Enum(UserRole::class)],
             'program_studi_id' => 'nullable|exists:program_studi,id',
             'no_hp' => 'nullable|string|max:20',
+            'jabatan' => 'nullable|string|max:120',
+            'unit_kerja' => 'nullable|string|max:120',
             'password' => 'nullable|string|min:6',
         ], [
             'email.unique' => 'Email sudah terdaftar pada akun lain.',
@@ -135,6 +150,8 @@ class UserController extends Controller
             'role' => $newRole,
             'program_studi_id' => array_key_exists('program_studi_id', $validated) ? $validated['program_studi_id'] : $user->program_studi_id,
             'no_hp' => array_key_exists('no_hp', $validated) ? $validated['no_hp'] : $user->no_hp,
+            'jabatan' => array_key_exists('jabatan', $validated) ? ($validated['jabatan'] ?: null) : $user->jabatan,
+            'unit_kerja' => array_key_exists('unit_kerja', $validated) ? ($validated['unit_kerja'] ?: null) : $user->unit_kerja,
         ];
 
         if (! empty($validated['password'])) {
@@ -142,6 +159,7 @@ class UserController extends Controller
         }
 
         $user->update($updateData);
+        $user->syncExtraRoles($validated['extra_roles'] ?? []);
 
         if ($oldRole !== $newRole) {
             AktivitasLog::catat(

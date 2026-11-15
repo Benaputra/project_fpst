@@ -6,9 +6,12 @@ use App\Enums\StatusPengajuan;
 use App\Http\Controllers\Controller;
 use App\Models\AktivitasLog;
 use App\Models\Notifikasi;
+use App\Models\PengajuanSkripsi;
 use App\Models\SidangSkripsi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SidangSkripsiController extends Controller
@@ -26,7 +29,7 @@ class SidangSkripsiController extends Controller
         $user = $request->user();
         $skripsi = $user->pengajuanSkripsi()->with(['seminar', 'sidang'])->first();
 
-        if (!$skripsi || !$skripsi->seminar || !$skripsi->seminar->isSelesai()) {
+        if (! $skripsi || ! $skripsi->seminar || ! $skripsi->seminar->isSelesai()) {
             return redirect()->route('mahasiswa.sidang.index')
                 ->with('error', 'Anda belum dapat mengajukan sidang skripsi. Pastikan Anda telah lulus seminar.');
         }
@@ -44,11 +47,11 @@ class SidangSkripsiController extends Controller
         $user = $request->user();
         $skripsi = $user->pengajuanSkripsi()->with('seminar')->firstOrFail();
 
-        if (!$skripsi->seminar || !$skripsi->seminar->isSelesai()) {
+        if (! $skripsi->seminar || ! $skripsi->seminar->isSelesai()) {
             abort(403, 'Anda belum menyelesaikan seminar.');
         }
 
-        $validated = $request->validate([
+        $request->validate([
             'file_naskah_sidang' => ['required', 'file', 'mimes:pdf', 'max:15360'], // max 15MB
             'file_acc_sidang' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
             'file_bebas_revisi_seminar' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
@@ -61,31 +64,61 @@ class SidangSkripsiController extends Controller
         ]);
 
         $paths = [
-            'file_naskah_sidang' => $request->file('file_naskah_sidang')->store('sidang/naskah'),
-            'file_acc_sidang' => $request->file('file_acc_sidang')->store('sidang/acc'),
-            'file_bebas_revisi_seminar' => $request->file('file_bebas_revisi_seminar')->store('sidang/bebas_revisi'),
-            'file_bukti_bayar_sidang' => $request->file('file_bukti_bayar_sidang')->store('sidang/bukti_bayar'),
+            'file_naskah_sidang' => $request->file('file_naskah_sidang')->store('sidang/naskah', 'local'),
+            'file_acc_sidang' => $request->file('file_acc_sidang')->store('sidang/acc', 'local'),
+            'file_bebas_revisi_seminar' => $request->file('file_bebas_revisi_seminar')->store('sidang/bebas_revisi', 'local'),
+            'file_bukti_bayar_sidang' => $request->file('file_bukti_bayar_sidang')->store('sidang/bukti_bayar', 'local'),
         ];
 
-        SidangSkripsi::updateOrCreate(
-            ['pengajuan_skripsi_id' => $skripsi->id],
-            array_merge($paths, ['status' => StatusPengajuan::Diajukan])
-        );
+        try {
+            $blocked = DB::transaction(function () use ($user, $skripsi, $paths): bool {
+                $lockedSkripsi = PengajuanSkripsi::with('seminar')->whereKey($skripsi->id)->lockForUpdate()->firstOrFail();
 
-        AktivitasLog::catat(
-            $user,
-            'Pengajuan Sidang Skripsi',
-            "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan sidang skripsi untuk judul: '{$skripsi->judul}'"
-        );
+                if (! $lockedSkripsi->seminar || ! $lockedSkripsi->seminar->isSelesai()) {
+                    abort(403, 'Anda belum menyelesaikan seminar.');
+                }
 
-        // Notifikasi ke Pengelola (Kaprodi, Admin Prodi, Admin Utama)
-        Notifikasi::kirimKePengelola(
-            $user->program_studi_id,
-            'Pendaftaran Sidang Skripsi Baru',
-            "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan pendaftaran sidang skripsi untuk judul: '{$skripsi->judul}'.",
-            null,
-            $user->id
-        );
+                $existingSidang = SidangSkripsi::where('pengajuan_skripsi_id', $lockedSkripsi->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existingSidang && $existingSidang->status !== StatusPengajuan::Ditolak) {
+                    return true;
+                }
+
+                SidangSkripsi::updateOrCreate(
+                    ['pengajuan_skripsi_id' => $lockedSkripsi->id],
+                    array_merge($paths, ['status' => StatusPengajuan::Diajukan])
+                );
+
+                AktivitasLog::catat(
+                    $user,
+                    'Pengajuan Sidang Skripsi',
+                    "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan sidang skripsi untuk judul: '{$lockedSkripsi->judul}'"
+                );
+
+                // Notifikasi ke Pengelola (Kaprodi, Admin Prodi, Admin Utama)
+                Notifikasi::kirimKePengelola(
+                    $user->program_studi_id,
+                    'Pendaftaran Sidang Skripsi Baru',
+                    "Mahasiswa {$user->name} ({$user->nomor_induk}) mengajukan pendaftaran sidang skripsi untuk judul: '{$lockedSkripsi->judul}'.",
+                    null,
+                    $user->id
+                );
+
+                return false;
+            });
+        } catch (\Throwable $e) {
+            Storage::disk('local')->delete(array_values($paths));
+            throw $e;
+        }
+
+        if ($blocked) {
+            Storage::disk('local')->delete(array_values($paths));
+
+            return redirect()->route('mahasiswa.sidang.index')
+                ->with('error', 'Anda sudah memiliki pendaftaran Sidang Skripsi yang aktif atau telah selesai.');
+        }
 
         return redirect()->route('mahasiswa.sidang.index')
             ->with('success', 'Pendaftaran sidang skripsi berhasil diajukan dan sedang menunggu penetapan penguji serta jadwal.');
