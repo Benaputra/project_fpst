@@ -43,7 +43,23 @@ class NotifikasiController extends Controller
             return false;
         }
 
-        return strcasecmp($parsed['host'], $request->getHost()) === 0;
+        $scheme = strtolower($parsed['scheme'] ?? '');
+        if (! in_array($scheme, ['http', 'https'], true)) {
+            return false;
+        }
+
+        $allowedHosts = array_filter([
+            $request->getHost(),
+            parse_url((string) config('app.url'), PHP_URL_HOST),
+        ]);
+
+        foreach ($allowedHosts as $allowedHost) {
+            if (strcasecmp($parsed['host'], $allowedHost) === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function markAllAsRead(Request $request): RedirectResponse
